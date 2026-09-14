@@ -154,9 +154,9 @@ app/src/main/java/com/spendobserver/
   "meta": {
     "id": "Family",
     "title": "Family",
-    "createdAt": "01/15/2026_10:30",
-    "updatedAt": "08/29/2026_18:02",
-    "backupAt": "08/29/2026_18:05"
+    "createdAt": "15/01/2026_10:30:00",
+    "updatedAt": "29/08/2026_18:02:00",
+    "backupAt": "29/08/2026_18:05:00"
   },
   "tags": { "1": "groceries", "2": "rent" },
   "years": {
@@ -190,6 +190,13 @@ app/src/main/java/com/spendobserver/
 
 Ключевые правила формата, которые Android-версия обязана соблюдать:
 
+- **`meta.createdAt`/`updatedAt`/`backupAt`** — строка `dd/MM/yyyy_HH:mm:ss`
+  (день **первый**, с секундами), а не `MM/dd/yyyy_HH:mm`, как можно
+  неверно прочитать из примера выше по невнимательности — это реальный
+  формат `formatDatetoMeta`/`parseMetaToDate` из `src/lib/utils/dateParser.ts`
+  оригинала, побитово. Расхождение здесь ломает совместимость файлов между
+  вебом и Android, так что при портировании ориентируйся на код, а не на
+  словесное описание.
 - **Суммы** — целые числа в центах (`amount`, `totalAmount`), никогда `Float`.
 - **`month.title`** — фиксированный английский ключ месяца (`"january"` …
   `"december"`), не переведённая строка. Отображаемое имя месяца всегда
