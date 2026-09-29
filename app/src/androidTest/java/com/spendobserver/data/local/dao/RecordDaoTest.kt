@@ -120,4 +120,26 @@ class RecordDaoTest {
         assertEquals(1, march.size)
         assertEquals(trackerId, march.first().trackerId)
     }
+
+    @Test
+    fun observeAll_returnsEveryRecordForTrackerOrderedByDate() = runBlocking {
+        val otherTrackerId = db.trackerDao().insert(
+            Tracker(title = "Work", createdAt = 0, updatedAt = 0),
+        )
+        val jan = recordDao.insert(record(LocalDate(2026, 1, 5)))
+        val dec = recordDao.insert(record(LocalDate(2025, 12, 20)))
+        recordDao.insert(
+            Record(
+                trackerId = otherTrackerId,
+                date = LocalDate(2026, 1, 1),
+                type = RecordType.COST,
+                description = null,
+                amountCents = 500,
+            ),
+        )
+
+        val all = recordDao.observeAll(trackerId).first()
+
+        assertEquals(listOf(dec, jan), all.map { it.id })
+    }
 }

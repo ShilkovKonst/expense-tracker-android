@@ -31,4 +31,7 @@ interface RecordDao {
             "ORDER BY date ASC",
     )
     fun observeInRange(trackerId: Long, from: LocalDate, to: LocalDate): Flow<List<Record>>
+
+    @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
+    fun observeAll(trackerId: Long): Flow<List<Record>>
 }

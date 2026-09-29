@@ -1,5 +1,6 @@
 package com.spendobserver.ui.trackers
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +36,7 @@ import com.spendobserver.data.repository.TrackerRepository
 @Composable
 fun TrackerListScreen(
     trackerRepository: TrackerRepository,
+    onTrackerClick: (Tracker) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerListViewModel = viewModel(
@@ -68,6 +70,7 @@ fun TrackerListScreen(
                 items(trackers, key = { it.id }) { tracker ->
                     TrackerRow(
                         tracker = tracker,
+                        onClick = { onTrackerClick(tracker) },
                         onRenameClick = { trackerToRename = tracker },
                         onDeleteClick = { trackerToDelete = tracker },
                     )
@@ -123,12 +126,14 @@ fun TrackerListScreen(
 @Composable
 private fun TrackerRow(
     tracker: Tracker,
+    onClick: () -> Unit,
     onRenameClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     ListItem(
+        modifier = Modifier.clickable(onClick = onClick),
         headlineContent = { Text(tracker.title) },
         trailingContent = {
             IconButton(

@@ -18,6 +18,8 @@ class RecordRepository(
     fun observeInRange(trackerId: Long, from: LocalDate, to: LocalDate): Flow<List<Record>> =
         recordDao.observeInRange(trackerId, from, to)
 
+    fun observeAll(trackerId: Long): Flow<List<Record>> = recordDao.observeAll(trackerId)
+
     suspend fun getRecord(id: Long): Record? = recordDao.getById(id)
 
     suspend fun getTagIds(recordId: Long): List<Long> =
