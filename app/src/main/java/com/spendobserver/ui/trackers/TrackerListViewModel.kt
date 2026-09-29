@@ -4,36 +4,49 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.summary.TrackerStats
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class TrackerListViewModel(private val repository: TrackerRepository) : ViewModel() {
+/**
+ * [statsFlow] is taken as a plain `Flow` (rather than a `RecordRepository`)
+ * so this ViewModel stays testable with an in-memory [TrackerRepository]
+ * fake alone — `RecordRepository` needs a real Room `AppDatabase` for its
+ * transactional methods, which a pure JVM unit test can't construct.
+ */
+class TrackerListViewModel(
+    private val trackerRepository: TrackerRepository,
+    statsFlow: Flow<Map<Long, TrackerStats>>,
+) : ViewModel() {
 
-    val trackers: StateFlow<List<Tracker>> = repository.observeTrackers()
+    val trackers: StateFlow<List<Tracker>> = trackerRepository.observeTrackers()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = emptyList(),
         )
 
+    /** Record count + net total per tracker, for the subtitle under each tracker's name. A tracker absent here has no records yet. */
+    val statsByTracker: StateFlow<Map<Long, TrackerStats>> = statsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyMap(),
+        )
+
     fun createTracker(title: String) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            repository.insertTracker(Tracker(title = title, createdAt = now, updatedAt = now))
-        }
-    }
-
-    fun renameTracker(tracker: Tracker, newTitle: String) {
-        viewModelScope.launch {
-            repository.updateTracker(tracker.copy(title = newTitle, updatedAt = System.currentTimeMillis()))
+            trackerRepository.insertTracker(Tracker(title = title, createdAt = now, updatedAt = now))
         }
     }
 
     fun deleteTracker(tracker: Tracker) {
         viewModelScope.launch {
-            repository.deleteTracker(tracker)
+            trackerRepository.deleteTracker(tracker)
         }
     }
 }

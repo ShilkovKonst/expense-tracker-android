@@ -157,4 +157,33 @@ class RecordDaoTest {
         assertEquals(listOf("groceries"), all.getValue(taggedId).tags.map { it.name })
         assertEquals(emptyList<String>(), all.getValue(untaggedId).tags.map { it.name })
     }
+
+    @Test
+    fun observeStatsByTracker_countsAndNetsIncomeAgainstCostPerTracker() = runBlocking {
+        val otherTrackerId = db.trackerDao().insert(Tracker(title = "Work", createdAt = 0, updatedAt = 0))
+        recordDao.insert(
+            Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.INCOME, description = null, amountCents = 5000),
+        )
+        recordDao.insert(record(LocalDate(2026, 3, 2), amountCents = 2000)) // COST, this tracker
+        recordDao.insert(
+            Record(trackerId = otherTrackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null, amountCents = 700),
+        )
+
+        val stats = recordDao.observeStatsByTracker().first().associateBy { it.trackerId }
+
+        assertEquals(2, stats.getValue(trackerId).recordCount)
+        assertEquals(5000L, stats.getValue(trackerId).incomeCents)
+        assertEquals(2000L, stats.getValue(trackerId).costCents)
+        assertEquals(1, stats.getValue(otherTrackerId).recordCount)
+        assertEquals(700L, stats.getValue(otherTrackerId).costCents)
+    }
+
+    @Test
+    fun observeStatsByTracker_trackerWithNoRecords_hasNoRow() = runBlocking {
+        db.trackerDao().insert(Tracker(title = "Empty", createdAt = 0, updatedAt = 0))
+
+        val stats = recordDao.observeStatsByTracker().first()
+
+        assertEquals(emptyList<Any>(), stats)
+    }
 }

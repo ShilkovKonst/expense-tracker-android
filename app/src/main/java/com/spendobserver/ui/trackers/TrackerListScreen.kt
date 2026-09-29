@@ -2,17 +2,17 @@ package com.spendobserver.ui.trackers
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,23 +31,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.summary.TrackerStats
+import com.spendobserver.domain.summary.formatSignedCents
+import com.spendobserver.domain.summary.recordsWord
 
 @Composable
 fun TrackerListScreen(
     trackerRepository: TrackerRepository,
+    recordRepository: RecordRepository,
     onTrackerClick: (Tracker) -> Unit = {},
+    onEditTrackerClick: (Tracker) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerListViewModel = viewModel(
-        factory = remember(trackerRepository) {
-            viewModelFactory { initializer { TrackerListViewModel(trackerRepository) } }
+        factory = remember(trackerRepository, recordRepository) {
+            viewModelFactory {
+                initializer { TrackerListViewModel(trackerRepository, recordRepository.observeStatsByTracker()) }
+            }
         },
     )
     val trackers by viewModel.trackers.collectAsStateWithLifecycle()
+    val statsByTracker by viewModel.statsByTracker.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
-    var trackerToRename by remember { mutableStateOf<Tracker?>(null) }
     var trackerToDelete by remember { mutableStateOf<Tracker?>(null) }
 
     Scaffold(
@@ -70,8 +78,9 @@ fun TrackerListScreen(
                 items(trackers, key = { it.id }) { tracker ->
                     TrackerRow(
                         tracker = tracker,
+                        stats = statsByTracker[tracker.id] ?: TrackerStats.EMPTY,
                         onClick = { onTrackerClick(tracker) },
-                        onRenameClick = { trackerToRename = tracker },
+                        onEditClick = { onEditTrackerClick(tracker) },
                         onDeleteClick = { trackerToDelete = tracker },
                     )
                 }
@@ -89,19 +98,6 @@ fun TrackerListScreen(
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false },
-        )
-    }
-
-    trackerToRename?.let { tracker ->
-        TrackerTitleDialog(
-            title = "Переименовать трекер",
-            initialTitle = tracker.title,
-            confirmLabel = "Сохранить",
-            onConfirm = { newTitle ->
-                viewModel.renameTracker(tracker, newTitle)
-                trackerToRename = null
-            },
-            onDismiss = { trackerToRename = null },
         )
     }
 
@@ -126,37 +122,31 @@ fun TrackerListScreen(
 @Composable
 private fun TrackerRow(
     tracker: Tracker,
+    stats: TrackerStats,
     onClick: () -> Unit,
-    onRenameClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
         headlineContent = { Text(tracker.title) },
+        supportingContent = {
+            Text(
+                text = "${stats.recordCount} ${recordsWord(stats.recordCount)} · ${formatSignedCents(stats.totals.netCents)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
         trailingContent = {
-            IconButton(
-                onClick = { menuExpanded = true },
-                modifier = Modifier.testTag("trackerMenuButton"),
-            ) {
-                Text("⋮")
-            }
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text("Переименовать") },
-                    onClick = {
-                        menuExpanded = false
-                        onRenameClick()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("Удалить") },
-                    onClick = {
-                        menuExpanded = false
-                        onDeleteClick()
-                    },
-                )
+            Row {
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.testTag("editTrackerButton-${tracker.title}"),
+                ) { Text("✎") }
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.testTag("deleteTrackerButton-${tracker.title}"),
+                ) { Text("🗑") }
             }
         },
     )

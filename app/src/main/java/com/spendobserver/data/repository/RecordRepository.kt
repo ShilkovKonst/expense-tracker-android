@@ -7,6 +7,8 @@ import com.spendobserver.data.local.dao.RecordTagDao
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordTag
 import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.summary.AmountTotals
+import com.spendobserver.domain.summary.TrackerStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
@@ -26,6 +28,12 @@ class RecordRepository(
     fun observeTagNamesByRecord(trackerId: Long): Flow<Map<Long, List<String>>> =
         recordDao.observeAllWithTags(trackerId).map { list ->
             list.associate { it.record.id to it.tags.map(Tag::name) }
+        }
+
+    /** Record count + net totals per tracker, across all dates — trackers with no records are simply absent from the map. */
+    fun observeStatsByTracker(): Flow<Map<Long, TrackerStats>> =
+        recordDao.observeStatsByTracker().map { rows ->
+            rows.associate { it.trackerId to TrackerStats(it.recordCount, AmountTotals(it.incomeCents, it.costCents)) }
         }
 
     suspend fun getRecord(id: Long): Record? = recordDao.getById(id)

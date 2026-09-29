@@ -49,6 +49,8 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.amountCentsFrom
+import com.spendobserver.domain.summary.formatCents
+import com.spendobserver.ui.common.TagNameDialog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
@@ -335,51 +337,10 @@ fun RecordFormScreen(
     }
 }
 
-@Composable
-private fun TagNameDialog(
-    title: String,
-    initialName: String,
-    confirmLabel: String,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var text by remember { mutableStateOf(initialName) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                singleLine = true,
-                label = { Text("Название") },
-                modifier = Modifier.fillMaxWidth().testTag("tagNameInput"),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(text.trim()) },
-                enabled = text.isNotBlank(),
-                modifier = Modifier.testTag("tagNameConfirmButton"),
-            ) { Text(confirmLabel) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
-        },
-    )
-}
-
 private fun formatDate(date: LocalDate): String {
     val dd = date.day.toString().padStart(2, '0')
     val mm = date.month.number.toString().padStart(2, '0')
     return "$dd.$mm.${date.year}"
-}
-
-private fun formatCents(cents: Long): String {
-    val whole = cents / 100
-    val fraction = (cents % 100).toString().padStart(2, '0')
-    return "$whole.$fraction"
 }
 
 private const val MILLIS_PER_DAY = 86_400_000L

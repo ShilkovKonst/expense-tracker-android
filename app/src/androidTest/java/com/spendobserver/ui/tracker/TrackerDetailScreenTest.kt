@@ -183,4 +183,17 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("без описания").assertExists()
     }
+
+    @Test
+    fun appBar_showsRecordCountAndNetTotalAcrossAllYears() {
+        runBlocking {
+            insertRecord(LocalDate(2025, 12, 1), RecordType.INCOME, 5000, "old income")
+            insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 2000, "this year")
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        // 2 records total, net across both years: 5000 - 2000 = 3000.
+        composeRule.onNodeWithText("2 записи · +30.00").assertExists()
+    }
 }

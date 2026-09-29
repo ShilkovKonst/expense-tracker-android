@@ -46,6 +46,8 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
+import com.spendobserver.domain.summary.formatSignedCents
+import com.spendobserver.domain.summary.recordsWord
 
 private val MonthNames = listOf(
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -78,11 +80,23 @@ fun TrackerDetailScreen(
     var expandedYears by remember { mutableStateOf(emptySet<Int>()) }
     var expandedMonths by remember { mutableStateOf(emptySet<Pair<Int, Int>>()) }
 
+    val recordCount = yearGroups.sumOf { yg -> yg.months.sumOf { it.records.size } }
+    val totalNet = yearGroups.sumOf { it.totals.netCents }
+
     Scaffold(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(trackerTitle ?: "") },
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(trackerTitle ?: "")
+                        Text(
+                            text = "$recordCount ${recordsWord(recordCount)} · ${formatSignedCents(totalNet)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Text("←")
@@ -178,10 +192,10 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
 }
 
 /**
- * A record's preview row: date, tags and description as a small labeled
- * list on the left (so an empty description never leaves the row looking
- * blank — every field is always visible, labeled, even when "empty"), the
- * signed amount on the right.
+ * A record's preview row: plain day number on the left, tags and
+ * description as a small labeled table in the middle (so an empty
+ * description never leaves the row looking blank — both fields are always
+ * visible, labeled, even when "empty"), the signed amount on the right.
  */
 @Composable
 private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Unit) {
@@ -192,18 +206,21 @@ private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Uni
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            LabeledField("Дата", record.date.day.toString().padStart(2, '0'))
+        Text(
+            text = record.date.day.toString().padStart(2, '0'),
+            modifier = Modifier.width(32.dp),
+        )
+        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
             LabeledTagsField("Теги", tagNames)
             LabeledField("Описание", record.description?.takeIf { it.isNotBlank() } ?: "без описания")
         }
         Spacer(modifier = Modifier.width(8.dp))
-        val (sign, color) = when (record.type) {
-            RecordType.INCOME -> "+" to IncomeColor
-            RecordType.COST -> "-" to MaterialTheme.colorScheme.error
+        val (signedCents, color) = when (record.type) {
+            RecordType.INCOME -> record.amountCents to IncomeColor
+            RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
         }
         Text(
-            text = "$sign${formatCents(record.amountCents)}",
+            text = formatSignedCents(signedCents),
             color = color,
             fontWeight = FontWeight.Medium,
         )
@@ -261,14 +278,5 @@ private fun NetAmountText(totals: AmountTotals) {
         net < 0 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val sign = if (net > 0) "+" else ""
-    Text("$sign${formatCents(net)}", color = color)
-}
-
-private fun formatCents(cents: Long): String {
-    val negative = cents < 0
-    val absCents = kotlin.math.abs(cents)
-    val whole = absCents / 100
-    val fraction = (absCents % 100).toString().padStart(2, '0')
-    return "${if (negative) "-" else ""}$whole.$fraction"
+    Text(formatSignedCents(net), color = color)
 }

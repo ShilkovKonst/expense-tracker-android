@@ -1,8 +1,12 @@
 package com.spendobserver.ui.trackers
 
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.summary.AmountTotals
+import com.spendobserver.domain.summary.TrackerStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -27,7 +31,7 @@ class TrackerListViewModelTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         dao = FakeTrackerDao()
-        viewModel = TrackerListViewModel(TrackerRepository(dao))
+        viewModel = TrackerListViewModel(TrackerRepository(dao), emptyFlow())
     }
 
     @After
@@ -62,20 +66,6 @@ class TrackerListViewModelTest {
     }
 
     @Test
-    fun renameTracker_updatesTitle() = runTest(dispatcher) {
-        viewModel.trackers.onEach { }.launchIn(backgroundScope)
-
-        viewModel.createTracker("Family")
-        advanceUntilIdle()
-        val tracker = viewModel.trackers.value.first()
-
-        viewModel.renameTracker(tracker, "Home")
-        advanceUntilIdle()
-
-        assertEquals(listOf("Home"), viewModel.trackers.value.map { it.title })
-    }
-
-    @Test
     fun deleteTracker_removesIt() = runTest(dispatcher) {
         viewModel.trackers.onEach { }.launchIn(backgroundScope)
 
@@ -87,5 +77,16 @@ class TrackerListViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.trackers.value.isEmpty())
+    }
+
+    @Test
+    fun statsByTracker_surfacesWhatTheProvidedFlowEmits() = runTest(dispatcher) {
+        val stats = mapOf(1L to TrackerStats(3, AmountTotals(5000, 2000)))
+        val statsViewModel = TrackerListViewModel(TrackerRepository(dao), flowOf(stats))
+        statsViewModel.statsByTracker.onEach { }.launchIn(backgroundScope)
+
+        advanceUntilIdle()
+
+        assertEquals(stats, statsViewModel.statsByTracker.value)
     }
 }

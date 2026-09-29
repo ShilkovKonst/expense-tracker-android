@@ -12,6 +12,7 @@ import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.record.RecordFormScreen
 import com.spendobserver.ui.tracker.TrackerDetailScreen
+import com.spendobserver.ui.trackers.TrackerEditScreen
 import com.spendobserver.ui.trackers.TrackerListScreen
 
 @Composable
@@ -30,7 +31,9 @@ fun SpendObserverNavHost(
         composable<Route.TrackerList> {
             TrackerListScreen(
                 trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
                 onTrackerClick = { tracker -> navController.navigate(Route.TrackerDetail(tracker.id)) },
+                onEditTrackerClick = { tracker -> navController.navigate(Route.TrackerEdit(tracker.id)) },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -54,6 +57,17 @@ fun SpendObserverNavHost(
                 trackerId = route.trackerId,
                 recordId = route.recordId,
                 recordRepository = recordRepository,
+                tagRepository = tagRepository,
+                onSaved = { navController.popBackStack() },
+                onBackClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        composable<Route.TrackerEdit> { backStackEntry ->
+            val route: Route.TrackerEdit = backStackEntry.toRoute()
+            TrackerEditScreen(
+                trackerId = route.trackerId,
+                trackerRepository = trackerRepository,
                 tagRepository = tagRepository,
                 onSaved = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },

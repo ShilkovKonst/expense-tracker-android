@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.spendobserver.data.local.dto.TrackerRecordStatsRow
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.relation.RecordWithTags
 import kotlinx.coroutines.flow.Flow
@@ -40,4 +41,13 @@ interface RecordDao {
     @Transaction
     @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
     fun observeAllWithTags(trackerId: Long): Flow<List<RecordWithTags>>
+
+    /** Record count + income/cost totals per tracker, across all dates — for the tracker list and detail header. A tracker with zero records has no row here. */
+    @Query(
+        "SELECT trackerId, COUNT(*) AS recordCount, " +
+            "COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amountCents ELSE 0 END), 0) AS incomeCents, " +
+            "COALESCE(SUM(CASE WHEN type = 'COST' THEN amountCents ELSE 0 END), 0) AS costCents " +
+            "FROM records GROUP BY trackerId",
+    )
+    fun observeStatsByTracker(): Flow<List<TrackerRecordStatsRow>>
 }
