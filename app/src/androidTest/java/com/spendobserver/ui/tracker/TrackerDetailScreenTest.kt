@@ -98,7 +98,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").assertExists()
         composeRule.onNodeWithText("Март").assertDoesNotExist()
-        composeRule.onNodeWithText("groceries").assertDoesNotExist()
+        composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
     }
 
     @Test
@@ -110,11 +110,11 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Март").assertExists()
-        composeRule.onNodeWithText("groceries").assertDoesNotExist()
+        composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
 
         composeRule.onNodeWithText("Март").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("groceries").assertExists()
+        composeRule.onNodeWithText("Описание: groceries").assertExists()
     }
 
     @Test
@@ -135,6 +135,26 @@ class TrackerDetailScreenTest {
 
         // March alone nets just its own two records (5000 - 2000 = 3000).
         composeRule.onNodeWithText("+30.00").assertExists()
+    }
+
+    @Test
+    fun yearAndMonthHeaders_showTheirOwnRecordCount() {
+        runBlocking {
+            insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 1000, "a")
+            insertRecord(LocalDate(2026, 3, 2), RecordType.COST, 1000, "b")
+            insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 1000, "c")
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        // Year header: 3 records total, always visible.
+        composeRule.onNodeWithText("3 записи").assertExists()
+
+        composeRule.onNodeWithText("2026").performClick()
+        composeRule.waitForIdle()
+
+        // March header: only its own 2 records.
+        composeRule.onNodeWithText("2 записи").assertExists()
     }
 
     @Test
@@ -181,7 +201,22 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText("Март").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("без описания").assertExists()
+        composeRule.onNodeWithText("Описание: без описания").assertExists()
+    }
+
+    @Test
+    fun recordPreview_longDescription_stillRendersAsOneLabeledLine() {
+        val longDescription = "very very very very so long and detailed description of record so long that I cant read it in one line"
+        runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, longDescription) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("2026").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Март").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Описание: $longDescription").assertExists()
     }
 
     @Test

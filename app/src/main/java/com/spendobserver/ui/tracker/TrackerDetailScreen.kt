@@ -33,7 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -171,12 +174,14 @@ fun TrackerDetailScreen(
 
 @Composable
 private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> Unit) {
+    val count = yearGroup.months.sumOf { it.records.size }
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
         leadingContent = { Text(if (expanded) "▾" else "▸") },
         headlineContent = {
             Text(yearGroup.year.toString(), fontWeight = FontWeight.Bold)
         },
+        supportingContent = { Text("$count ${recordsWord(count)}") },
         trailingContent = { NetAmountText(yearGroup.totals) },
     )
 }
@@ -187,62 +192,75 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
         modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
         leadingContent = { Text(if (expanded) "▾" else "▸") },
         headlineContent = { Text(MonthNames[monthGroup.month - 1]) },
+        supportingContent = { Text("${monthGroup.records.size} ${recordsWord(monthGroup.records.size)}") },
         trailingContent = { NetAmountText(monthGroup.totals) },
     )
 }
 
 /**
- * A record's preview row: plain day number on the left, tags and
- * description as a small labeled table in the middle (so an empty
- * description never leaves the row looking blank — both fields are always
- * visible, labeled, even when "empty"), the signed amount on the right.
+ * A record's preview row, two tiers: day number + tags + signed amount on
+ * one line (tags wrap to more lines as needed, without pushing the amount
+ * down — see [LabeledTagsField]), the description on its own full-width
+ * line below. A single [Text] carries the "Описание: " label inline with
+ * the value (see [DescriptionLine]) so wrapped lines run the full row
+ * width instead of being squeezed into whatever's left of a fixed-width
+ * label column — the label only costs space on its own first line.
  */
 @Composable
 private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Unit) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = record.date.day.toString().padStart(2, '0'),
-            modifier = Modifier.width(32.dp),
-        )
-        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-            LabeledTagsField("Теги", tagNames)
-            LabeledField("Описание", record.description?.takeIf { it.isNotBlank() } ?: "без описания")
+        Row(verticalAlignment = Alignment.Top) {
+            Text(
+                text = record.date.day.toString().padStart(2, '0'),
+                modifier = Modifier.width(32.dp),
+            )
+            LabeledTagsField("Теги", tagNames, modifier = Modifier.weight(1f).padding(start = 8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            val (signedCents, color) = when (record.type) {
+                RecordType.INCOME -> record.amountCents to IncomeColor
+                RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
+            }
+            Text(
+                text = formatSignedCents(signedCents),
+                color = color,
+                fontWeight = FontWeight.Medium,
+            )
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        val (signedCents, color) = when (record.type) {
-            RecordType.INCOME -> record.amountCents to IncomeColor
-            RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
-        }
-        Text(
-            text = formatSignedCents(signedCents),
-            color = color,
-            fontWeight = FontWeight.Medium,
+        DescriptionLine(
+            text = record.description?.takeIf { it.isNotBlank() } ?: "без описания",
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
 
 @Composable
-private fun LabeledField(label: String, value: String) {
-    Row(modifier = Modifier.padding(vertical = 2.dp)) {
-        Text(
-            text = "$label: ",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(value, style = MaterialTheme.typography.bodySmall)
-    }
+private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = labelColor)) {
+                append("Описание: ")
+            }
+            append(text)
+        },
+        style = MaterialTheme.typography.bodySmall,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
+/**
+ * "Теги: " pinned to the top-left of the cell (not vertically centered —
+ * with several tags wrapping to a second [FlowRow] line, centering would
+ * float the label away from the first line of chips it's labeling).
+ */
 @Composable
-private fun LabeledTagsField(label: String, tagNames: List<String>) {
-    Row(modifier = Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun LabeledTagsField(label: String, tagNames: List<String>, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
         Text(
             text = "$label: ",
             style = MaterialTheme.typography.bodySmall,
