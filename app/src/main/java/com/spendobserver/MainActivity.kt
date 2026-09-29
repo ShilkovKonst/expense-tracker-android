@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     trackerRepository = container.trackerRepository,
                     recordRepository = container.recordRepository,
+                    tagRepository = container.tagRepository,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

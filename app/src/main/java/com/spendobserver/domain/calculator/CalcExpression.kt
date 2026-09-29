@@ -116,3 +116,17 @@ fun calcExpression(expression: String, mode: CalculatorMode = CalculatorMode.LEF
         CalculatorMode.LEFT_TO_RIGHT -> calcExpressionLeftToRight(expression)
         CalculatorMode.ALGEBRAIC -> calcExpressionAlgebraic(expression)
     }
+
+/**
+ * Evaluates the amount field's calculator [expression] into whole cents for
+ * storage as [com.spendobserver.data.local.entity.Record.amountCents].
+ * Returns `null` for anything that isn't a finite positive amount (empty
+ * input, a dangling expression, a result of zero or less) — record amounts
+ * are always positive, with income/cost conveyed separately by
+ * [com.spendobserver.data.local.entity.RecordType].
+ */
+fun amountCentsFrom(expression: String, mode: CalculatorMode = CalculatorMode.LEFT_TO_RIGHT): Long? {
+    val value = calcExpression(expression, mode)
+    if (!value.isFinite() || value <= 0.0) return null
+    return Math.round(value * 100)
+}

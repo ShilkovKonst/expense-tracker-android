@@ -16,4 +16,8 @@ sealed interface Route {
 
     @Serializable
     data class TrackerDetail(val trackerId: Long) : Route
+
+    /** [recordId] is null when creating a new record, set when editing an existing one. */
+    @Serializable
+    data class RecordForm(val trackerId: Long, val recordId: Long? = null) : Route
 }

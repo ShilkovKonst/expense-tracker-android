@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,8 @@ fun TrackerDetailScreen(
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
     onBackClick: () -> Unit,
+    onAddRecordClick: () -> Unit = {},
+    onRecordClick: (Record) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerDetailViewModel = viewModel(
@@ -79,6 +82,11 @@ fun TrackerDetailScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddRecordClick) {
+                Text("+")
+            }
         },
     ) { innerPadding ->
         if (yearGroups.isEmpty()) {
@@ -124,7 +132,7 @@ fun TrackerDetailScreen(
                             }
                             if (monthExpanded) {
                                 items(monthGroup.records, key = { "record-${it.id}" }) { record ->
-                                    RecordRow(record)
+                                    RecordRow(record, onClick = { onRecordClick(record) })
                                 }
                             }
                         }
@@ -158,9 +166,12 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
 }
 
 @Composable
-private fun RecordRow(record: Record) {
+private fun RecordRow(record: Record, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(record.date.day.toString().padStart(2, '0'), modifier = Modifier.width(32.dp))
