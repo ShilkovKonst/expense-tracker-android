@@ -5,8 +5,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.relation.RecordWithTags
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
@@ -34,4 +36,8 @@ interface RecordDao {
 
     @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
     fun observeAll(trackerId: Long): Flow<List<Record>>
+
+    @Transaction
+    @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
+    fun observeAllWithTags(trackerId: Long): Flow<List<RecordWithTags>>
 }

@@ -6,7 +6,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.entity.RecordTag
 import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -141,5 +143,18 @@ class RecordDaoTest {
         val all = recordDao.observeAll(trackerId).first()
 
         assertEquals(listOf(dec, jan), all.map { it.id })
+    }
+
+    @Test
+    fun observeAllWithTags_joinsEachRecordWithItsTagNames() = runBlocking {
+        val tagId = db.tagDao().insert(Tag(trackerId = trackerId, name = "groceries"))
+        val taggedId = recordDao.insert(record(LocalDate(2026, 3, 1)))
+        db.recordTagDao().insert(RecordTag(recordId = taggedId, tagId = tagId))
+        val untaggedId = recordDao.insert(record(LocalDate(2026, 3, 2)))
+
+        val all = recordDao.observeAllWithTags(trackerId).first().associateBy { it.record.id }
+
+        assertEquals(listOf("groceries"), all.getValue(taggedId).tags.map { it.name })
+        assertEquals(emptyList<String>(), all.getValue(untaggedId).tags.map { it.name })
     }
 }

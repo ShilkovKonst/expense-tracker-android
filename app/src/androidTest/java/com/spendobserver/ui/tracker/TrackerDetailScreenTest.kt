@@ -10,8 +10,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.RecordRepository
+import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -30,6 +32,7 @@ class TrackerDetailScreenTest {
     private lateinit var db: AppDatabase
     private lateinit var trackerRepository: TrackerRepository
     private lateinit var recordRepository: RecordRepository
+    private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
 
     @Before
@@ -38,6 +41,7 @@ class TrackerDetailScreenTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         trackerRepository = TrackerRepository(db.trackerDao())
         recordRepository = RecordRepository(db)
+        tagRepository = TagRepository(db.tagDao())
 
         trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
     }
@@ -144,5 +148,39 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").assertExists()
         composeRule.onNodeWithText("2025").assertExists()
+    }
+
+    @Test
+    fun recordPreview_showsItsTags() {
+        runBlocking {
+            val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "groceries"))
+            recordRepository.insertRecord(
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "shopping", amountCents = 1000),
+                setOf(tagId),
+            )
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("2026").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Март").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("groceries").assertExists()
+    }
+
+    @Test
+    fun recordPreview_blankDescription_showsPlaceholderInsteadOfEmptyLine() {
+        runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, null) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("2026").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Март").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("без описания").assertExists()
     }
 }

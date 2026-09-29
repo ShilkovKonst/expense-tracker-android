@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -148,8 +149,22 @@ fun RecordFormScreen(
             OutlinedTextField(
                 value = formatDate(date),
                 onValueChange = {},
-                readOnly = true,
+                // enabled = false, not readOnly = true: a read-only field
+                // still runs its own tap-to-focus/cursor gesture handling,
+                // which wins over a plain Modifier.clickable wrapped around
+                // it — so the dialog below never opened and the date stayed
+                // stuck on today. Disabling the field entirely stops it
+                // from touching input at all, leaving our clickable as the
+                // only handler; the disabled-state colors are overridden
+                // below so it still looks like a normal field, not greyed
+                // out.
+                enabled = false,
                 label = { Text("Дата") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { showDatePicker = true }

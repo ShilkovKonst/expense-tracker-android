@@ -257,3 +257,6 @@ app/src/main/java/com/spendobserver/
 - Десктопная версия — рассматривается отдельно после Android
   (Kotlin Multiplatform + Compose Desktop, если Android-версия оправдает подход).
 - Публикация в Google Play — сборка `.apk` для side-load достаточно для начала.
+
+## Пример дизайна превью записи в аккордеоне
+![alt text](image.png)

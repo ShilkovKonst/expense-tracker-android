@@ -1,14 +1,20 @@
 package com.spendobserver.ui.tracker
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -16,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -66,6 +73,7 @@ fun TrackerDetailScreen(
     )
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val yearGroups by viewModel.yearGroups.collectAsStateWithLifecycle()
+    val tagNamesByRecordId by viewModel.tagNamesByRecordId.collectAsStateWithLifecycle()
 
     var expandedYears by remember { mutableStateOf(emptySet<Int>()) }
     var expandedMonths by remember { mutableStateOf(emptySet<Pair<Int, Int>>()) }
@@ -132,7 +140,11 @@ fun TrackerDetailScreen(
                             }
                             if (monthExpanded) {
                                 items(monthGroup.records, key = { "record-${it.id}" }) { record ->
-                                    RecordRow(record, onClick = { onRecordClick(record) })
+                                    RecordRow(
+                                        record = record,
+                                        tagNames = tagNamesByRecordId[record.id] ?: emptyList(),
+                                        onClick = { onRecordClick(record) },
+                                    )
                                 }
                             }
                         }
@@ -165,26 +177,79 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
     )
 }
 
+/**
+ * A record's preview row: date, tags and description as a small labeled
+ * list on the left (so an empty description never leaves the row looking
+ * blank — every field is always visible, labeled, even when "empty"), the
+ * signed amount on the right.
+ */
 @Composable
-private fun RecordRow(record: Record, onClick: () -> Unit) {
+private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
-        Text(record.date.day.toString().padStart(2, '0'), modifier = Modifier.width(32.dp))
-        Text(
-            text = record.description.orEmpty(),
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            LabeledField("Дата", record.date.day.toString().padStart(2, '0'))
+            LabeledTagsField("Теги", tagNames)
+            LabeledField("Описание", record.description?.takeIf { it.isNotBlank() } ?: "без описания")
+        }
+        Spacer(modifier = Modifier.width(8.dp))
         val (sign, color) = when (record.type) {
             RecordType.INCOME -> "+" to IncomeColor
             RecordType.COST -> "-" to MaterialTheme.colorScheme.error
         }
-        Text("$sign${formatCents(record.amountCents)}", color = color)
+        Text(
+            text = "$sign${formatCents(record.amountCents)}",
+            color = color,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun LabeledField(label: String, value: String) {
+    Row(modifier = Modifier.padding(vertical = 2.dp)) {
+        Text(
+            text = "$label: ",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(value, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun LabeledTagsField(label: String, tagNames: List<String>) {
+    Row(modifier = Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "$label: ",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (tagNames.isEmpty()) {
+            Text("—", style = MaterialTheme.typography.bodySmall)
+        } else {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (name in tagNames) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

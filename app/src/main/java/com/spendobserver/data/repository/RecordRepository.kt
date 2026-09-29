@@ -6,7 +6,9 @@ import com.spendobserver.data.local.dao.RecordDao
 import com.spendobserver.data.local.dao.RecordTagDao
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordTag
+import com.spendobserver.data.local.entity.Tag
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 
 class RecordRepository(
@@ -19,6 +21,12 @@ class RecordRepository(
         recordDao.observeInRange(trackerId, from, to)
 
     fun observeAll(trackerId: Long): Flow<List<Record>> = recordDao.observeAll(trackerId)
+
+    /** Tag names for every record of [trackerId], keyed by record id — for previews that show tags without a separate query per row. */
+    fun observeTagNamesByRecord(trackerId: Long): Flow<Map<Long, List<String>>> =
+        recordDao.observeAllWithTags(trackerId).map { list ->
+            list.associate { it.record.id to it.tags.map(Tag::name) }
+        }
 
     suspend fun getRecord(id: Long): Record? = recordDao.getById(id)
 

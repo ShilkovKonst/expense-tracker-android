@@ -20,9 +20,12 @@ private fun jsRound(value: Double): Double = floor(value + 0.5)
  * that's what used to turn into a silent NaN (and, further downstream in
  * the original web app, a silent 0). Returns `null` when nothing numeric is
  * left to evaluate.
+ *
+ * A comma is normalized to a decimal point first (`125,26` -> `125.26`) so
+ * a locale that types amounts with a comma still parses correctly.
  */
 private fun tokenize(expression: String): List<String>? {
-    val rawTokens = TOKEN_REGEX.findAll(expression).map { it.value }.toList()
+    val rawTokens = TOKEN_REGEX.findAll(expression.replace(',', '.')).map { it.value }.toList()
     if (rawTokens.isEmpty()) return null
 
     val merged = if (rawTokens[0] == "-" && rawTokens.getOrNull(1)?.toDoubleOrNull() != null) {

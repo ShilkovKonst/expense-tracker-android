@@ -43,6 +43,13 @@ class CalcExpressionTest {
     }
 
     @Test
+    fun handlesCommaAsDecimalSeparator() {
+        // A locale that types "125,26" instead of "125.26" must still parse.
+        assertEquals(125.26, calcExpression("125,26"), 0.0001)
+        assertEquals(4.0, calcExpression("1,5+2,5"), 0.0001)
+    }
+
+    @Test
     fun returnsNaN_forEmptyString() {
         assertTrue(calcExpression("").isNaN())
     }

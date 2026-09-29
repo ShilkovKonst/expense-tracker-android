@@ -31,6 +31,13 @@ class TrackerDetailViewModel(
             initialValue = emptyList(),
         )
 
+    val tagNamesByRecordId: StateFlow<Map<Long, List<String>>> = recordRepository.observeTagNamesByRecord(trackerId)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptyMap(),
+        )
+
     init {
         viewModelScope.launch {
             _trackerTitle.value = trackerRepository.getTracker(trackerId)?.title

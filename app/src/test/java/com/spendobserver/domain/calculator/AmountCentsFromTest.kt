@@ -34,6 +34,11 @@ class AmountCentsFromTest {
     }
 
     @Test
+    fun commaDecimalSeparator_convertsToCents() {
+        assertEquals(12526L, amountCentsFrom("125,26"))
+    }
+
+    @Test
     fun respectsSelectedCalculatorMode() {
         // (5+10)/2 = 7.5 left-to-right, vs 5+(10/2) = 10 with algebraic precedence.
         assertEquals(750L, amountCentsFrom("5+10/2", CalculatorMode.LEFT_TO_RIGHT))
