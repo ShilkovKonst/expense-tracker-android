@@ -38,6 +38,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -57,6 +58,16 @@ private val MonthNames = listOf(
     "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
 )
 private val IncomeColor = Color(0xFF2E7D32)
+
+// Record-row typography: date, the "Теги:"/"Описание:" labels, and the
+// amount all share one size+weight so they read as one line; month and
+// year step up by +1sp each so the hierarchy (year > month > record row)
+// is visible at a glance. All three levels use the same SemiBold weight —
+// only the size changes.
+private val RecordTextWeight = FontWeight.SemiBold
+private val RecordTextSize = 14.sp
+private val MonthTextSize = 15.sp
+private val YearTextSize = 16.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,7 +190,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
         modifier = Modifier.clickable(onClick = onClick),
         leadingContent = { Text(if (expanded) "▾" else "▸") },
         headlineContent = {
-            Text(yearGroup.year.toString(), fontWeight = FontWeight.Bold)
+            Text(yearGroup.year.toString(), fontWeight = RecordTextWeight, fontSize = YearTextSize)
         },
         supportingContent = { Text("$count ${recordsWord(count)}") },
         trailingContent = { NetAmountText(yearGroup.totals) },
@@ -191,49 +202,64 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
     ListItem(
         modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
         leadingContent = { Text(if (expanded) "▾" else "▸") },
-        headlineContent = { Text(MonthNames[monthGroup.month - 1]) },
+        headlineContent = {
+            Text(MonthNames[monthGroup.month - 1], fontWeight = RecordTextWeight, fontSize = MonthTextSize)
+        },
         supportingContent = { Text("${monthGroup.records.size} ${recordsWord(monthGroup.records.size)}") },
         trailingContent = { NetAmountText(monthGroup.totals) },
     )
 }
 
 /**
- * A record's preview row, two tiers: day number + tags + signed amount on
- * one line (tags wrap to more lines as needed, without pushing the amount
- * down — see [LabeledTagsField]), the description on its own full-width
- * line below. A single [Text] carries the "Описание: " label inline with
- * the value (see [DescriptionLine]) so wrapped lines run the full row
- * width instead of being squeezed into whatever's left of a fixed-width
- * label column — the label only costs space on its own first line.
+ * A record's preview row, split into two blocks so a long description can
+ * never run into the amount: block 1 (date + tags on top, description
+ * below) fills the available width on the left, two tiers; block 2 (the
+ * signed amount) gets its own column on the right, outside block 1's
+ * width so the description tier can never run under it. Date, the
+ * "Теги: " label, and the amount all share [RecordTextSize]/
+ * [RecordTextWeight] and sit on the same top-anchored line; a single
+ * [Text] carries "Описание: " inline with the value (see
+ * [DescriptionLine]) so wrapped lines run the full block-1 width instead
+ * of being squeezed into whatever's left of a fixed-width label column.
  */
 @Composable
 private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Unit) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Text(
-                text = record.date.day.toString().padStart(2, '0'),
-                modifier = Modifier.width(32.dp),
-            )
-            LabeledTagsField("Теги", tagNames, modifier = Modifier.weight(1f).padding(start = 8.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            val (signedCents, color) = when (record.type) {
-                RecordType.INCOME -> record.amountCents to IncomeColor
-                RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
+        // Block 1: date + tags tier, description tier below — both
+        // confined to whatever width is left after block 2's amount
+        // column, so a long description never runs under it.
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Text(
+                    text = record.date.day.toString().padStart(2, '0'),
+                    fontWeight = RecordTextWeight,
+                    fontSize = RecordTextSize,
+                    modifier = Modifier.width(32.dp),
+                )
+                LabeledTagsField("Теги", tagNames, modifier = Modifier.weight(1f).padding(start = 8.dp))
             }
-            Text(
-                text = formatSignedCents(signedCents),
-                color = color,
-                fontWeight = FontWeight.Medium,
+            DescriptionLine(
+                text = record.description?.takeIf { it.isNotBlank() } ?: "без описания",
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
-        DescriptionLine(
-            text = record.description?.takeIf { it.isNotBlank() } ?: "без описания",
-            modifier = Modifier.padding(top = 4.dp),
+        Spacer(modifier = Modifier.width(12.dp))
+        // Block 2: the amount, in its own column on the right.
+        val (signedCents, color) = when (record.type) {
+            RecordType.INCOME -> record.amountCents to IncomeColor
+            RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
+        }
+        Text(
+            text = formatSignedCents(signedCents),
+            color = color,
+            fontWeight = RecordTextWeight,
+            fontSize = RecordTextSize,
         )
     }
 }
@@ -243,7 +269,7 @@ private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     Text(
         text = buildAnnotatedString {
-            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = labelColor)) {
+            withStyle(SpanStyle(fontWeight = RecordTextWeight, fontSize = RecordTextSize, color = labelColor)) {
                 append("Описание: ")
             }
             append(text)
@@ -263,8 +289,8 @@ private fun LabeledTagsField(label: String, tagNames: List<String>, modifier: Mo
     Row(modifier = modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
         Text(
             text = "$label: ",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = RecordTextWeight,
+            fontSize = RecordTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (tagNames.isEmpty()) {
