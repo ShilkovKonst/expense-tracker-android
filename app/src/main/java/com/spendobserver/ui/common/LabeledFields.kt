@@ -81,7 +81,8 @@ fun LabeledOutlinedBox(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, MaterialTheme.colorScheme.outline, OutlinedTextFieldDefaults.shape)
-                .padding(start = 12.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                // 16dp start, like an OutlinedTextField's text, so content lines up with the fields above.
+                .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
             content = content,
         )
         Text(

@@ -43,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -66,7 +68,7 @@ import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
-/** Where a tag created from the "+ Новый тег" chip goes: the record (global) or one part (local). */
+/** Where a tag created from the "+" chip goes: the record (global) or one part (local). */
 private data class NewTagTarget(val isGlobal: Boolean, val partId: Int? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,7 +181,7 @@ fun RecordFormScreen(
             // its card, so then only the global row is here.
             TagChipsSection(
                 title = "Общие теги",
-                hint = "где, с кем — на всю запись",
+                hint = "где, с кем",
                 tags = globalTags,
                 selectedIds = globalTagIds,
                 onToggle = viewModel::toggleGlobalTag,
@@ -538,22 +540,14 @@ private fun TagChipsSection(
     newTagChipTestTag: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(title, style = MaterialTheme.typography.labelLarge)
-            Text(
-                text = "  $hint",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    // Same border-cut label as the date, amount, and description fields.
+    LabeledOutlinedBox(label = "$title — $hint", modifier = modifier) {
         TagChips(
             tags = tags,
             selectedIds = selectedIds,
             onToggle = onToggle,
             onNewTag = onNewTag,
             newTagChipTestTag = newTagChipTestTag,
-            modifier = Modifier.padding(top = 8.dp),
         )
     }
 }
@@ -561,7 +555,7 @@ private fun TagChipsSection(
 /**
  * A tag level's chips in two columns: the tags on the left (wrapping
  * within that column, or a placeholder when there are none yet) and the
- * "+ Новый тег" button on the right, so the button always sits in the
+ * "+" (new tag) button on the right, so the button always sits in the
  * same place instead of trailing after however many tags there are.
  */
 @Composable
@@ -576,7 +570,7 @@ private fun TagChips(
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         if (tags.isEmpty()) {
             // Centered within a chip's 48dp touch-target height, the same
-            // band the "+ Новый тег" chip centers its visible 32dp in.
+            // band the "+" chip centers its visible 32dp in.
             Box(
                 contentAlignment = Alignment.CenterStart,
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp),
@@ -609,11 +603,15 @@ private fun TagChips(
             }
         }
         Spacer(modifier = Modifier.width(8.dp))
+        // Just "+": in a tags box it's clear what gets added; screen
+        // readers still get the full action from the content description.
         FilterChip(
             selected = false,
             onClick = onNewTag,
-            label = { Text("+ Новый тег") },
-            modifier = Modifier.testTag(newTagChipTestTag),
+            label = { Text("+") },
+            modifier = Modifier
+                .testTag(newTagChipTestTag)
+                .semantics { contentDescription = "Новый тег" },
         )
     }
 }
