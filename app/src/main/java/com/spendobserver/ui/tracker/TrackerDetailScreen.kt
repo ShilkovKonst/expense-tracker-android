@@ -217,7 +217,8 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
  * signed amount) gets its own column on the right, outside block 1's
  * width so the description tier can never run under it. Date, the
  * "Теги: " label, and the amount all share [RecordTextSize]/
- * [RecordTextWeight] and sit on the same top-anchored line; a single
+ * [RecordTextWeight] and are baseline-aligned (top-aligning their boxes
+ * isn't enough — padding and the taller chips shift the glyphs); a single
  * [Text] carries "Описание: " inline with the value (see
  * [DescriptionLine]) so wrapped lines run the full block-1 width instead
  * of being squeezed into whatever's left of a fixed-width label column.
@@ -229,20 +230,24 @@ private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Uni
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.Top,
     ) {
         // Block 1: date + tags tier, description tier below — both
         // confined to whatever width is left after block 2's amount
-        // column, so a long description never runs under it.
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.Top) {
+        // column, so a long description never runs under it. Its first
+        // baseline is the date/tags tier's, which the amount aligns to.
+        Column(modifier = Modifier.weight(1f).alignByBaseline()) {
+            Row {
                 Text(
                     text = record.date.day.toString().padStart(2, '0'),
                     fontWeight = RecordTextWeight,
                     fontSize = RecordTextSize,
-                    modifier = Modifier.width(32.dp),
+                    modifier = Modifier.width(32.dp).alignByBaseline(),
                 )
-                LabeledTagsField("Теги", tagNames, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                LabeledTagsField(
+                    "Теги",
+                    tagNames,
+                    modifier = Modifier.weight(1f).padding(start = 8.dp).alignByBaseline(),
+                )
             }
             DescriptionLine(
                 text = record.description?.takeIf { it.isNotBlank() } ?: "без описания",
@@ -260,6 +265,7 @@ private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Uni
             color = color,
             fontWeight = RecordTextWeight,
             fontSize = RecordTextSize,
+            modifier = Modifier.alignByBaseline(),
         )
     }
 }
@@ -280,23 +286,29 @@ private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * "Теги: " pinned to the top-left of the cell (not vertically centered —
- * with several tags wrapping to a second [FlowRow] line, centering would
- * float the label away from the first line of chips it's labeling).
+ * "Теги: " baseline-aligned with the first line of chips (not vertically
+ * centered — with several tags wrapping to a second [FlowRow] line,
+ * centering would float the label away from the first line it's
+ * labeling). The field's own first baseline is the label's, so callers
+ * can line it up with the date and amount via `alignByBaseline()`.
  */
 @Composable
 private fun LabeledTagsField(label: String, tagNames: List<String>, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+    Row(modifier = modifier) {
         Text(
             text = "$label: ",
             fontWeight = RecordTextWeight,
             fontSize = RecordTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.alignByBaseline(),
         )
         if (tagNames.isEmpty()) {
-            Text("—", style = MaterialTheme.typography.bodySmall)
+            Text("—", style = MaterialTheme.typography.bodySmall, modifier = Modifier.alignByBaseline())
         } else {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.alignByBaseline(),
+            ) {
                 for (name in tagNames) {
                     Surface(
                         shape = RoundedCornerShape(4.dp),
