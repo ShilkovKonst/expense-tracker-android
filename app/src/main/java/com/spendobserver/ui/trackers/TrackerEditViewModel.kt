@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.text.trimInvisible
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,16 +48,19 @@ class TrackerEditViewModel(
         _saveError.value = null
     }
 
+    /** Refuses an empty name or one another tracker already has (compared after [trimInvisible]). */
     fun save(onSaved: () -> Unit) {
-        val trimmed = _title.value.trim()
-        if (trimmed.isEmpty()) {
-            _saveError.value = "Введите название"
-            return
-        }
+        val title = _title.value.trimInvisible()
         viewModelScope.launch {
+            trackerRepository.titleError(title, exceptTrackerId = trackerId)?.let {
+                _saveError.value = it
+                return@launch
+            }
             val tracker = trackerRepository.getTracker(trackerId) ?: return@launch
-            trackerRepository.updateTracker(tracker.copy(title = trimmed, updatedAt = System.currentTimeMillis()))
-            onSaved()
+            catchingTitleClash {
+                trackerRepository.updateTracker(tracker.copy(title = title, updatedAt = System.currentTimeMillis()))
+            }.onSuccess { onSaved() }
+                .onFailure { _saveError.value = TITLE_TAKEN_ERROR }
         }
     }
 

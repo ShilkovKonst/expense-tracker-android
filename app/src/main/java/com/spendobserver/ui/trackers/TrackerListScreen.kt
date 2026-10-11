@@ -41,6 +41,7 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.recordsWord
+import com.spendobserver.domain.text.trimInvisible
 import com.spendobserver.ui.common.DeleteTrackerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +63,7 @@ fun TrackerListScreen(
     )
     val trackers by viewModel.trackers.collectAsStateWithLifecycle()
     val statsByTracker by viewModel.statsByTracker.collectAsStateWithLifecycle()
+    val createError by viewModel.createError.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var trackerToDelete by remember { mutableStateOf<Tracker?>(null) }
@@ -113,11 +115,19 @@ fun TrackerListScreen(
             title = "Новый трекер",
             initialTitle = "",
             confirmLabel = "Создать",
+            error = createError,
+            onTextChange = viewModel::clearCreateError,
+            // Stays open on a refused name (createError explains why); closes once created.
             onConfirm = { title ->
-                viewModel.createTracker(title, onCreated = onTrackerCreated)
-                showCreateDialog = false
+                viewModel.createTracker(title) { id ->
+                    showCreateDialog = false
+                    onTrackerCreated(id)
+                }
             },
-            onDismiss = { showCreateDialog = false },
+            onDismiss = {
+                showCreateDialog = false
+                viewModel.clearCreateError()
+            },
         )
     }
 
@@ -171,6 +181,8 @@ private fun TrackerTitleDialog(
     title: String,
     initialTitle: String,
     confirmLabel: String,
+    error: String?,
+    onTextChange: () -> Unit,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -182,16 +194,21 @@ private fun TrackerTitleDialog(
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
+                onValueChange = {
+                    text = it
+                    onTextChange()
+                },
                 singleLine = true,
                 label = { Text("Название") },
+                isError = error != null,
+                supportingText = error?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth().testTag("trackerTitleInput"),
             )
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(text.trim()) },
-                enabled = text.isNotBlank(),
+                onClick = { onConfirm(text) },
+                enabled = text.trimInvisible().isNotEmpty(),
             ) { Text(confirmLabel) }
         },
         dismissButton = {

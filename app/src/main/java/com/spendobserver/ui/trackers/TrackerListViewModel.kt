@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
+import com.spendobserver.domain.text.trimInvisible
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -37,12 +40,33 @@ class TrackerListViewModel(
             initialValue = emptyMap(),
         )
 
-    /** [onCreated] gets the new tracker's id, so the screen can open it right away. */
+    /** Why the last [createTracker] call was refused; shown in the create dialog, which stays open. */
+    private val _createError = MutableStateFlow<String?>(null)
+    val createError: StateFlow<String?> = _createError.asStateFlow()
+
+    fun clearCreateError() {
+        _createError.value = null
+    }
+
+    /**
+     * Creates a tracker unless its name — compared after [trimInvisible] —
+     * is empty or already taken; then [createError] explains why instead.
+     * [onCreated] gets the new tracker's id, so the screen can open it.
+     */
     fun createTracker(title: String, onCreated: (Long) -> Unit = {}) {
+        val normalized = title.trimInvisible()
         viewModelScope.launch {
+            trackerRepository.titleError(normalized)?.let {
+                _createError.value = it
+                return@launch
+            }
             val now = System.currentTimeMillis()
-            val id = trackerRepository.insertTracker(Tracker(title = title, createdAt = now, updatedAt = now))
-            onCreated(id)
+            catchingTitleClash {
+                trackerRepository.insertTracker(Tracker(title = normalized, createdAt = now, updatedAt = now))
+            }.onSuccess { id ->
+                _createError.value = null
+                onCreated(id)
+            }.onFailure { _createError.value = TITLE_TAKEN_ERROR }
         }
     }
 

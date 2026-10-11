@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -88,5 +89,64 @@ class TrackerListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(stats, statsViewModel.statsByTracker.value)
+    }
+
+    @Test
+    fun createTracker_storesTheTitleWithoutSurroundingWhitespace() = runTest(dispatcher) {
+        viewModel.trackers.onEach { }.launchIn(backgroundScope)
+
+        viewModel.createTracker("  Family ​")
+        advanceUntilIdle()
+
+        assertEquals(listOf("Family"), viewModel.trackers.value.map { it.title })
+    }
+
+    @Test
+    fun createTracker_existingTitle_isRefusedWithAnError() = runTest(dispatcher) {
+        viewModel.trackers.onEach { }.launchIn(backgroundScope)
+        viewModel.createTracker("Family")
+        advanceUntilIdle()
+
+        var createdId: Long? = null
+        viewModel.createTracker("Family") { createdId = it }
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.trackers.value.size)
+        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
+        assertNull(createdId)
+    }
+
+    @Test
+    fun createTracker_titleDifferingOnlyByInvisibleCharacters_isTheSameTitle() = runTest(dispatcher) {
+        viewModel.trackers.onEach { }.launchIn(backgroundScope)
+        viewModel.createTracker("Family")
+        advanceUntilIdle()
+
+        viewModel.createTracker("﻿ Family ")
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.trackers.value.size)
+        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
+    }
+
+    @Test
+    fun createTracker_onlyInvisibleCharacters_isRefusedAsEmpty() = runTest(dispatcher) {
+        viewModel.trackers.onEach { }.launchIn(backgroundScope)
+
+        viewModel.createTracker("​ ")
+        advanceUntilIdle()
+
+        assertTrue(viewModel.trackers.value.isEmpty())
+        assertEquals(TITLE_EMPTY_ERROR, viewModel.createError.value)
+    }
+
+    @Test
+    fun clearCreateError_resetsIt() = runTest(dispatcher) {
+        viewModel.createTracker("")
+        advanceUntilIdle()
+
+        viewModel.clearCreateError()
+
+        assertNull(viewModel.createError.value)
     }
 }

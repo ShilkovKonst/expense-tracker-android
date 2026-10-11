@@ -199,4 +199,34 @@ class TrackerEditScreenTest {
         composeRule.onNodeWithText("в 1 записи — уровень не изменить").assertExists()
         composeRule.onNodeWithTag("toggleTagLevelButton-алко").assertIsNotEnabled()
     }
+
+    @Test
+    fun renamingToAnotherTrackersTitle_showsErrorAndDoesNotSave() {
+        runBlocking { trackerRepository.insertTracker(Tracker(title = "Work", createdAt = 0, updatedAt = 0)) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
+        composeRule.onNodeWithTag("trackerNameInput").performTextInput(" Work​")
+        composeRule.onNodeWithTag("saveTrackerButton").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
+        assertEquals(0, savedCount)
+        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
+    }
+
+    @Test
+    fun keepingOwnTitle_withStraySpaces_savesTrimmed() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
+        composeRule.onNodeWithTag("trackerNameInput").performTextInput("  Family  ")
+        composeRule.onNodeWithTag("saveTrackerButton").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, savedCount)
+        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
+    }
 }

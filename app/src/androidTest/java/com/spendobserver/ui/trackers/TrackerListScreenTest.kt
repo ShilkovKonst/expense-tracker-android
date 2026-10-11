@@ -17,6 +17,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
@@ -174,5 +175,22 @@ class TrackerListScreenTest {
 
         val tracker = runBlocking { trackerRepository.findByTitle("Family") }
         assertEquals(tracker?.id, createdId)
+    }
+
+    @Test
+    fun creatingTrackerWithExistingTitle_showsErrorInsteadOfCrashing() {
+        setContent()
+        createTracker("Family")
+
+        // Same name with stray spaces: still a duplicate once trimmed.
+        composeRule.onNodeWithText("+").performClick()
+        composeRule.onNodeWithTag("trackerTitleInput").performTextInput("  Family ")
+        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
+        composeRule.onNodeWithTag("trackerTitleInput").assertExists() // dialog stays open
+        val trackers = runBlocking { trackerRepository.observeTrackers().first() }
+        assertEquals(1, trackers.size)
     }
 }
