@@ -149,4 +149,17 @@ class TrackerListViewModelTest {
 
         assertNull(viewModel.createError.value)
     }
+
+    @Test
+    fun createTracker_titleDifferingOnlyByCase_isTheSameTitle() = runTest(dispatcher) {
+        viewModel.trackers.onEach { }.launchIn(backgroundScope)
+        viewModel.createTracker("Семья")
+        advanceUntilIdle()
+
+        viewModel.createTracker("СЕМЬЯ")
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.trackers.value.size)
+        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
+    }
 }

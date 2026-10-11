@@ -6,6 +6,7 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.common.tagNameError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -64,10 +65,26 @@ class TrackerEditViewModel(
         }
     }
 
-    fun createTag(name: String, isGlobal: Boolean) {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
-        viewModelScope.launch { tagRepository.insertTag(Tag(trackerId = trackerId, name = trimmed, isGlobal = isGlobal)) }
+    /** Why the open create/rename tag dialog's name was refused; the dialog stays open meanwhile. */
+    private val _tagNameError = MutableStateFlow<String?>(null)
+    val tagNameError: StateFlow<String?> = _tagNameError.asStateFlow()
+
+    fun clearTagNameError() {
+        _tagNameError.value = null
+    }
+
+    /** Refuses an empty or already-used name (see [tagNameError]); [onCreated] runs only on success. */
+    fun createTag(name: String, isGlobal: Boolean, onCreated: () -> Unit = {}) {
+        val normalized = name.trimInvisible()
+        viewModelScope.launch {
+            tagRepository.tagNameError(trackerId, normalized)?.let {
+                _tagNameError.value = it
+                return@launch
+            }
+            tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
+            _tagNameError.value = null
+            onCreated()
+        }
     }
 
     /** No-op for a tag in use — the repository refuses, and the screen disables the action anyway. */
@@ -75,10 +92,22 @@ class TrackerEditViewModel(
         viewModelScope.launch { tagRepository.setGlobal(tag, !tag.isGlobal) }
     }
 
-    fun renameTag(tag: Tag, newName: String) {
-        val trimmed = newName.trim()
-        if (trimmed.isEmpty() || trimmed == tag.name) return
-        viewModelScope.launch { tagRepository.updateTag(tag.copy(name = trimmed)) }
+    /** [onRenamed] runs once the name is accepted (or unchanged), so the dialog can close. */
+    fun renameTag(tag: Tag, newName: String, onRenamed: () -> Unit = {}) {
+        val name = newName.trimInvisible()
+        if (name == tag.name) {
+            onRenamed()
+            return
+        }
+        viewModelScope.launch {
+            tagRepository.tagNameError(trackerId, name, exceptTagId = tag.id)?.let {
+                _tagNameError.value = it
+                return@launch
+            }
+            tagRepository.updateTag(tag.copy(name = name))
+            _tagNameError.value = null
+            onRenamed()
+        }
     }
 
     fun deleteTag(tag: Tag) {

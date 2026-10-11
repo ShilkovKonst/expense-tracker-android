@@ -32,4 +32,7 @@ interface TrackerDao {
 
     @Query("SELECT * FROM trackers ORDER BY title ASC")
     fun observeAll(): Flow<List<Tracker>>
+
+    @Query("SELECT * FROM trackers")
+    suspend fun getAll(): List<Tracker>
 }

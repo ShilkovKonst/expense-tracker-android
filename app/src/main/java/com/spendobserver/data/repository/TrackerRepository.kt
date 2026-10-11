@@ -2,6 +2,7 @@ package com.spendobserver.data.repository
 
 import com.spendobserver.data.local.dao.TrackerDao
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.text.isSameNameAs
 import kotlinx.coroutines.flow.Flow
 
 class TrackerRepository(private val trackerDao: TrackerDao) {
@@ -15,12 +16,13 @@ class TrackerRepository(private val trackerDao: TrackerDao) {
     suspend fun findByTitle(title: String): Tracker? = trackerDao.getByTitle(title)
 
     /**
-     * Whether another tracker already has [title] (titles are unique). Pass
-     * [exceptTrackerId] when renaming, so a tracker keeping its own name
-     * doesn't count as a clash with itself.
+     * Whether another tracker already has [title] by [isSameNameAs] — so
+     * also ignoring case and invisible edges, which the database's unique
+     * index can't. Pass [exceptTrackerId] when renaming, so a tracker
+     * keeping its own name (or just recasing it) doesn't clash with itself.
      */
     suspend fun isTitleTaken(title: String, exceptTrackerId: Long? = null): Boolean =
-        trackerDao.getByTitle(title)?.let { it.id != exceptTrackerId } ?: false
+        trackerDao.getAll().any { it.id != exceptTrackerId && it.title.isSameNameAs(title) }
 
     suspend fun insertTracker(tracker: Tracker): Long = trackerDao.insert(tracker)
 

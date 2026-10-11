@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.spendobserver.domain.text.trimInvisible
 
 /**
  * A single text-field dialog for creating or renaming a tag. Shared between
@@ -25,6 +26,8 @@ fun TagNameDialog(
     confirmLabel: String,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
+    error: String? = null,
+    onTextChange: () -> Unit = {},
 ) {
     var text by remember { mutableStateOf(initialName) }
 
@@ -34,16 +37,21 @@ fun TagNameDialog(
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
+                onValueChange = {
+                    text = it
+                    onTextChange()
+                },
                 singleLine = true,
                 label = { Text("Название") },
+                isError = error != null,
+                supportingText = error?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth().testTag("tagNameInput"),
             )
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(text.trim()) },
-                enabled = text.isNotBlank(),
+                onClick = { onConfirm(text) },
+                enabled = text.trimInvisible().isNotEmpty(),
                 modifier = Modifier.testTag("tagNameConfirmButton"),
             ) { Text(confirmLabel) }
         },

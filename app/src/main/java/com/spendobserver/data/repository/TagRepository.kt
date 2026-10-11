@@ -2,6 +2,7 @@ package com.spendobserver.data.repository
 
 import com.spendobserver.data.local.dao.TagDao
 import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.text.isSameNameAs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -17,6 +18,13 @@ class TagRepository(private val tagDao: TagDao) {
     suspend fun updateTag(tag: Tag) = tagDao.update(tag)
 
     suspend fun deleteTag(tag: Tag) = tagDao.delete(tag)
+
+    /**
+     * Whether another tag of [trackerId] — on either level — already has
+     * [name] by [isSameNameAs]. Pass [exceptTagId] when renaming.
+     */
+    suspend fun isNameTaken(trackerId: Long, name: String, exceptTagId: Long? = null): Boolean =
+        tagDao.getForTracker(trackerId).any { it.id != exceptTagId && it.name.isSameNameAs(name) }
 
     /** Records using each tag, keyed by tag id. */
     fun observeUsage(trackerId: Long): Flow<Map<Long, Int>> =

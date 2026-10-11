@@ -325,4 +325,21 @@ class RecordFormScreenTest {
         assertTrue(saved.tags.single().isGlobal)
         assertTrue(saved.parts.single().tags.isEmpty())
     }
+
+    @Test
+    fun creatingTagWithAnExistingName_onEitherLevelOrCase_showsErrorAndKeepsDialogOpen() {
+        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true)) }
+        setContent()
+        composeRule.waitForIdle()
+
+        // A local tag can't reuse a global tag's name, even in another case.
+        composeRule.onNodeWithTag("newTagChip").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput(" АШАН ")
+        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Тег с таким названием уже есть").assertExists()
+        composeRule.onNodeWithTag("tagNameInput").assertExists()
+        assertEquals(1, runBlocking { tagRepository.observeTags(trackerId).first() }.size)
+    }
 }

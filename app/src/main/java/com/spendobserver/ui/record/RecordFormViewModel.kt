@@ -11,7 +11,10 @@ import com.spendobserver.domain.calculator.CalculatorMode
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.record.PartsInput
+import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.common.tagNameError
 import com.spendobserver.ui.navigation.RecordChange
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +27,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
-import kotlin.time.Clock
 
 /**
  * Backs the create/edit record form. [recordId] is `null` when creating a
@@ -120,15 +122,30 @@ class RecordFormViewModel(
 
     fun toggleGlobalTag(tagId: Long) = _globalTagIds.update { if (tagId in it) it - tagId else it + tagId }
 
+    /** Why the open create/rename tag dialog's name was refused; the dialog stays open meanwhile. */
+    private val _tagNameError = MutableStateFlow<String?>(null)
+    val tagNameError: StateFlow<String?> = _tagNameError.asStateFlow()
+
+    fun clearTagNameError() {
+        _tagNameError.value = null
+    }
+
     /**
      * Creates a tag on the level it was asked for from: a global one is
      * selected on the record, a local one ([forPartId] set) on that part.
+     * An empty or already-used name (see [tagNameError]) sets
+     * [tagNameError] instead; [onCreated] runs only on success.
      */
-    fun createTag(name: String, isGlobal: Boolean, forPartId: Int? = null) {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
+    fun createTag(name: String, isGlobal: Boolean, forPartId: Int? = null, onCreated: () -> Unit = {}) {
+        val normalized = name.trimInvisible()
         viewModelScope.launch {
-            val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = trimmed, isGlobal = isGlobal))
+            tagRepository.tagNameError(trackerId, normalized)?.let {
+                _tagNameError.value = it
+                return@launch
+            }
+            val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
+            _tagNameError.value = null
+            onCreated()
             if (isGlobal) {
                 _globalTagIds.update { it + id }
             } else if (forPartId != null) {
@@ -137,11 +154,21 @@ class RecordFormViewModel(
         }
     }
 
-    fun renameTag(tag: Tag, newName: String) {
-        val trimmed = newName.trim()
-        if (trimmed.isEmpty() || trimmed == tag.name) return
+    /** [onRenamed] runs once the name is accepted (or unchanged), so the dialog can close. */
+    fun renameTag(tag: Tag, newName: String, onRenamed: () -> Unit = {}) {
+        val name = newName.trimInvisible()
+        if (name == tag.name) {
+            onRenamed()
+            return
+        }
         viewModelScope.launch {
-            tagRepository.updateTag(tag.copy(name = trimmed))
+            tagRepository.tagNameError(trackerId, name, exceptTagId = tag.id)?.let {
+                _tagNameError.value = it
+                return@launch
+            }
+            tagRepository.updateTag(tag.copy(name = name))
+            _tagNameError.value = null
+            onRenamed()
         }
     }
 

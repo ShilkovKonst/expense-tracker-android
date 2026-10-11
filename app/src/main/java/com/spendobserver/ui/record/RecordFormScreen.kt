@@ -94,6 +94,7 @@ fun RecordFormScreen(
     val showErrors by viewModel.showErrors.collectAsStateWithLifecycle()
     val globalTagIds by viewModel.globalTagIds.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
     val globalTags = tags.filter { it.isGlobal }
     val localTags = tags.filterNot { it.isGlobal }
     val errors = if (showErrors) evaluation.errors else emptyList()
@@ -171,15 +172,34 @@ fun RecordFormScreen(
                     .testTag("dateInput"),
             )
 
-            TagChipsSection(
-                title = "Общие теги",
-                hint = "где, с кем — на всю запись",
-                tags = globalTags,
-                selectedIds = globalTagIds,
-                onToggle = viewModel::toggleGlobalTag,
-                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
-                newTagChipTestTag = "newGlobalTagChip",
-            )
+            // Global | local tags side by side. A split record's local tags
+            // belong to each part (inside its card), so then the global
+            // column takes the full width.
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TagChipsSection(
+                    title = "Общие теги",
+                    hint = "где, с кем",
+                    tags = globalTags,
+                    selectedIds = globalTagIds,
+                    onToggle = viewModel::toggleGlobalTag,
+                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
+                    newTagChipTestTag = "newGlobalTagChip",
+                    modifier = Modifier.weight(1f),
+                )
+                if (!parts.isSplit) {
+                    val only = parts.parts.single()
+                    TagChipsSection(
+                        title = "Теги",
+                        hint = "на что",
+                        tags = localTags,
+                        selectedIds = only.tagIds,
+                        onToggle = { viewModel.togglePartTag(only.id, it) },
+                        onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
+                        newTagChipTestTag = "newTagChip",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
 
             if (tags.isNotEmpty()) {
                 TextButton(
@@ -214,18 +234,7 @@ fun RecordFormScreen(
                 )
             }
 
-            if (!parts.isSplit) {
-                val only = parts.parts.single()
-                TagChipsSection(
-                    title = "Теги",
-                    hint = "на что",
-                    tags = localTags,
-                    selectedIds = only.tagIds,
-                    onToggle = { viewModel.togglePartTag(only.id, it) },
-                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
-                    newTagChipTestTag = "newTagChip",
-                )
-            } else {
+            if (parts.isSplit) {
                 parts.parts.forEachIndexed { index, part ->
                     PartCard(
                         index = index,
@@ -334,10 +343,14 @@ fun RecordFormScreen(
             initialName = "",
             confirmLabel = "Создать",
             onConfirm = { name ->
-                viewModel.createTag(name, isGlobal = target.isGlobal, forPartId = target.partId)
-                newTagTarget = null
+                viewModel.createTag(name, isGlobal = target.isGlobal, forPartId = target.partId) { newTagTarget = null }
             },
-            onDismiss = { newTagTarget = null },
+            onDismiss = {
+                newTagTarget = null
+                viewModel.clearTagNameError()
+            },
+            error = tagNameError,
+            onTextChange = viewModel::clearTagNameError,
         )
     }
 
@@ -346,11 +359,13 @@ fun RecordFormScreen(
             title = "Переименовать тег",
             initialName = tag.name,
             confirmLabel = "Сохранить",
-            onConfirm = { newName ->
-                viewModel.renameTag(tag, newName)
+            onConfirm = { newName -> viewModel.renameTag(tag, newName) { tagToRename = null } },
+            onDismiss = {
                 tagToRename = null
+                viewModel.clearTagNameError()
             },
-            onDismiss = { tagToRename = null },
+            error = tagNameError,
+            onTextChange = viewModel::clearTagNameError,
         )
     }
 
@@ -523,16 +538,15 @@ private fun TagChipsSection(
     onToggle: (Long) -> Unit,
     onNewTag: () -> Unit,
     newTagChipTestTag: String,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(title, style = MaterialTheme.typography.labelLarge)
-            Text(
-                text = "  $hint",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    Column(modifier = modifier) {
+        Text(title, style = MaterialTheme.typography.labelLarge)
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         TagChips(
             tags = tags,
             selectedIds = selectedIds,

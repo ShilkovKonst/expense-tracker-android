@@ -58,6 +58,7 @@ fun TrackerEditScreen(
     val title by viewModel.title.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val tagUsage by viewModel.tagUsage.collectAsStateWithLifecycle()
+    val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
     val saveError by viewModel.saveError.collectAsStateWithLifecycle()
 
     /** Non-null while the new-tag dialog is open: which level the new tag goes on. */
@@ -135,11 +136,13 @@ fun TrackerEditScreen(
             title = if (isGlobal) "Новый общий тег" else "Новый тег",
             initialName = "",
             confirmLabel = "Создать",
-            onConfirm = { name ->
-                viewModel.createTag(name, isGlobal)
+            onConfirm = { name -> viewModel.createTag(name, isGlobal) { newTagIsGlobal = null } },
+            onDismiss = {
                 newTagIsGlobal = null
+                viewModel.clearTagNameError()
             },
-            onDismiss = { newTagIsGlobal = null },
+            error = tagNameError,
+            onTextChange = viewModel::clearTagNameError,
         )
     }
 
@@ -148,11 +151,13 @@ fun TrackerEditScreen(
             title = "Переименовать тег",
             initialName = tag.name,
             confirmLabel = "Сохранить",
-            onConfirm = { newName ->
-                viewModel.renameTag(tag, newName)
+            onConfirm = { newName -> viewModel.renameTag(tag, newName) { tagToRename = null } },
+            onDismiss = {
                 tagToRename = null
+                viewModel.clearTagNameError()
             },
-            onDismiss = { tagToRename = null },
+            error = tagNameError,
+            onTextChange = viewModel::clearTagNameError,
         )
     }
 

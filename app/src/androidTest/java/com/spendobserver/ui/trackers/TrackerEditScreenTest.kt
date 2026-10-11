@@ -229,4 +229,54 @@ class TrackerEditScreenTest {
         assertEquals(1, savedCount)
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
+
+    @Test
+    fun renamingTagToAnotherTagsName_showsErrorAndKeepsItsName() {
+        runBlocking {
+            tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel"))
+            tagRepository.insertTag(Tag(trackerId = trackerId, name = "food"))
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextClearance()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("FOOD")
+        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Тег с таким названием уже есть").assertExists()
+        val names = runBlocking { tagRepository.observeTags(trackerId).first() }.map { it.name }.toSet()
+        assertEquals(setOf("fuel", "food"), names)
+    }
+
+    @Test
+    fun recasingATagsOwnName_isAllowed() {
+        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextClearance()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("Fuel")
+        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals("Fuel", runBlocking { tagRepository.observeTags(trackerId).first() }.single().name)
+    }
+
+    @Test
+    fun renamingTrackerToAnotherTitleInADifferentCase_isRefused() {
+        runBlocking { trackerRepository.insertTracker(Tracker(title = "Work", createdAt = 0, updatedAt = 0)) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
+        composeRule.onNodeWithTag("trackerNameInput").performTextInput("work")
+        composeRule.onNodeWithTag("saveTrackerButton").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
+        assertEquals(0, savedCount)
+    }
 }

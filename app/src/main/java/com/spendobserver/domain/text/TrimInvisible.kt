@@ -10,3 +10,12 @@ package com.spendobserver.domain.text
  * Characters *inside* the string are left alone.
  */
 fun String.trimInvisible(): String = trim { it.isWhitespace() || Character.getType(it) == Character.FORMAT.toInt() }
+
+/**
+ * Whether two user-entered names (trackers, tags) count as the same:
+ * equal after [trimInvisible], ignoring case — so "Семья", " семья " and
+ * "СЕМЬЯ​" are one name. Compared in Kotlin rather than SQL on
+ * purpose: SQLite's `LOWER()` / `COLLATE NOCASE` only fold ASCII letters,
+ * so Cyrillic names would slip through.
+ */
+fun String.isSameNameAs(other: String): Boolean = trimInvisible().equals(other.trimInvisible(), ignoreCase = true)

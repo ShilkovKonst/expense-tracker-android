@@ -27,6 +27,9 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE trackerId = :trackerId ORDER BY name ASC")
     fun observeForTracker(trackerId: Long): Flow<List<Tag>>
 
+    @Query("SELECT * FROM tags WHERE trackerId = :trackerId")
+    suspend fun getForTracker(trackerId: Long): List<Tag>
+
     /**
      * How many records use each of [trackerId]'s tags — directly (a global
      * tag) or through any of their parts (a local tag, counted once per
