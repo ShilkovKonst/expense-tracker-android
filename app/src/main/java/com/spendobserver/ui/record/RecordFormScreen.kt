@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -172,33 +174,29 @@ fun RecordFormScreen(
                     .testTag("dateInput"),
             )
 
-            // Global | local tags side by side. A split record's local tags
-            // belong to each part (inside its card), so then the global
-            // column takes the full width.
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // One row per tag level: global first, then — for a simple record —
+            // local. A split record's local tags belong to each part, inside
+            // its card, so then only the global row is here.
+            TagChipsSection(
+                title = "Общие теги",
+                hint = "где, с кем — на всю запись",
+                tags = globalTags,
+                selectedIds = globalTagIds,
+                onToggle = viewModel::toggleGlobalTag,
+                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
+                newTagChipTestTag = "newGlobalTagChip",
+            )
+            if (!parts.isSplit) {
+                val only = parts.parts.single()
                 TagChipsSection(
-                    title = "Общие теги",
-                    hint = "где, с кем",
-                    tags = globalTags,
-                    selectedIds = globalTagIds,
-                    onToggle = viewModel::toggleGlobalTag,
-                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
-                    newTagChipTestTag = "newGlobalTagChip",
-                    modifier = Modifier.weight(1f),
+                    title = "Теги",
+                    hint = "на что",
+                    tags = localTags,
+                    selectedIds = only.tagIds,
+                    onToggle = { viewModel.togglePartTag(only.id, it) },
+                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
+                    newTagChipTestTag = "newTagChip",
                 )
-                if (!parts.isSplit) {
-                    val only = parts.parts.single()
-                    TagChipsSection(
-                        title = "Теги",
-                        hint = "на что",
-                        tags = localTags,
-                        selectedIds = only.tagIds,
-                        onToggle = { viewModel.togglePartTag(only.id, it) },
-                        onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
-                        newTagChipTestTag = "newTagChip",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
             }
 
             if (tags.isNotEmpty()) {
@@ -541,12 +539,14 @@ private fun TagChipsSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        Text(title, style = MaterialTheme.typography.labelLarge)
-        Text(
-            text = hint,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(title, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "  $hint",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         TagChips(
             tags = tags,
             selectedIds = selectedIds,
@@ -558,6 +558,12 @@ private fun TagChipsSection(
     }
 }
 
+/**
+ * A tag level's chips in two columns: the tags on the left (wrapping
+ * within that column, or a placeholder when there are none yet) and the
+ * "+ Новый тег" button on the right, so the button always sits in the
+ * same place instead of trailing after however many tags there are.
+ */
 @Composable
 private fun TagChips(
     tags: List<Tag>,
@@ -567,24 +573,42 @@ private fun TagChips(
     newTagChipTestTag: String,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        // Selection only — no per-chip menu: a compact FilterChip's own
-        // touch target and a nested IconButton's (48dp-minimum) touch
-        // target overlap too closely to hit reliably, so rename/delete
-        // live in the full-width rows of the "Управление тегами" dialog
-        // instead (same layout TrackerListScreen's tracker rows already
-        // use safely, since there the icon sits far from the label).
-        for (tag in tags) {
-            FilterChip(
-                selected = tag.id in selectedIds,
-                onClick = { onToggle(tag.id) },
-                label = { Text(tag.name) },
-            )
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        if (tags.isEmpty()) {
+            // Centered within a chip's 48dp touch-target height, the same
+            // band the "+ Новый тег" chip centers its visible 32dp in.
+            Box(
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            ) {
+                Text(
+                    text = "Тегов пока нет",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                // Selection only — no per-chip menu: a compact FilterChip's own
+                // touch target and a nested IconButton's (48dp-minimum) touch
+                // target overlap too closely to hit reliably, so rename/delete
+                // live in the full-width rows of the "Управление тегами" dialog
+                // instead (same layout TrackerListScreen's tracker rows already
+                // use safely, since there the icon sits far from the label).
+                for (tag in tags) {
+                    FilterChip(
+                        selected = tag.id in selectedIds,
+                        onClick = { onToggle(tag.id) },
+                        label = { Text(tag.name) },
+                    )
+                }
+            }
         }
+        Spacer(modifier = Modifier.width(8.dp))
         FilterChip(
             selected = false,
             onClick = onNewTag,

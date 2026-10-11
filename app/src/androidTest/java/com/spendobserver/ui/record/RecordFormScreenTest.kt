@@ -342,4 +342,20 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("tagNameInput").assertExists()
         assertEquals(1, runBlocking { tagRepository.observeTags(trackerId).first() }.size)
     }
+
+    @Test
+    fun noTagsYet_eachLevelShowsAPlaceholder_untilATagIsCreated() {
+        setContent()
+        composeRule.waitForIdle()
+
+        assertEquals(2, composeRule.onAllNodesWithText("Тегов пока нет").fetchSemanticsNodes().size)
+
+        composeRule.onNodeWithTag("newGlobalTagChip").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
+        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
+        composeRule.waitForIdle()
+
+        // Only the local level is still empty.
+        assertEquals(1, composeRule.onAllNodesWithText("Тегов пока нет").fetchSemanticsNodes().size)
+    }
 }
