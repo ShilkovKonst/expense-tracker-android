@@ -37,10 +37,12 @@ class TrackerListViewModel(
             initialValue = emptyMap(),
         )
 
-    fun createTracker(title: String) {
+    /** [onCreated] gets the new tracker's id, so the screen can open it right away. */
+    fun createTracker(title: String, onCreated: (Long) -> Unit = {}) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            trackerRepository.insertTracker(Tracker(title = title, createdAt = now, updatedAt = now))
+            val id = trackerRepository.insertTracker(Tracker(title = title, createdAt = now, updatedAt = now))
+            onCreated(id)
         }
     }
 

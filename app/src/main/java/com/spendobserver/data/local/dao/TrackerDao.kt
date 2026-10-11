@@ -23,6 +23,10 @@ interface TrackerDao {
     @Query("SELECT * FROM trackers WHERE id = :id")
     suspend fun getById(id: Long): Tracker?
 
+    /** Emits `null` once the tracker is deleted. */
+    @Query("SELECT * FROM trackers WHERE id = :id")
+    fun observeById(id: Long): Flow<Tracker?>
+
     @Query("SELECT * FROM trackers WHERE title = :title")
     suspend fun getByTitle(title: String): Tracker?
 

@@ -10,6 +10,8 @@ class TrackerRepository(private val trackerDao: TrackerDao) {
 
     suspend fun getTracker(id: Long): Tracker? = trackerDao.getById(id)
 
+    fun observeTracker(id: Long): Flow<Tracker?> = trackerDao.observeById(id)
+
     suspend fun findByTitle(title: String): Tracker? = trackerDao.getByTitle(title)
 
     suspend fun insertTracker(tracker: Tracker): Long = trackerDao.insert(tracker)

@@ -19,7 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +30,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,6 +59,7 @@ import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.partsWord
 import com.spendobserver.domain.summary.recordsWord
+import com.spendobserver.ui.common.DeleteTrackerDialog
 import com.spendobserver.ui.navigation.RecordChange
 
 private val MonthNames = listOf(
@@ -84,6 +87,8 @@ fun TrackerDetailScreen(
     onBackClick: () -> Unit,
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
+    onEditTrackerClick: () -> Unit = {},
+    onTrackerDeleted: () -> Unit = {},
     recordChange: RecordChange? = null,
     onRecordChangeConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -100,6 +105,7 @@ fun TrackerDetailScreen(
     val items by viewModel.items.collectAsStateWithLifecycle()
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    var showDeleteTrackerDialog by remember { mutableStateOf(false) }
 
     // A save/delete result from the record form: hand it to the ViewModel
     // and clear it from the back-stack entry, so it fires exactly once.
@@ -147,13 +153,26 @@ fun TrackerDetailScreen(
                         Text("←")
                     }
                 },
+                // Same controls as the tracker's row on the tracker list.
+                actions = {
+                    IconButton(
+                        onClick = onEditTrackerClick,
+                        modifier = Modifier.testTag("editTrackerButton"),
+                    ) { Text("✎") }
+                    IconButton(
+                        onClick = { showDeleteTrackerDialog = true },
+                        modifier = Modifier.testTag("deleteTrackerButton"),
+                    ) { Text("🗑") }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddRecordClick) {
-                Text("+")
-            }
+            ExtendedFloatingActionButton(
+                onClick = onAddRecordClick,
+                icon = { Text("+") },
+                text = { Text("Добавить запись") },
+            )
         },
     ) { innerPadding ->
         if (yearGroups.isEmpty()) {
@@ -193,6 +212,17 @@ fun TrackerDetailScreen(
                 }
             }
         }
+    }
+
+    if (showDeleteTrackerDialog) {
+        DeleteTrackerDialog(
+            trackerTitle = trackerTitle.orEmpty(),
+            onConfirm = {
+                showDeleteTrackerDialog = false
+                viewModel.deleteTracker(onDeleted = onTrackerDeleted)
+            },
+            onDismiss = { showDeleteTrackerDialog = false },
+        )
     }
 }
 

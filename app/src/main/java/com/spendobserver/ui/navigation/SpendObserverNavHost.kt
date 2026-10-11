@@ -37,6 +37,7 @@ fun SpendObserverNavHost(
                 recordRepository = recordRepository,
                 onTrackerClick = { tracker -> navController.navigate(Route.TrackerDetail(tracker.id)) },
                 onEditTrackerClick = { tracker -> navController.navigate(Route.TrackerEdit(tracker.id)) },
+                onTrackerCreated = { trackerId -> navController.navigate(Route.TrackerDetail(trackerId)) },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -53,6 +54,9 @@ fun SpendObserverNavHost(
                 onRecordClick = { record ->
                     navController.navigate(Route.RecordForm(trackerId = route.trackerId, recordId = record.id))
                 },
+                onEditTrackerClick = { navController.navigate(Route.TrackerEdit(route.trackerId)) },
+                // Back to the start screen; the deleted tracker's entry must not stay on the stack.
+                onTrackerDeleted = { navController.popBackStack(Route.TrackerList, inclusive = false) },
                 recordChange = recordChange,
                 onRecordChangeConsumed = { backStackEntry.savedStateHandle.clearRecordChange() },
                 modifier = Modifier.fillMaxSize(),

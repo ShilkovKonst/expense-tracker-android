@@ -2,6 +2,7 @@ package com.spendobserver.ui.record
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -57,6 +57,8 @@ import com.spendobserver.domain.record.PartInput
 import com.spendobserver.domain.record.PartsError
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
+import com.spendobserver.ui.common.AlwaysLabeledTextField
+import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
@@ -144,6 +146,48 @@ fun RecordFormScreen(
                 ) { Text("Доход") }
             }
 
+            OutlinedTextField(
+                value = formatDate(date),
+                onValueChange = {},
+                // enabled = false, not readOnly = true: a read-only field
+                // still runs its own tap-to-focus/cursor gesture handling,
+                // which wins over a plain Modifier.clickable wrapped around
+                // it — so the dialog below never opened and the date stayed
+                // stuck on today. Disabling the field entirely stops it
+                // from touching input at all, leaving our clickable as the
+                // only handler; the disabled-state colors are overridden
+                // below so it still looks like a normal field, not greyed
+                // out.
+                enabled = false,
+                label = { Text("Дата") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true }
+                    .testTag("dateInput"),
+            )
+
+            TagChipsSection(
+                title = "Общие теги",
+                hint = "где, с кем — на всю запись",
+                tags = globalTags,
+                selectedIds = globalTagIds,
+                onToggle = viewModel::toggleGlobalTag,
+                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
+                newTagChipTestTag = "newGlobalTagChip",
+            )
+
+            if (tags.isNotEmpty()) {
+                TextButton(
+                    onClick = { showManageTagsDialog = true },
+                    modifier = Modifier.testTag("manageTagsButton"),
+                ) { Text("Управление тегами") }
+            }
+
             if (!parts.isSplit) {
                 // Simple record: one amount field, exactly like before parts existed.
                 val only = parts.parts.single()
@@ -169,16 +213,6 @@ fun RecordFormScreen(
                     onClear = viewModel::clearReceiptTotal,
                 )
             }
-
-            TagChipsSection(
-                title = "Общие теги",
-                hint = "где, с кем — на всю запись",
-                tags = globalTags,
-                selectedIds = globalTagIds,
-                onToggle = viewModel::toggleGlobalTag,
-                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
-                newTagChipTestTag = "newGlobalTagChip",
-            )
 
             if (!parts.isSplit) {
                 val only = parts.parts.single()
@@ -221,43 +255,12 @@ fun RecordFormScreen(
                 }
             }
 
-            if (tags.isNotEmpty()) {
-                TextButton(
-                    onClick = { showManageTagsDialog = true },
-                    modifier = Modifier.testTag("manageTagsButton"),
-                ) { Text("Управление тегами") }
-            }
-
-            OutlinedTextField(
-                value = formatDate(date),
-                onValueChange = {},
-                // enabled = false, not readOnly = true: a read-only field
-                // still runs its own tap-to-focus/cursor gesture handling,
-                // which wins over a plain Modifier.clickable wrapped around
-                // it — so the dialog below never opened and the date stayed
-                // stuck on today. Disabling the field entirely stops it
-                // from touching input at all, leaving our clickable as the
-                // only handler; the disabled-state colors are overridden
-                // below so it still looks like a normal field, not greyed
-                // out.
-                enabled = false,
-                label = { Text("Дата") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true }
-                    .testTag("dateInput"),
-            )
-
-            OutlinedTextField(
+            AlwaysLabeledTextField(
                 value = description,
                 onValueChange = viewModel::setDescription,
-                label = { Text("Описание") },
-                modifier = Modifier.fillMaxWidth().testTag("descriptionInput"),
+                label = "Описание",
+                placeholder = "Опционально",
+                modifier = Modifier.testTag("descriptionInput"),
             )
 
             Button(
@@ -467,39 +470,35 @@ private fun PartCard(
     onNewTag: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth().testTag("partCard-$index")) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    LabeledOutlinedBox(
+        label = if (isRemainder) "Остаток" else "Часть ${index + 1}",
+        modifier = Modifier.testTag("partCard-$index"),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (isRemainder) {
                 Text(
-                    text = if (isRemainder) "Остаток" else "Часть ${index + 1}",
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.weight(1f),
+                    text = evaluation.partCents[part.id]?.let(::formatCents) ?: "—",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.testTag("remainderAmount"),
                 )
-                if (isRemainder) {
-                    Text(
-                        text = evaluation.partCents[part.id]?.let(::formatCents) ?: "—",
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.testTag("remainderAmount"),
-                    )
+            } else {
+                Row(verticalAlignment = Alignment.Top) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        AmountField(
+                            value = part.amountExpression,
+                            onValueChange = onAmountChange,
+                            label = "Сумма",
+                            error = errors.amountErrorFor(part.id),
+                            modifier = Modifier.testTag("partAmountInput-$index"),
+                        )
+                    }
+                    if (canRemove) {
+                        IconButton(
+                            onClick = onRemove,
+                            modifier = Modifier.padding(top = 4.dp).testTag("removePartButton-$index"),
+                        ) { Text("✕") }
+                    }
                 }
-                if (canRemove) {
-                    IconButton(
-                        onClick = onRemove,
-                        modifier = Modifier.testTag("removePartButton-$index"),
-                    ) { Text("✕") }
-                }
-            }
-            if (!isRemainder) {
-                AmountField(
-                    value = part.amountExpression,
-                    onValueChange = onAmountChange,
-                    label = "Сумма",
-                    error = errors.amountErrorFor(part.id),
-                    modifier = Modifier.testTag("partAmountInput-$index"),
-                )
             }
             TagChips(
                 tags = localTags,

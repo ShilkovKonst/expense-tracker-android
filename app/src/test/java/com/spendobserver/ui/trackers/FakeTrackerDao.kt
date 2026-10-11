@@ -33,6 +33,8 @@ class FakeTrackerDao : TrackerDao {
 
     override suspend fun getById(id: Long): Tracker? = trackers.value.find { it.id == id }
 
+    override fun observeById(id: Long): Flow<Tracker?> = trackers.map { list -> list.find { it.id == id } }
+
     override suspend fun getByTitle(title: String): Tracker? = trackers.value.find { it.title == title }
 
     override fun observeAll(): Flow<List<Tracker>> = trackers.map { list -> list.sortedBy { it.title } }

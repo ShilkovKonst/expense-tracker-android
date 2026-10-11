@@ -158,4 +158,21 @@ class TrackerListScreenTest {
 
         composeRule.onNodeWithText("Family").assertExists()
     }
+
+    @Test
+    fun creatingTracker_reportsItsIdSoItCanBeOpened() {
+        var createdId: Long? = null
+        composeRule.setContent {
+            TrackerListScreen(
+                trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
+                onTrackerCreated = { createdId = it },
+            )
+        }
+
+        createTracker("Family")
+
+        val tracker = runBlocking { trackerRepository.findByTitle("Family") }
+        assertEquals(tracker?.id, createdId)
+    }
 }

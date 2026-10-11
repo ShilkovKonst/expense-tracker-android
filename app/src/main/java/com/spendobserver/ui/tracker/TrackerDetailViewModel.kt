@@ -10,7 +10,6 @@ import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -25,13 +24,19 @@ import kotlinx.coroutines.launch
  * accordion exactly as it was left.
  */
 class TrackerDetailViewModel(
-    trackerId: Long,
+    private val trackerId: Long,
     private val trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
 ) : ViewModel() {
 
-    private val _trackerTitle = MutableStateFlow<String?>(null)
-    val trackerTitle: StateFlow<String?> = _trackerTitle.asStateFlow()
+    /** Observed rather than read once: this ViewModel outlives a rename on the tracker-edit screen. */
+    val trackerTitle: StateFlow<String?> = trackerRepository.observeTracker(trackerId)
+        .map { it?.title }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = null,
+        )
 
     val yearGroups: StateFlow<List<YearGroup>> = recordRepository.observeAll(trackerId)
         .map { it.groupByYearMonth() }
@@ -67,12 +72,6 @@ class TrackerDetailViewModel(
         initialValue = null,
     )
 
-    init {
-        viewModelScope.launch {
-            _trackerTitle.value = trackerRepository.getTracker(trackerId)?.title
-        }
-    }
-
     fun toggleYear(year: Int) {
         expandedYears.update { if (year in it) it - year else it + year }
     }
@@ -95,5 +94,14 @@ class TrackerDetailViewModel(
 
     fun onFocusHandled() {
         pendingChange.value = null
+    }
+
+    /** Deletes the tracker with all its records, then calls [onDeleted] — only once the delete has finished, since navigating away clears this ViewModel and would cancel it. */
+    fun deleteTracker(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            val tracker = trackerRepository.getTracker(trackerId) ?: return@launch
+            trackerRepository.deleteTracker(tracker)
+            onDeleted()
+        }
     }
 }

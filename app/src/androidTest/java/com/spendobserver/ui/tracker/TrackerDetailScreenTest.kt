@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -298,5 +299,41 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText("800.00").assertIsDisplayed()
         composeRule.onNodeWithText("2350.00").assertIsDisplayed()
         assertEquals(0, openedCount)
+    }
+
+    @Test
+    fun appBarTitle_followsARenameMadeElsewhere() {
+        setContent()
+        composeRule.waitForIdle()
+
+        runBlocking {
+            val tracker = trackerRepository.getTracker(trackerId)!!
+            trackerRepository.updateTracker(tracker.copy(title = "Семья"))
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Семья").assertExists()
+    }
+
+    @Test
+    fun deletingTrackerFromAppBar_deletesItThenReportsIt() {
+        var deletedCount = 0
+        composeRule.setContent {
+            TrackerDetailScreen(
+                trackerId = trackerId,
+                trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
+                onBackClick = {},
+                onTrackerDeleted = { deletedCount++ },
+            )
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("deleteTrackerButton").performClick()
+        composeRule.onNodeWithText("Удалить").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, deletedCount)
+        assertNull(runBlocking { trackerRepository.getTracker(trackerId) })
     }
 }
