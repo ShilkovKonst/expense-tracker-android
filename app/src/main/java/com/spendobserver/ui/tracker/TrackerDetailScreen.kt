@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,10 +28,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +53,7 @@ import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.recordsWord
+import com.spendobserver.ui.navigation.RecordChange
 
 private val MonthNames = listOf(
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -78,6 +80,8 @@ fun TrackerDetailScreen(
     onBackClick: () -> Unit,
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
+    recordChange: RecordChange? = null,
+    onRecordChangeConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerDetailViewModel = viewModel(
@@ -90,9 +94,33 @@ fun TrackerDetailScreen(
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val yearGroups by viewModel.yearGroups.collectAsStateWithLifecycle()
     val tagNamesByRecordId by viewModel.tagNamesByRecordId.collectAsStateWithLifecycle()
+    val items by viewModel.items.collectAsStateWithLifecycle()
+    val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
 
-    var expandedYears by remember { mutableStateOf(emptySet<Int>()) }
-    var expandedMonths by remember { mutableStateOf(emptySet<Pair<Int, Int>>()) }
+    // A save/delete result from the record form: hand it to the ViewModel
+    // and clear it from the back-stack entry, so it fires exactly once.
+    LaunchedEffect(recordChange) {
+        if (recordChange != null) {
+            viewModel.onRecordChanged(recordChange)
+            onRecordChangeConsumed()
+        }
+    }
+    // Re-runs as `items` updates: the target row may only appear after the
+    // expansion and Room's re-emission have both reached the list.
+    LaunchedEffect(focusTarget, items) {
+        when (val target = focusTarget) {
+            null -> Unit
+            FocusTarget.None -> viewModel.onFocusHandled()
+            is FocusTarget.Item -> {
+                val index = items.indexOfFirst { it.key == target.key }
+                if (index >= 0) {
+                    listState.animateScrollToItem(index)
+                    viewModel.onFocusHandled()
+                }
+            }
+        }
+    }
 
     val recordCount = yearGroups.sumOf { yg -> yg.months.sumOf { it.records.size } }
     val totalNet = yearGroups.sumOf { it.totals.netCents }
@@ -133,49 +161,30 @@ fun TrackerDetailScreen(
                 Text("Записей пока нет")
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                for (yearGroup in yearGroups) {
-                    val yearExpanded = yearGroup.year in expandedYears
-                    item(key = "year-${yearGroup.year}") {
-                        YearHeader(
-                            yearGroup = yearGroup,
-                            expanded = yearExpanded,
-                            onClick = {
-                                expandedYears = if (yearExpanded) {
-                                    expandedYears - yearGroup.year
-                                } else {
-                                    expandedYears + yearGroup.year
-                                }
-                            },
+            LazyColumn(
+                state = listState,
+                // Room below the last row for the FAB (56dp + 16dp margins),
+                // so the last record's amount can scroll out from under it.
+                contentPadding = PaddingValues(bottom = 88.dp),
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+            ) {
+                items(items, key = { it.key }) { item ->
+                    when (item) {
+                        is AccordionItem.Year -> YearHeader(
+                            yearGroup = item.group,
+                            expanded = item.expanded,
+                            onClick = { viewModel.toggleYear(item.group.year) },
                         )
-                    }
-                    if (yearExpanded) {
-                        for (monthGroup in yearGroup.months) {
-                            val monthKey = yearGroup.year to monthGroup.month
-                            val monthExpanded = monthKey in expandedMonths
-                            item(key = "month-${monthGroup.year}-${monthGroup.month}") {
-                                MonthHeader(
-                                    monthGroup = monthGroup,
-                                    expanded = monthExpanded,
-                                    onClick = {
-                                        expandedMonths = if (monthExpanded) {
-                                            expandedMonths - monthKey
-                                        } else {
-                                            expandedMonths + monthKey
-                                        }
-                                    },
-                                )
-                            }
-                            if (monthExpanded) {
-                                items(monthGroup.records, key = { "record-${it.id}" }) { record ->
-                                    RecordRow(
-                                        record = record,
-                                        tagNames = tagNamesByRecordId[record.id] ?: emptyList(),
-                                        onClick = { onRecordClick(record) },
-                                    )
-                                }
-                            }
-                        }
+                        is AccordionItem.Month -> MonthHeader(
+                            monthGroup = item.group,
+                            expanded = item.expanded,
+                            onClick = { viewModel.toggleMonth(item.group.year, item.group.month) },
+                        )
+                        is AccordionItem.RecordEntry -> RecordRow(
+                            record = item.record,
+                            tagNames = tagNamesByRecordId[item.record.id] ?: emptyList(),
+                            onClick = { onRecordClick(item.record) },
+                        )
                     }
                 }
             }

@@ -9,6 +9,7 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.CalculatorMode
 import com.spendobserver.domain.calculator.amountCentsFrom
+import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
@@ -120,7 +122,7 @@ class RecordFormViewModel(
         }
     }
 
-    fun save(onSaved: () -> Unit) {
+    fun save(onSaved: (RecordChange) -> Unit) {
         val amountCents = amountCentsFrom(_amountExpression.value)
         if (amountCents == null) {
             _saveError.value = "Введите сумму больше нуля"
@@ -135,24 +137,28 @@ class RecordFormViewModel(
                 description = _description.value.trim().ifEmpty { null },
                 amountCents = amountCents,
             )
-            if (recordId == null) {
+            val savedId = if (recordId == null) {
                 recordRepository.insertRecord(record, _selectedTagIds.value)
             } else {
                 recordRepository.updateRecord(record, _selectedTagIds.value)
+                recordId
             }
-            onSaved()
+            onSaved(record.change(savedId, deleted = false))
         }
     }
 
-    fun delete(onDeleted: () -> Unit) {
+    fun delete(onDeleted: (RecordChange) -> Unit) {
         val id = recordId ?: return
         viewModelScope.launch {
             val record = recordRepository.getRecord(id) ?: return@launch
             recordRepository.deleteRecord(record)
-            onDeleted()
+            onDeleted(record.change(id, deleted = true))
         }
     }
 }
+
+private fun Record.change(id: Long, deleted: Boolean) =
+    RecordChange(recordId = id, year = date.year, month = date.month.number, deleted = deleted)
 
 private fun formatAmount(cents: Long): String {
     val whole = cents / 100

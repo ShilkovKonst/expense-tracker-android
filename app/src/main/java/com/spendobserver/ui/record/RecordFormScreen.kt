@@ -51,6 +51,7 @@ import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.amountCentsFrom
 import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.ui.common.TagNameDialog
+import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
@@ -61,7 +62,7 @@ fun RecordFormScreen(
     recordId: Long?,
     recordRepository: RecordRepository,
     tagRepository: TagRepository,
-    onSaved: () -> Unit,
+    onSaved: (RecordChange) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

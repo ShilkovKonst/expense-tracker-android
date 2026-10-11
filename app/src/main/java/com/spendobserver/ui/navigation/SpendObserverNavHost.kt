@@ -2,7 +2,10 @@ package com.spendobserver.ui.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,6 +42,8 @@ fun SpendObserverNavHost(
         }
         composable<Route.TrackerDetail> { backStackEntry ->
             val route: Route.TrackerDetail = backStackEntry.toRoute()
+            val recordChange by remember(backStackEntry) { backStackEntry.savedStateHandle.recordChanges() }
+                .collectAsStateWithLifecycle(initialValue = null)
             TrackerDetailScreen(
                 trackerId = route.trackerId,
                 trackerRepository = trackerRepository,
@@ -48,6 +53,8 @@ fun SpendObserverNavHost(
                 onRecordClick = { record ->
                     navController.navigate(Route.RecordForm(trackerId = route.trackerId, recordId = record.id))
                 },
+                recordChange = recordChange,
+                onRecordChangeConsumed = { backStackEntry.savedStateHandle.clearRecordChange() },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -58,7 +65,12 @@ fun SpendObserverNavHost(
                 recordId = route.recordId,
                 recordRepository = recordRepository,
                 tagRepository = tagRepository,
-                onSaved = { navController.popBackStack() },
+                onSaved = { change ->
+                    // Hand the result to the tracker-detail entry underneath before
+                    // popping back to it; plain back navigation sets nothing.
+                    navController.previousBackStackEntry?.savedStateHandle?.setRecordChange(change)
+                    navController.popBackStack()
+                },
                 onBackClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxSize(),
             )

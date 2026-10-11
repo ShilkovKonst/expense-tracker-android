@@ -1,6 +1,7 @@
 package com.spendobserver.ui.tracker
 
 import android.content.Context
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -15,6 +16,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
@@ -56,20 +58,20 @@ class TrackerDetailScreenTest {
         type: RecordType,
         amountCents: Long,
         description: String?,
-    ) {
+    ): Long =
         recordRepository.insertRecord(
             Record(trackerId = trackerId, date = date, type = type, description = description, amountCents = amountCents),
             emptySet(),
         )
-    }
 
-    private fun setContent() {
+    private fun setContent(recordChange: RecordChange? = null) {
         composeRule.setContent {
             TrackerDetailScreen(
                 trackerId = trackerId,
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
                 onBackClick = {},
+                recordChange = recordChange,
             )
         }
     }
@@ -230,5 +232,32 @@ class TrackerDetailScreenTest {
 
         // 2 records total, net across both years: 5000 - 2000 = 3000.
         composeRule.onNodeWithText("2 записи · +30.00").assertExists()
+    }
+
+    @Test
+    fun savedRecordChange_expandsItsYearAndMonthAndScrollsToIt() {
+        // 30 records in one month push the oldest (bottom-most) one well off screen.
+        val targetId = runBlocking {
+            for (day in 2..28) insertRecord(LocalDate(2026, 3, day), RecordType.COST, 100, "filler $day")
+            insertRecord(LocalDate(2025, 12, 1), RecordType.COST, 100, "last year")
+            insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 100, "target")
+        }
+        setContent(RecordChange(recordId = targetId, year = 2026, month = 3, deleted = false))
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Описание: target").assertIsDisplayed()
+        // Only the change's own year was opened.
+        composeRule.onNodeWithText("Декабрь").assertDoesNotExist()
+    }
+
+    @Test
+    fun deletedRecordChange_opensTheMonthItWasRemovedFrom() {
+        runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "kept") }
+        // The deleted record (id 999) is already gone from the database.
+        setContent(RecordChange(recordId = 999, year = 2026, month = 3, deleted = true))
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Март").assertIsDisplayed()
+        composeRule.onNodeWithText("Описание: kept").assertIsDisplayed()
     }
 }
