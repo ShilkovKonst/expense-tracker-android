@@ -122,7 +122,7 @@ fun calcExpression(expression: String, mode: CalculatorMode = CalculatorMode.LEF
 
 /**
  * Evaluates the amount field's calculator [expression] into whole cents for
- * storage as [com.spendobserver.data.local.entity.Record.amountCents].
+ * storage as [com.spendobserver.data.local.entity.RecordPart.amountCents].
  * Returns `null` for anything that isn't a finite positive amount (empty
  * input, a dangling expression, a result of zero or less) — record amounts
  * are always positive, with income/cost conveyed separately by

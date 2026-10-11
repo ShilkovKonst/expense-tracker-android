@@ -3,6 +3,7 @@ package com.spendobserver.ui.tracker
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.room.Room
@@ -13,6 +14,7 @@ import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -20,6 +22,7 @@ import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,8 +63,9 @@ class TrackerDetailScreenTest {
         description: String?,
     ): Long =
         recordRepository.insertRecord(
-            Record(trackerId = trackerId, date = date, type = type, description = description, amountCents = amountCents),
+            Record(trackerId = trackerId, date = date, type = type, description = description),
             emptySet(),
+            listOf(PartDraft(amountCents, emptySet())),
         )
 
     private fun setContent(recordChange: RecordChange? = null) {
@@ -177,8 +181,9 @@ class TrackerDetailScreenTest {
         runBlocking {
             val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "groceries"))
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "shopping", amountCents = 1000),
-                setOf(tagId),
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "shopping"),
+                emptySet(),
+                listOf(PartDraft(1000, setOf(tagId))),
             )
         }
         setContent()
@@ -259,5 +264,39 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("Март").assertIsDisplayed()
         composeRule.onNodeWithText("Описание: kept").assertIsDisplayed()
+    }
+
+    @Test
+    fun splitRecord_partsAreCollapsedAndToggleWithoutOpeningTheRecord() {
+        val recordId = runBlocking {
+            recordRepository.insertRecord(
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "receipt"),
+                emptySet(),
+                listOf(PartDraft(80000, emptySet()), PartDraft(235000, emptySet())),
+            )
+        }
+        var openedCount = 0
+        composeRule.setContent {
+            TrackerDetailScreen(
+                trackerId = trackerId,
+                trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
+                onBackClick = {},
+                onRecordClick = { openedCount++ },
+                recordChange = RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false),
+            )
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("▸ 2 части").assertExists()
+        composeRule.onNodeWithText("800.00").assertDoesNotExist()
+
+        composeRule.onNodeWithTag("partsToggle-$recordId").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("▾ 2 части").assertExists()
+        composeRule.onNodeWithText("800.00").assertIsDisplayed()
+        composeRule.onNodeWithText("2350.00").assertIsDisplayed()
+        assertEquals(0, openedCount)
     }
 }

@@ -6,16 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.spendobserver.data.local.dao.RecordDao
+import com.spendobserver.data.local.dao.RecordPartDao
 import com.spendobserver.data.local.dao.RecordTagDao
 import com.spendobserver.data.local.dao.TagDao
 import com.spendobserver.data.local.dao.TrackerDao
 import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.entity.RecordPart
+import com.spendobserver.data.local.entity.RecordPartTag
 import com.spendobserver.data.local.entity.RecordTag
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 
 @Database(
-    entities = [Tracker::class, Tag::class, Record::class, RecordTag::class],
+    entities = [Tracker::class, Tag::class, Record::class, RecordTag::class, RecordPart::class, RecordPartTag::class],
     version = 1,
     exportSchema = true,
 )
@@ -29,6 +32,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun recordDao(): RecordDao
 
     abstract fun recordTagDao(): RecordTagDao
+
+    abstract fun recordPartDao(): RecordPartDao
 
     companion object {
         private const val DATABASE_NAME = "spendobserver.db"

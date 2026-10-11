@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,8 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +22,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -36,8 +38,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,11 +53,17 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.amountCentsFrom
+import com.spendobserver.domain.record.PartInput
+import com.spendobserver.domain.record.PartsError
+import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
+
+/** Where a tag created from the "+ Новый тег" chip goes: the record (global) or one part (local). */
+private data class NewTagTarget(val isGlobal: Boolean, val partId: Int? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,16 +84,20 @@ fun RecordFormScreen(
         },
     )
 
-    val amountExpression by viewModel.amountExpression.collectAsStateWithLifecycle()
     val type by viewModel.type.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
     val description by viewModel.description.collectAsStateWithLifecycle()
-    val selectedTagIds by viewModel.selectedTagIds.collectAsStateWithLifecycle()
+    val parts by viewModel.parts.collectAsStateWithLifecycle()
+    val evaluation by viewModel.evaluation.collectAsStateWithLifecycle()
+    val showErrors by viewModel.showErrors.collectAsStateWithLifecycle()
+    val globalTagIds by viewModel.globalTagIds.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
-    val saveError by viewModel.saveError.collectAsStateWithLifecycle()
+    val globalTags = tags.filter { it.isGlobal }
+    val localTags = tags.filterNot { it.isGlobal }
+    val errors = if (showErrors) evaluation.errors else emptyList()
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var showNewTagDialog by remember { mutableStateOf(false) }
+    var newTagTarget by remember { mutableStateOf<NewTagTarget?>(null) }
     var showManageTagsDialog by remember { mutableStateOf(false) }
     var tagToRename by remember { mutableStateOf<Tag?>(null) }
     var tagToDelete by remember { mutableStateOf<Tag?>(null) }
@@ -130,23 +144,88 @@ fun RecordFormScreen(
                 ) { Text("Доход") }
             }
 
-            Column {
-                OutlinedTextField(
-                    value = amountExpression,
-                    onValueChange = viewModel::setAmountExpression,
-                    label = { Text("Сумма") },
-                    placeholder = { Text("120+50/2") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    isError = saveError != null,
-                    modifier = Modifier.fillMaxWidth().testTag("amountInput"),
+            if (!parts.isSplit) {
+                // Simple record: one amount field, exactly like before parts existed.
+                val only = parts.parts.single()
+                Column {
+                    AmountField(
+                        value = only.amountExpression,
+                        onValueChange = { viewModel.setPartAmount(only.id, it) },
+                        label = "Сумма",
+                        error = errors.amountErrorFor(only.id),
+                        modifier = Modifier.testTag("amountInput"),
+                    )
+                    TextButton(
+                        onClick = viewModel::split,
+                        modifier = Modifier.testTag("splitButton"),
+                    ) { Text("Разбить по частям") }
+                }
+            } else {
+                ReceiptTotalSection(
+                    expression = parts.receiptTotalExpression,
+                    errors = errors,
+                    onChange = viewModel::setReceiptTotal,
+                    onAdd = { viewModel.setReceiptTotal("") },
+                    onClear = viewModel::clearReceiptTotal,
                 )
-                val preview = amountCentsFrom(amountExpression)
-                if (preview != null && amountExpression != preview.let { formatCents(it) }) {
-                    Text("= ${formatCents(preview)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            TagChipsSection(
+                title = "Общие теги",
+                hint = "где, с кем — на всю запись",
+                tags = globalTags,
+                selectedIds = globalTagIds,
+                onToggle = viewModel::toggleGlobalTag,
+                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
+                newTagChipTestTag = "newGlobalTagChip",
+            )
+
+            if (!parts.isSplit) {
+                val only = parts.parts.single()
+                TagChipsSection(
+                    title = "Теги",
+                    hint = "на что",
+                    tags = localTags,
+                    selectedIds = only.tagIds,
+                    onToggle = { viewModel.togglePartTag(only.id, it) },
+                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
+                    newTagChipTestTag = "newTagChip",
+                )
+            } else {
+                parts.parts.forEachIndexed { index, part ->
+                    PartCard(
+                        index = index,
+                        part = part,
+                        isRemainder = part.id == parts.remainderPartId,
+                        canRemove = parts.parts.size > 1 && part.id != parts.remainderPartId,
+                        evaluation = evaluation,
+                        errors = errors,
+                        localTags = localTags,
+                        onAmountChange = { viewModel.setPartAmount(part.id, it) },
+                        onToggleTag = { viewModel.togglePartTag(part.id, it) },
+                        onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = part.id) },
+                        onRemove = { viewModel.removePart(part.id) },
+                    )
                 }
-                if (saveError != null) {
-                    Text(saveError!!, color = MaterialTheme.colorScheme.error)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = viewModel::addPart,
+                        modifier = Modifier.testTag("addPartButton"),
+                    ) { Text("+ Часть") }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "Итого: ${evaluation.totalCents?.let(::formatCents) ?: "—"}",
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.testTag("recordTotal"),
+                    )
                 }
+            }
+
+            if (tags.isNotEmpty()) {
+                TextButton(
+                    onClick = { showManageTagsDialog = true },
+                    modifier = Modifier.testTag("manageTagsButton"),
+                ) { Text("Управление тегами") }
             }
 
             OutlinedTextField(
@@ -173,42 +252,6 @@ fun RecordFormScreen(
                     .clickable { showDatePicker = true }
                     .testTag("dateInput"),
             )
-
-            Column {
-                Text("Теги", style = MaterialTheme.typography.labelLarge)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) {
-                    // Selection only — no per-chip menu: a compact FilterChip's own
-                    // touch target and a nested IconButton's (48dp-minimum) touch
-                    // target overlap too closely to hit reliably, so rename/delete
-                    // live in the full-width rows of the "Управление тегами" dialog
-                    // below instead (same layout TrackerListScreen's tracker rows
-                    // already use safely, since there the icon sits far from the
-                    // label with room to spare).
-                    for (tag in tags) {
-                        FilterChip(
-                            selected = tag.id in selectedTagIds,
-                            onClick = { viewModel.toggleTag(tag.id) },
-                            label = { Text(tag.name) },
-                        )
-                    }
-                    FilterChip(
-                        selected = false,
-                        onClick = { showNewTagDialog = true },
-                        label = { Text("+ Новый тег") },
-                        modifier = Modifier.testTag("newTagChip"),
-                    )
-                }
-                if (tags.isNotEmpty()) {
-                    TextButton(
-                        onClick = { showManageTagsDialog = true },
-                        modifier = Modifier.testTag("manageTagsButton"),
-                    ) { Text("Управление тегами") }
-                }
-            }
 
             OutlinedTextField(
                 value = description,
@@ -249,6 +292,11 @@ fun RecordFormScreen(
                     for (tag in tags) {
                         ListItem(
                             headlineContent = { Text(tag.name) },
+                            supportingContent = if (tag.isGlobal) {
+                                { Text("общий") }
+                            } else {
+                                null
+                            },
                             trailingContent = {
                                 Row {
                                     IconButton(
@@ -277,16 +325,16 @@ fun RecordFormScreen(
         )
     }
 
-    if (showNewTagDialog) {
+    newTagTarget?.let { target ->
         TagNameDialog(
-            title = "Новый тег",
+            title = if (target.isGlobal) "Новый общий тег" else "Новый тег",
             initialName = "",
             confirmLabel = "Создать",
             onConfirm = { name ->
-                viewModel.createTag(name)
-                showNewTagDialog = false
+                viewModel.createTag(name, isGlobal = target.isGlobal, forPartId = target.partId)
+                newTagTarget = null
             },
-            onDismiss = { showNewTagDialog = false },
+            onDismiss = { newTagTarget = null },
         )
     }
 
@@ -337,6 +385,204 @@ fun RecordFormScreen(
         )
     }
 }
+
+/** A calculator-backed amount field with the evaluated "= 150.00" preview underneath. */
+@Composable
+private fun AmountField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    error: String?,
+    modifier: Modifier = Modifier,
+) {
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            placeholder = { Text("120+50/2") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            isError = error != null,
+            modifier = modifier.fillMaxWidth(),
+        )
+        val preview = amountCentsFrom(value)
+        if (preview != null && value != formatCents(preview)) {
+            Text("= ${formatCents(preview)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (error != null) {
+            Text(error, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun ReceiptTotalSection(
+    expression: String?,
+    errors: List<PartsError>,
+    onChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onClear: () -> Unit,
+) {
+    if (expression == null) {
+        TextButton(
+            onClick = onAdd,
+            modifier = Modifier.testTag("addReceiptTotalButton"),
+        ) { Text("+ Итог по чеку") }
+        return
+    }
+    Column {
+        AmountField(
+            value = expression,
+            onValueChange = onChange,
+            label = "Итог по чеку",
+            error = when {
+                PartsError.InvalidReceiptTotal in errors -> "Введите итог чека"
+                PartsError.PartsExceedReceiptTotal in errors -> "Сумма частей должна быть меньше итога чека"
+                else -> null
+            },
+            modifier = Modifier.testTag("receiptTotalInput"),
+        )
+        TextButton(
+            onClick = onClear,
+            modifier = Modifier.testTag("clearReceiptTotalButton"),
+        ) { Text("Убрать итог") }
+    }
+}
+
+/**
+ * One part in split mode. The remainder part (last, when there's a
+ * receipt total) shows its computed amount instead of an input.
+ */
+@Composable
+private fun PartCard(
+    index: Int,
+    part: PartInput,
+    isRemainder: Boolean,
+    canRemove: Boolean,
+    evaluation: PartsEvaluation,
+    errors: List<PartsError>,
+    localTags: List<Tag>,
+    onAmountChange: (String) -> Unit,
+    onToggleTag: (Long) -> Unit,
+    onNewTag: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth().testTag("partCard-$index")) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = if (isRemainder) "Остаток" else "Часть ${index + 1}",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                if (isRemainder) {
+                    Text(
+                        text = evaluation.partCents[part.id]?.let(::formatCents) ?: "—",
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.testTag("remainderAmount"),
+                    )
+                }
+                if (canRemove) {
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.testTag("removePartButton-$index"),
+                    ) { Text("✕") }
+                }
+            }
+            if (!isRemainder) {
+                AmountField(
+                    value = part.amountExpression,
+                    onValueChange = onAmountChange,
+                    label = "Сумма",
+                    error = errors.amountErrorFor(part.id),
+                    modifier = Modifier.testTag("partAmountInput-$index"),
+                )
+            }
+            TagChips(
+                tags = localTags,
+                selectedIds = part.tagIds,
+                onToggle = onToggleTag,
+                onNewTag = onNewTag,
+                newTagChipTestTag = "newTagChip-$index",
+            )
+            if (errors.any { it is PartsError.DuplicateTags && part.id in it.partIds }) {
+                Text("Часть с такими же тегами уже есть", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TagChipsSection(
+    title: String,
+    hint: String,
+    tags: List<Tag>,
+    selectedIds: Set<Long>,
+    onToggle: (Long) -> Unit,
+    onNewTag: () -> Unit,
+    newTagChipTestTag: String,
+) {
+    Column {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(title, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "  $hint",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TagChips(
+            tags = tags,
+            selectedIds = selectedIds,
+            onToggle = onToggle,
+            onNewTag = onNewTag,
+            newTagChipTestTag = newTagChipTestTag,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+}
+
+@Composable
+private fun TagChips(
+    tags: List<Tag>,
+    selectedIds: Set<Long>,
+    onToggle: (Long) -> Unit,
+    onNewTag: () -> Unit,
+    newTagChipTestTag: String,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        // Selection only — no per-chip menu: a compact FilterChip's own
+        // touch target and a nested IconButton's (48dp-minimum) touch
+        // target overlap too closely to hit reliably, so rename/delete
+        // live in the full-width rows of the "Управление тегами" dialog
+        // instead (same layout TrackerListScreen's tracker rows already
+        // use safely, since there the icon sits far from the label).
+        for (tag in tags) {
+            FilterChip(
+                selected = tag.id in selectedIds,
+                onClick = { onToggle(tag.id) },
+                label = { Text(tag.name) },
+            )
+        }
+        FilterChip(
+            selected = false,
+            onClick = onNewTag,
+            label = { Text("+ Новый тег") },
+            modifier = Modifier.testTag(newTagChipTestTag),
+        )
+    }
+}
+
+private fun List<PartsError>.amountErrorFor(partId: Int): String? =
+    if (PartsError.InvalidAmount(partId) in this) "Введите сумму больше нуля" else null
 
 private fun formatDate(date: LocalDate): String {
     val dd = date.day.toString().padStart(2, '0')

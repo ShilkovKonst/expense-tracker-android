@@ -3,10 +3,14 @@ package com.spendobserver.ui.record
 import android.content.Context
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.room.Room
@@ -19,6 +23,7 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
+import com.spendobserver.domain.record.PartDraft
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -87,8 +92,8 @@ class RecordFormScreenTest {
         val list = runBlocking { recordRepository.observeAll(trackerId).first() }
         assertEquals(1, list.size)
         assertEquals(1250L, list[0].amountCents)
-        assertEquals(RecordType.INCOME, list[0].type)
-        assertEquals("salary", list[0].description)
+        assertEquals(RecordType.INCOME, list[0].record.type)
+        assertEquals("salary", list[0].record.description)
     }
 
     @Test
@@ -113,9 +118,9 @@ class RecordFormScreenTest {
                     date = LocalDate(2026, 3, 15),
                     type = RecordType.COST,
                     description = "monthly rent",
-                    amountCents = 45000,
                 ),
-                setOf(tagId),
+                emptySet(),
+                listOf(PartDraft(45000, setOf(tagId))),
             )
         }
 
@@ -137,9 +142,9 @@ class RecordFormScreenTest {
                     date = LocalDate(2026, 3, 15),
                     type = RecordType.COST,
                     description = null,
-                    amountCents = 1000,
                 ),
                 emptySet(),
+                listOf(PartDraft(1000, emptySet())),
             )
         }
 
@@ -235,6 +240,89 @@ class RecordFormScreenTest {
 
         assertEquals(1, savedCount)
         val record = runBlocking { recordRepository.observeAll(trackerId).first().single() }
-        assertTrue(runBlocking { recordRepository.getTagIds(record.id) }.isEmpty())
+        assertTrue(record.tags.isEmpty() && record.parts.all { it.tags.isEmpty() })
+    }
+
+    @Test
+    fun splitReceipt_savesOneRecordWithTypedPartsAndComputedRemainder() {
+        val (shop, groceries, alcohol) = runBlocking {
+            Triple(
+                tagRepository.insertTag(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true)),
+                tagRepository.insertTag(Tag(trackerId = trackerId, name = "продукты")),
+                tagRepository.insertTag(Tag(trackerId = trackerId, name = "алко")),
+            )
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("3450")
+        composeRule.onNodeWithTag("splitButton").performClick()
+        composeRule.onNodeWithText("Ашан").performScrollTo().performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("800")
+        // Part 0's chips come first, the remainder's second.
+        composeRule.onAllNodesWithText("алко")[0].performScrollTo().performClick()
+        composeRule.onAllNodesWithText("продукты")[1].performScrollTo().performClick()
+        composeRule.onNodeWithTag("remainderAmount").performScrollTo().assertTextEquals("2650.00")
+        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, savedCount)
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }
+        assertEquals(listOf(shop), saved.tags.map { it.id })
+        assertEquals(
+            listOf(80000L to setOf(alcohol), 265000L to setOf(groceries)),
+            saved.parts.map { p -> p.part.amountCents to p.tags.map { it.id }.toSet() },
+        )
+    }
+
+    @Test
+    fun partsExceedingReceiptTotal_showErrorAndDoNotSave() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("100")
+        composeRule.onNodeWithTag("splitButton").performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("150")
+        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Сумма частей должна быть меньше итога чека").assertExists()
+        assertEquals(0, savedCount)
+    }
+
+    @Test
+    fun editingMultiPartRecord_showsEveryPartAndTheTotal() {
+        val recordId = runBlocking {
+            recordRepository.insertRecord(
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = null),
+                emptySet(),
+                listOf(PartDraft(80000, emptySet()), PartDraft(235000, emptySet())),
+            )
+        }
+        setContent(recordId = recordId)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("partAmountInput-0").assertTextContains("800.00")
+        composeRule.onNodeWithTag("partAmountInput-1").performScrollTo().assertTextContains("2350.00")
+        composeRule.onNodeWithTag("recordTotal").performScrollTo().assertTextEquals("Итого: 3150.00")
+    }
+
+    @Test
+    fun newGlobalTag_isCreatedGlobalAndSelectedOnTheRecord() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("newGlobalTagChip").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
+        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("amountInput").performTextInput("100")
+        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.waitForIdle()
+
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }
+        assertEquals(listOf("Ашан"), saved.tags.map { it.name })
+        assertTrue(saved.tags.single().isGlobal)
+        assertTrue(saved.parts.single().tags.isEmpty())
     }
 }

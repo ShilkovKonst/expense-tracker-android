@@ -1,24 +1,18 @@
 package com.spendobserver.domain.summary
 
-import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
-import kotlinx.datetime.LocalDate
+import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.testing.recordWithParts
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AmountTotalsTest {
 
-    private fun record(type: RecordType, amountCents: Long) = Record(
-        trackerId = 1,
-        date = LocalDate(2026, 3, 15),
-        type = type,
-        description = null,
-        amountCents = amountCents,
-    )
+    private fun record(type: RecordType, amountCents: Long) = recordWithParts(type = type, partAmountsCents = longArrayOf(amountCents))
 
     @Test
     fun emptyList_totalsAreZero() {
-        val totals = emptyList<Record>().amountTotals()
+        val totals = emptyList<RecordWithParts>().amountTotals()
 
         assertEquals(0L, totals.incomeCents)
         assertEquals(0L, totals.costCents)
@@ -60,5 +54,14 @@ class AmountTotalsTest {
         assertEquals(5000L, totals.incomeCents)
         assertEquals(3000L, totals.costCents)
         assertEquals(2000L, totals.netCents)
+    }
+
+    @Test
+    fun multiPartRecord_countsTheSumOfItsParts() {
+        // One receipt split into groceries, alcohol, and snacks.
+        val receipt = recordWithParts(type = RecordType.COST, partAmountsCents = longArrayOf(235000, 80000, 30000))
+
+        assertEquals(345000L, receipt.amountCents)
+        assertEquals(345000L, listOf(receipt).amountTotals().costCents)
     }
 }

@@ -5,12 +5,19 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
+import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.entity.RecordPart
+import com.spendobserver.data.local.entity.RecordPartTag
+import com.spendobserver.data.local.entity.RecordTag
+import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -96,5 +103,48 @@ class TagDaoTest {
         db.trackerDao().delete(tracker)
 
         assertTrue(tagDao.observeForTracker(trackerId).first().isEmpty())
+    }
+
+    /** A record using [globalTagIds] directly and one part per entry of [partTagIds]. */
+    private suspend fun insertRecord(globalTagIds: List<Long> = emptyList(), vararg partTagIds: List<Long>): Long {
+        val recordId = db.recordDao().insert(
+            Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
+        )
+        globalTagIds.forEach { db.recordTagDao().insert(RecordTag(recordId = recordId, tagId = it)) }
+        partTagIds.forEachIndexed { position, tagIds ->
+            val partId = db.recordPartDao().insert(RecordPart(recordId = recordId, amountCents = 100, position = position))
+            tagIds.forEach { db.recordPartDao().insertTag(RecordPartTag(partId = partId, tagId = it)) }
+        }
+        return recordId
+    }
+
+    @Test
+    fun observeUsage_countsRecordsOnBothLevels_onceEvenAcrossSeveralParts() = runBlocking {
+        val shop = tagDao.insert(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true))
+        val alcohol = tagDao.insert(Tag(trackerId = trackerId, name = "алко"))
+        val unused = tagDao.insert(Tag(trackerId = trackerId, name = "снеки"))
+        insertRecord(listOf(shop), listOf(alcohol), listOf(alcohol)) // alcohol on two parts of one record
+        insertRecord(listOf(shop), listOf(alcohol))
+
+        val usage = tagDao.observeUsage(trackerId).first().associate { it.tagId to it.recordCount }
+
+        assertEquals(mapOf(shop to 2, alcohol to 2, unused to 0), usage)
+    }
+
+    @Test
+    fun setGlobalIfUnused_changesAnUnusedTag() = runBlocking {
+        val id = tagDao.insert(Tag(trackerId = trackerId, name = "Ашан"))
+
+        assertEquals(1, tagDao.setGlobalIfUnused(id, true))
+        assertTrue(tagDao.getByTrackerAndName(trackerId, "Ашан")!!.isGlobal)
+    }
+
+    @Test
+    fun setGlobalIfUnused_refusesATagUsedByAPart() = runBlocking {
+        val id = tagDao.insert(Tag(trackerId = trackerId, name = "алко"))
+        insertRecord(emptyList(), listOf(id))
+
+        assertEquals(0, tagDao.setGlobalIfUnused(id, true))
+        assertFalse(tagDao.getByTrackerAndName(trackerId, "алко")!!.isGlobal)
     }
 }

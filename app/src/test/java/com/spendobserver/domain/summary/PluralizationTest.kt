@@ -27,4 +27,12 @@ class PluralizationTest {
         assertEquals("записей", recordsWord(12))
         assertEquals("записей", recordsWord(14))
     }
+
+    @Test
+    fun partsWord_followsTheSameRules() {
+        assertEquals("часть", partsWord(1))
+        assertEquals("части", partsWord(3))
+        assertEquals("частей", partsWord(5))
+        assertEquals("частей", partsWord(12))
+    }
 }

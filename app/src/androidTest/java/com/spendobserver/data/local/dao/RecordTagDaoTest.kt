@@ -43,7 +43,6 @@ class RecordTagDaoTest {
                 date = LocalDate(2026, 3, 15),
                 type = RecordType.COST,
                 description = null,
-                amountCents = 1000,
             ),
         )
         tagId = db.tagDao().insert(Tag(trackerId = trackerId, name = "groceries"))

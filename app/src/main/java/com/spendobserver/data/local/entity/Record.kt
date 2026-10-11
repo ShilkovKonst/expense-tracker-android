@@ -11,6 +11,12 @@ enum class RecordType {
     COST,
 }
 
+/**
+ * One real-world event — e.g. a single receipt. Its amount isn't stored:
+ * it's always the sum of its [RecordPart]s (at least one per record), so
+ * the total can never drift from the parts. Tags attached directly to a
+ * record (through [RecordTag]) are global ones only ([Tag.isGlobal]).
+ */
 @Entity(
     tableName = "records",
     foreignKeys = [
@@ -30,5 +36,4 @@ data class Record(
     val date: LocalDate,
     val type: RecordType,
     val description: String?,
-    val amountCents: Long,
 )

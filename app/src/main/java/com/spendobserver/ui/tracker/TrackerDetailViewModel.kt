@@ -41,17 +41,14 @@ class TrackerDetailViewModel(
             initialValue = emptyList(),
         )
 
-    val tagNamesByRecordId: StateFlow<Map<Long, List<String>>> = recordRepository.observeTagNamesByRecord(trackerId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-            initialValue = emptyMap(),
-        )
-
     private val expandedYears = MutableStateFlow(emptySet<Int>())
     private val expandedMonths = MutableStateFlow(emptySet<YearMonth>())
 
-    val items: StateFlow<List<AccordionItem>> = combine(yearGroups, expandedYears, expandedMonths, ::accordionItems)
+    /** Split records whose part lines are shown; collapsed by default to keep the list compact. */
+    private val expandedRecords = MutableStateFlow(emptySet<Long>())
+
+    val items: StateFlow<List<AccordionItem>> =
+        combine(yearGroups, expandedYears, expandedMonths, expandedRecords, ::accordionItems)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -83,6 +80,10 @@ class TrackerDetailViewModel(
     fun toggleMonth(year: Int, month: Int) {
         val key = year to month
         expandedMonths.update { if (key in it) it - key else it + key }
+    }
+
+    fun toggleRecordParts(recordId: Long) {
+        expandedRecords.update { if (recordId in it) it - recordId else it + recordId }
     }
 
     /** Opens the change's year and month, and queues a scroll to it. */

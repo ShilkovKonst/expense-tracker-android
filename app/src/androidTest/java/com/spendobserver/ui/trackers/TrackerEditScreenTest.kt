@@ -1,6 +1,7 @@
 package com.spendobserver.ui.trackers
 
 import android.content.Context
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -11,12 +12,17 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
+import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.record.PartDraft
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -147,5 +153,50 @@ class TrackerEditScreenTest {
         composeRule.onNodeWithText("fuel").assertDoesNotExist()
         val tags = runBlocking { tagRepository.observeTags(trackerId).first() }
         assertTrue(tags.isEmpty())
+    }
+
+    @Test
+    fun creatingGlobalTag_storesItAsGlobal() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("newGlobalTagButton").performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
+        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
+        composeRule.waitForIdle()
+
+        val tag = runBlocking { tagRepository.observeTags(trackerId).first().single() }
+        assertTrue(tag.isGlobal)
+    }
+
+    @Test
+    fun unusedTag_movesToTheOtherLevel() {
+        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "Ашан")) }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("не используется").assertExists()
+        composeRule.onNodeWithTag("toggleTagLevelButton-Ашан").performClick()
+        composeRule.waitForIdle()
+
+        val tag = runBlocking { tagRepository.observeTags(trackerId).first().single() }
+        assertTrue(tag.isGlobal)
+    }
+
+    @Test
+    fun usedTag_cannotChangeLevel() {
+        runBlocking {
+            val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "алко"))
+            RecordRepository(db).insertRecord(
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
+                emptySet(),
+                listOf(PartDraft(100, setOf(tagId))),
+            )
+        }
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("в 1 записи — уровень не изменить").assertExists()
+        composeRule.onNodeWithTag("toggleTagLevelButton-алко").assertIsNotEnabled()
     }
 }

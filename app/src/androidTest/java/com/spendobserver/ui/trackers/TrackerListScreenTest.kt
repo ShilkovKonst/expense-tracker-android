@@ -14,6 +14,7 @@ import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import kotlinx.coroutines.runBlocking
@@ -104,12 +105,14 @@ class TrackerListScreenTest {
         val trackerId = runBlocking { db.trackerDao().getByTitle("Family")!!.id }
         runBlocking {
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.INCOME, description = null, amountCents = 5000),
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.INCOME, description = null),
                 emptySet(),
+                listOf(PartDraft(5000, emptySet())),
             )
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 2), type = RecordType.COST, description = null, amountCents = 2000),
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 2), type = RecordType.COST, description = null),
                 emptySet(),
+                listOf(PartDraft(2000, emptySet())),
             )
         }
         composeRule.waitForIdle()

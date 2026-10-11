@@ -8,13 +8,17 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.CalculatorMode
-import com.spendobserver.domain.calculator.amountCentsFrom
+import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.domain.record.PartsEvaluation
+import com.spendobserver.domain.record.PartsInput
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -23,9 +27,14 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
- * Backs the create/edit record form (README step 6). [recordId] is `null`
- * when creating a new record; when set, existing field values are loaded
- * from [recordRepository] on init.
+ * Backs the create/edit record form. [recordId] is `null` when creating a
+ * new record; when set, existing field values are loaded from
+ * [recordRepository] on init.
+ *
+ * The record's parts — amounts, the receipt total, the remainder — are a
+ * [PartsInput]; this ViewModel only forwards edits to it and saves what it
+ * produces, so all the arithmetic and validation stays in pure, JVM-tested
+ * domain code.
  *
  * The calculator mode is hardcoded to [CalculatorMode.LEFT_TO_RIGHT] (the
  * web app's default) until a settings screen exists to choose it.
@@ -37,10 +46,9 @@ class RecordFormViewModel(
     private val tagRepository: TagRepository,
 ) : ViewModel() {
 
-    val isEditing: Boolean get() = recordId != null
+    private val calculatorMode = CalculatorMode.LEFT_TO_RIGHT
 
-    private val _amountExpression = MutableStateFlow("")
-    val amountExpression: StateFlow<String> = _amountExpression.asStateFlow()
+    val isEditing: Boolean get() = recordId != null
 
     private val _type = MutableStateFlow(RecordType.COST)
     val type: StateFlow<RecordType> = _type.asStateFlow()
@@ -51,31 +59,37 @@ class RecordFormViewModel(
     private val _description = MutableStateFlow("")
     val description: StateFlow<String> = _description.asStateFlow()
 
-    private val _selectedTagIds = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedTagIds: StateFlow<Set<Long>> = _selectedTagIds.asStateFlow()
+    private val _parts = MutableStateFlow(PartsInput())
+    val parts: StateFlow<PartsInput> = _parts.asStateFlow()
+
+    val evaluation: StateFlow<PartsEvaluation> = _parts
+        .map { it.evaluate(calculatorMode) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), PartsInput().evaluate())
+
+    private val _globalTagIds = MutableStateFlow<Set<Long>>(emptySet())
+    val globalTagIds: StateFlow<Set<Long>> = _globalTagIds.asStateFlow()
 
     val tags: StateFlow<List<Tag>> = tagRepository.observeTags(trackerId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), emptyList())
 
-    private val _saveError = MutableStateFlow<String?>(null)
-    val saveError: StateFlow<String?> = _saveError.asStateFlow()
+    /** Errors stay hidden until the first save attempt, then follow every edit. */
+    private val _showErrors = MutableStateFlow(false)
+    val showErrors: StateFlow<Boolean> = _showErrors.asStateFlow()
 
     init {
         if (recordId != null) {
             viewModelScope.launch {
-                val record = recordRepository.getRecord(recordId) ?: return@launch
-                _amountExpression.value = formatAmount(record.amountCents)
+                val details = recordRepository.getRecord(recordId) ?: return@launch
+                val record = details.record
                 _type.value = record.type
                 _date.value = record.date
                 _description.value = record.description.orEmpty()
-                _selectedTagIds.value = recordRepository.getTagIds(recordId).toSet()
+                _globalTagIds.value = details.tags.map { it.id }.toSet()
+                _parts.value = PartsInput.fromSaved(
+                    details.parts.map { p -> PartDraft(p.part.amountCents, p.tags.map { it.id }.toSet()) },
+                )
             }
         }
-    }
-
-    fun setAmountExpression(value: String) {
-        _amountExpression.value = value
-        _saveError.value = null
     }
 
     fun setType(value: RecordType) {
@@ -90,20 +104,36 @@ class RecordFormViewModel(
         _description.value = value
     }
 
-    fun toggleTag(tagId: Long) {
-        _selectedTagIds.value = if (tagId in _selectedTagIds.value) {
-            _selectedTagIds.value - tagId
-        } else {
-            _selectedTagIds.value + tagId
-        }
-    }
+    fun setPartAmount(partId: Int, expression: String) = _parts.update { it.setPartAmount(partId, expression) }
 
-    fun createTag(name: String) {
+    fun togglePartTag(partId: Int, tagId: Long) = _parts.update { it.togglePartTag(partId, tagId) }
+
+    fun split() = _parts.update { it.split() }
+
+    fun addPart() = _parts.update { it.addPart() }
+
+    fun removePart(partId: Int) = _parts.update { it.removePart(partId) }
+
+    fun setReceiptTotal(expression: String) = _parts.update { it.setReceiptTotal(expression) }
+
+    fun clearReceiptTotal() = _parts.update { it.clearReceiptTotal(calculatorMode) }
+
+    fun toggleGlobalTag(tagId: Long) = _globalTagIds.update { if (tagId in it) it - tagId else it + tagId }
+
+    /**
+     * Creates a tag on the level it was asked for from: a global one is
+     * selected on the record, a local one ([forPartId] set) on that part.
+     */
+    fun createTag(name: String, isGlobal: Boolean, forPartId: Int? = null) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
-            val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = trimmed))
-            _selectedTagIds.value = _selectedTagIds.value + id
+            val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = trimmed, isGlobal = isGlobal))
+            if (isGlobal) {
+                _globalTagIds.update { it + id }
+            } else if (forPartId != null) {
+                _parts.update { it.togglePartTag(forPartId, id) }
+            }
         }
     }
 
@@ -118,14 +148,17 @@ class RecordFormViewModel(
     fun deleteTag(tag: Tag) {
         viewModelScope.launch {
             tagRepository.deleteTag(tag)
-            _selectedTagIds.value = _selectedTagIds.value - tag.id
+            _globalTagIds.update { it - tag.id }
+            _parts.update { input ->
+                input.parts.filter { tag.id in it.tagIds }.fold(input) { acc, part -> acc.togglePartTag(part.id, tag.id) }
+            }
         }
     }
 
     fun save(onSaved: (RecordChange) -> Unit) {
-        val amountCents = amountCentsFrom(_amountExpression.value)
-        if (amountCents == null) {
-            _saveError.value = "Введите сумму больше нуля"
+        val drafts = _parts.value.toDrafts(calculatorMode)
+        if (drafts == null) {
+            _showErrors.value = true
             return
         }
         viewModelScope.launch {
@@ -135,12 +168,11 @@ class RecordFormViewModel(
                 date = _date.value,
                 type = _type.value,
                 description = _description.value.trim().ifEmpty { null },
-                amountCents = amountCents,
             )
             val savedId = if (recordId == null) {
-                recordRepository.insertRecord(record, _selectedTagIds.value)
+                recordRepository.insertRecord(record, _globalTagIds.value, drafts)
             } else {
-                recordRepository.updateRecord(record, _selectedTagIds.value)
+                recordRepository.updateRecord(record, _globalTagIds.value, drafts)
                 recordId
             }
             onSaved(record.change(savedId, deleted = false))
@@ -150,7 +182,7 @@ class RecordFormViewModel(
     fun delete(onDeleted: (RecordChange) -> Unit) {
         val id = recordId ?: return
         viewModelScope.launch {
-            val record = recordRepository.getRecord(id) ?: return@launch
+            val record = recordRepository.getRecord(id)?.record ?: return@launch
             recordRepository.deleteRecord(record)
             onDeleted(record.change(id, deleted = true))
         }
@@ -159,9 +191,3 @@ class RecordFormViewModel(
 
 private fun Record.change(id: Long, deleted: Boolean) =
     RecordChange(recordId = id, year = date.year, month = date.month.number, deleted = deleted)
-
-private fun formatAmount(cents: Long): String {
-    val whole = cents / 100
-    val fraction = (cents % 100).toString().padStart(2, '0')
-    return "$whole.$fraction"
-}

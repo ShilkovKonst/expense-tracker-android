@@ -1,7 +1,7 @@
 package com.spendobserver.domain.summary
 
-import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.data.local.relation.RecordWithParts
 
 data class AmountTotals(
     val incomeCents: Long,
@@ -10,11 +10,11 @@ data class AmountTotals(
     val netCents: Long get() = incomeCents - costCents
 }
 
-fun List<Record>.amountTotals(): AmountTotals {
+fun List<RecordWithParts>.amountTotals(): AmountTotals {
     var income = 0L
     var cost = 0L
     for (record in this) {
-        when (record.type) {
+        when (record.record.type) {
             RecordType.INCOME -> income += record.amountCents
             RecordType.COST -> cost += record.amountCents
         }

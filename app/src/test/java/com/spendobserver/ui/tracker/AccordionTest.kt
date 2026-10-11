@@ -1,8 +1,7 @@
 package com.spendobserver.ui.tracker
 
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.domain.summary.groupByYearMonth
+import com.spendobserver.testing.recordWithParts
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
@@ -11,14 +10,7 @@ import org.junit.Test
 
 class AccordionTest {
 
-    private fun record(id: Long, date: LocalDate) = Record(
-        id = id,
-        trackerId = 1,
-        date = date,
-        type = RecordType.COST,
-        description = null,
-        amountCents = 1000,
-    )
+    private fun record(id: Long, date: LocalDate) = recordWithParts(id = id, date = date)
 
     private val records = listOf(
         record(1, LocalDate(2026, 9, 29)),
@@ -53,6 +45,14 @@ class AccordionTest {
     }
 
     @Test
+    fun accordionItems_recordPartsAreCollapsedUnlessTheRecordIsExpanded() {
+        val items = accordionItems(groups, setOf(2026), setOf(2026 to 9), expandedRecords = setOf(2L))
+
+        val entries = items.filterIsInstance<AccordionItem.RecordEntry>().associate { it.record.record.id to it.partsExpanded }
+        assertEquals(mapOf(1L to false, 2L to true), entries)
+    }
+
+    @Test
     fun resolveFocus_saved_waitsUntilRecordIsInItsMonth() {
         // Edited record 3 moved from August to September, but Room hasn't re-emitted yet.
         val change = RecordChange(recordId = 3, year = 2026, month = 9, deleted = false)
@@ -76,7 +76,7 @@ class AccordionTest {
 
     @Test
     fun resolveFocus_deleted_targetsTheMonthItWasRemovedFrom() {
-        val after = records.filter { it.id != 1L }.groupByYearMonth()
+        val after = records.filter { it.record.id != 1L }.groupByYearMonth()
         val change = RecordChange(recordId = 1, year = 2026, month = 9, deleted = true)
 
         assertEquals(FocusTarget.Item("month-2026-9"), resolveFocus(change, after))
@@ -84,7 +84,7 @@ class AccordionTest {
 
     @Test
     fun resolveFocus_deletedMonthsLastRecord_fallsBackToYear() {
-        val after = records.filter { it.id != 3L }.groupByYearMonth()
+        val after = records.filter { it.record.id != 3L }.groupByYearMonth()
         val change = RecordChange(recordId = 3, year = 2026, month = 8, deleted = true)
 
         assertEquals(FocusTarget.Item("year-2026"), resolveFocus(change, after))
@@ -92,7 +92,7 @@ class AccordionTest {
 
     @Test
     fun resolveFocus_deletedYearsLastRecord_isNone() {
-        val after = records.filter { it.id != 4L }.groupByYearMonth()
+        val after = records.filter { it.record.id != 4L }.groupByYearMonth()
         val change = RecordChange(recordId = 4, year = 2025, month = 12, deleted = true)
 
         assertEquals(FocusTarget.None, resolveFocus(change, after))

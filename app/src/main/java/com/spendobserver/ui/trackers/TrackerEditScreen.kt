@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.ui.common.TagNameDialog
 
 /** Renaming a tracker and managing its tags (create/rename/delete) — one screen, reached via the ✎ button on a tracker row. */
@@ -55,9 +57,11 @@ fun TrackerEditScreen(
     )
     val title by viewModel.title.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val tagUsage by viewModel.tagUsage.collectAsStateWithLifecycle()
     val saveError by viewModel.saveError.collectAsStateWithLifecycle()
 
-    var showNewTagDialog by remember { mutableStateOf(false) }
+    /** Non-null while the new-tag dialog is open: which level the new tag goes on. */
+    var newTagIsGlobal by remember { mutableStateOf<Boolean?>(null) }
     var tagToRename by remember { mutableStateOf<Tag?>(null) }
     var tagToDelete by remember { mutableStateOf<Tag?>(null) }
 
@@ -95,39 +99,29 @@ fun TrackerEditScreen(
                 }
             }
 
-            Column {
-                Text("Теги", style = MaterialTheme.typography.labelLarge)
-                if (tags.isEmpty()) {
-                    Text(
-                        text = "Тегов пока нет",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                } else {
-                    for (tag in tags) {
-                        ListItem(
-                            headlineContent = { Text(tag.name) },
-                            trailingContent = {
-                                Row {
-                                    IconButton(
-                                        onClick = { tagToRename = tag },
-                                        modifier = Modifier.testTag("renameTagButton-${tag.name}"),
-                                    ) { Text("✎") }
-                                    IconButton(
-                                        onClick = { tagToDelete = tag },
-                                        modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
-                                    ) { Text("🗑") }
-                                }
-                            },
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = { showNewTagDialog = true },
-                    modifier = Modifier.testTag("newTagButton"),
-                ) { Text("+ Новый тег") }
-            }
+            TagSection(
+                title = "Общие теги",
+                hint = "где, с кем — на всю запись",
+                tags = tags.filter { it.isGlobal },
+                tagUsage = tagUsage,
+                onNewTag = { newTagIsGlobal = true },
+                onToggleLevel = viewModel::toggleTagLevel,
+                onRename = { tagToRename = it },
+                onDelete = { tagToDelete = it },
+                newTagButtonTestTag = "newGlobalTagButton",
+            )
+
+            TagSection(
+                title = "Теги",
+                hint = "на что — на части записи",
+                tags = tags.filterNot { it.isGlobal },
+                tagUsage = tagUsage,
+                onNewTag = { newTagIsGlobal = false },
+                onToggleLevel = viewModel::toggleTagLevel,
+                onRename = { tagToRename = it },
+                onDelete = { tagToDelete = it },
+                newTagButtonTestTag = "newTagButton",
+            )
 
             Button(
                 onClick = { viewModel.save(onSaved) },
@@ -136,16 +130,16 @@ fun TrackerEditScreen(
         }
     }
 
-    if (showNewTagDialog) {
+    newTagIsGlobal?.let { isGlobal ->
         TagNameDialog(
-            title = "Новый тег",
+            title = if (isGlobal) "Новый общий тег" else "Новый тег",
             initialName = "",
             confirmLabel = "Создать",
             onConfirm = { name ->
-                viewModel.createTag(name)
-                showNewTagDialog = false
+                viewModel.createTag(name, isGlobal)
+                newTagIsGlobal = null
             },
-            onDismiss = { showNewTagDialog = false },
+            onDismiss = { newTagIsGlobal = null },
         )
     }
 
@@ -179,3 +173,79 @@ fun TrackerEditScreen(
         )
     }
 }
+
+/**
+ * One level's tags. ⇄ moves a tag to the other level, enabled only while
+ * no record uses it — otherwise existing records would hold it on the
+ * wrong level (see [Tag.isGlobal]).
+ */
+@Composable
+private fun TagSection(
+    title: String,
+    hint: String,
+    tags: List<Tag>,
+    tagUsage: Map<Long, Int>,
+    onNewTag: () -> Unit,
+    onToggleLevel: (Tag) -> Unit,
+    onRename: (Tag) -> Unit,
+    onDelete: (Tag) -> Unit,
+    newTagButtonTestTag: String,
+) {
+    Column {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(title, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "  $hint",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (tags.isEmpty()) {
+            Text(
+                text = "Тегов пока нет",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        for (tag in tags) {
+            val usage = tagUsage[tag.id] ?: 0
+            ListItem(
+                headlineContent = { Text(tag.name) },
+                supportingContent = {
+                    Text(
+                        if (usage == 0) {
+                            "не используется"
+                        } else {
+                            "в $usage ${recordsInWord(usage)} — уровень не изменить"
+                        },
+                    )
+                },
+                trailingContent = {
+                    Row {
+                        IconButton(
+                            onClick = { onToggleLevel(tag) },
+                            enabled = usage == 0,
+                            modifier = Modifier.testTag("toggleTagLevelButton-${tag.name}"),
+                        ) { Text("⇄") }
+                        IconButton(
+                            onClick = { onRename(tag) },
+                            modifier = Modifier.testTag("renameTagButton-${tag.name}"),
+                        ) { Text("✎") }
+                        IconButton(
+                            onClick = { onDelete(tag) },
+                            modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
+                        ) { Text("🗑") }
+                    }
+                },
+            )
+        }
+        TextButton(
+            onClick = onNewTag,
+            modifier = Modifier.testTag(newTagButtonTestTag),
+        ) { Text("+ Новый тег") }
+    }
+}
+
+/** Prepositional case for "в N …": в 1 записи, в 2 записях, в 5 записях. */
+private fun recordsInWord(count: Int) = russianPlural(count, "записи", "записях", "записях")

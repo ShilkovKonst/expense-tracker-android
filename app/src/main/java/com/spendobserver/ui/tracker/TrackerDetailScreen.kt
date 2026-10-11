@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -46,12 +47,15 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.data.local.relation.RecordWithParts
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
+import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.domain.summary.formatSignedCents
+import com.spendobserver.domain.summary.partsWord
 import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.ui.navigation.RecordChange
 
@@ -93,7 +97,6 @@ fun TrackerDetailScreen(
     )
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val yearGroups by viewModel.yearGroups.collectAsStateWithLifecycle()
-    val tagNamesByRecordId by viewModel.tagNamesByRecordId.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -181,9 +184,10 @@ fun TrackerDetailScreen(
                             onClick = { viewModel.toggleMonth(item.group.year, item.group.month) },
                         )
                         is AccordionItem.RecordEntry -> RecordRow(
-                            record = item.record,
-                            tagNames = tagNamesByRecordId[item.record.id] ?: emptyList(),
-                            onClick = { onRecordClick(item.record) },
+                            details = item.record,
+                            partsExpanded = item.partsExpanded,
+                            onTogglePartsClick = { viewModel.toggleRecordParts(item.record.record.id) },
+                            onClick = { onRecordClick(item.record.record) },
                         )
                     }
                 }
@@ -220,60 +224,117 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
 }
 
 /**
- * A record's preview row, split into two blocks so a long description can
- * never run into the amount: block 1 (date + tags on top, description
- * below) fills the available width on the left, two tiers; block 2 (the
- * signed amount) gets its own column on the right, outside block 1's
- * width so the description tier can never run under it. Date, the
- * "Теги: " label, and the amount all share [RecordTextSize]/
- * [RecordTextWeight] and are baseline-aligned (top-aligning their boxes
- * isn't enough — padding and the taller chips shift the glyphs); a single
- * [Text] carries "Описание: " inline with the value (see
- * [DescriptionLine]) so wrapped lines run the full block-1 width instead
- * of being squeezed into whatever's left of a fixed-width label column.
+ * A record's preview row in three columns, each confined to its own width
+ * so text never runs into a neighbor:
+ *
+ * 1. the day of month, fixed width;
+ * 2. the data — tags, the parts with their subtotals, the description —
+ *    taking whatever width is left (`weight(1f)`), so anything long wraps
+ *    *inside* this column;
+ * 3. the record's signed total.
+ *
+ * Columns 1 and 3 are measured first and the middle one gets the rest,
+ * which is what keeps it from overlapping them. The date, the "Теги: "
+ * label, and the total share [RecordTextSize]/[RecordTextWeight] and are
+ * baseline-aligned: the middle [Column] reports its first line's baseline.
+ *
+ * A one-part record shows a single tags line (global tags highlighted).
+ * A split record shows its global tags, then a collapsed "▸ N частей"
+ * toggle; expanded, one line per part with its local tags and subtotal.
+ * The toggle has its own click handler, so tapping it expands the parts
+ * instead of opening the record.
  */
 @Composable
-private fun RecordRow(record: Record, tagNames: List<String>, onClick: () -> Unit) {
+private fun RecordRow(
+    details: RecordWithParts,
+    partsExpanded: Boolean,
+    onTogglePartsClick: () -> Unit,
+    onClick: () -> Unit,
+) {
+    val record = details.record
+    val isSplit = details.parts.size > 1
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
     ) {
-        // Block 1: date + tags tier, description tier below — both
-        // confined to whatever width is left after block 2's amount
-        // column, so a long description never runs under it. Its first
-        // baseline is the date/tags tier's, which the amount aligns to.
-        Column(modifier = Modifier.weight(1f).alignByBaseline()) {
-            Row {
-                Text(
-                    text = record.date.day.toString().padStart(2, '0'),
-                    fontWeight = RecordTextWeight,
-                    fontSize = RecordTextSize,
-                    modifier = Modifier.width(32.dp).alignByBaseline(),
+        Text(
+            text = record.date.day.toString().padStart(2, '0'),
+            fontWeight = RecordTextWeight,
+            fontSize = RecordTextSize,
+            modifier = Modifier.width(32.dp).alignByBaseline(),
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp, end = 12.dp)
+                .alignByBaseline(),
+        ) {
+            val globalChips = details.tags.map { TagChip(it.name, global = true) }
+            val headerChips = if (isSplit) globalChips else globalChips + details.parts.single().tags.map { TagChip(it.name) }
+            LabeledTagsField("Теги", headerChips)
+            if (isSplit) {
+                PartsToggle(
+                    count = details.parts.size,
+                    expanded = partsExpanded,
+                    onClick = onTogglePartsClick,
+                    modifier = Modifier.testTag("partsToggle-${record.id}"),
                 )
-                LabeledTagsField(
-                    "Теги",
-                    tagNames,
-                    modifier = Modifier.weight(1f).padding(start = 8.dp).alignByBaseline(),
-                )
+                if (partsExpanded) {
+                    for (part in details.parts) {
+                        PartLine(tagNames = part.tags.map { it.name }, amountCents = part.part.amountCents)
+                    }
+                }
             }
-            DescriptionLine(
-                text = record.description?.takeIf { it.isNotBlank() } ?: "без описания",
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: "без описания")
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        // Block 2: the amount, in its own column on the right.
         val (signedCents, color) = when (record.type) {
-            RecordType.INCOME -> record.amountCents to IncomeColor
-            RecordType.COST -> -record.amountCents to MaterialTheme.colorScheme.error
+            RecordType.INCOME -> details.amountCents to IncomeColor
+            RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
         }
         Text(
             text = formatSignedCents(signedCents),
             color = color,
             fontWeight = RecordTextWeight,
             fontSize = RecordTextSize,
+            modifier = Modifier.alignByBaseline(),
+        )
+    }
+}
+
+@Composable
+private fun PartsToggle(count: Int, expanded: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Text(
+        text = "${if (expanded) "▾" else "▸"} $count ${partsWord(count)}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.clickable(onClick = onClick).padding(vertical = 2.dp),
+    )
+}
+
+private data class TagChip(val name: String, val global: Boolean = false)
+
+/** One part of a split record: its tags, and its subtotal pinned to the right edge of the data column. */
+@Composable
+private fun PartLine(tagNames: List<String>, amountCents: Long) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.weight(1f).padding(end = 8.dp).alignByBaseline()) {
+            if (tagNames.isEmpty()) {
+                Text(
+                    "без тегов",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                TagChips(tagNames.map { TagChip(it) })
+            }
+        }
+        Text(
+            text = formatCents(amountCents),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.alignByBaseline(),
         )
     }
@@ -302,7 +363,7 @@ private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
  * can line it up with the date and amount via `alignByBaseline()`.
  */
 @Composable
-private fun LabeledTagsField(label: String, tagNames: List<String>, modifier: Modifier = Modifier) {
+private fun LabeledTagsField(label: String, chips: List<TagChip>, modifier: Modifier = Modifier) {
     Row(modifier = modifier) {
         Text(
             text = "$label: ",
@@ -311,25 +372,33 @@ private fun LabeledTagsField(label: String, tagNames: List<String>, modifier: Mo
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.alignByBaseline(),
         )
-        if (tagNames.isEmpty()) {
+        if (chips.isEmpty()) {
             Text("—", style = MaterialTheme.typography.bodySmall, modifier = Modifier.alignByBaseline())
         } else {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.alignByBaseline(),
+            TagChips(chips, modifier = Modifier.alignByBaseline())
+        }
+    }
+}
+
+/** Global tags are filled, local ones outlined — the same split as the form's two tag sections. */
+@Composable
+private fun TagChips(chips: List<TagChip>, modifier: Modifier = Modifier) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier,
+    ) {
+        for (chip in chips) {
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = if (chip.global) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
-                for (name in tagNames) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
-                }
+                Text(
+                    text = chip.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                )
             }
         }
     }
