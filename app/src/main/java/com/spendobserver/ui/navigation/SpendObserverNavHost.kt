@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -25,6 +26,7 @@ fun SpendObserverNavHost(
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
     tagRepository: TagRepository,
+    backupRepository: BackupRepository,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -36,6 +38,7 @@ fun SpendObserverNavHost(
             TrackerListScreen(
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = backupRepository,
                 onTrackerClick = { tracker -> navController.navigate(Route.TrackerDetail(tracker.id)) },
                 onEditTrackerClick = { tracker -> navController.navigate(Route.TrackerEdit(tracker.id)) },
                 onTrackerCreated = { trackerId -> navController.navigate(Route.TrackerDetail(trackerId)) },
@@ -50,6 +53,7 @@ fun SpendObserverNavHost(
                 trackerId = route.trackerId,
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = backupRepository,
                 onBackClick = { navController.popBackStack() },
                 onAddRecordClick = { navController.navigate(Route.RecordForm(trackerId = route.trackerId)) },
                 onRecordClick = { record ->

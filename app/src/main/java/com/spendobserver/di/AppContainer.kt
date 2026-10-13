@@ -2,6 +2,7 @@ package com.spendobserver.di
 
 import android.content.Context
 import com.spendobserver.data.local.AppDatabase
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -18,4 +19,5 @@ class AppContainer(context: Context) {
     val trackerRepository: TrackerRepository by lazy { TrackerRepository(database.trackerDao()) }
     val tagRepository: TagRepository by lazy { TagRepository(database.tagDao()) }
     val recordRepository: RecordRepository by lazy { RecordRepository(database) }
+    val backupRepository: BackupRepository by lazy { BackupRepository(database, recordRepository) }
 }

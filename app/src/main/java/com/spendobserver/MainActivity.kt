@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
                     trackerRepository = container.trackerRepository,
                     recordRepository = container.recordRepository,
                     tagRepository = container.tagRepository,
+                    backupRepository = container.backupRepository,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

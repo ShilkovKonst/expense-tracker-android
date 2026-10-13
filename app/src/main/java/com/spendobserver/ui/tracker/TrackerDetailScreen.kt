@@ -18,12 +18,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -32,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +56,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.AmountTotals
@@ -59,9 +66,12 @@ import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.partsWord
 import com.spendobserver.domain.summary.recordsWord
+import com.spendobserver.ui.backup.ExportScope
+import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
 import com.spendobserver.ui.common.MonthNames
 import com.spendobserver.ui.navigation.RecordChange
+import kotlinx.coroutines.launch
 
 private val IncomeColor = Color(0xFF2E7D32)
 
@@ -81,6 +91,7 @@ fun TrackerDetailScreen(
     trackerId: Long,
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
+    backupRepository: BackupRepository,
     onBackClick: () -> Unit,
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
@@ -104,6 +115,13 @@ fun TrackerDetailScreen(
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     var showDeleteTrackerDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val exportActions = rememberExportActions(backupRepository) { message ->
+        scope.launch { snackbarHostState.showSnackbar(message) }
+    }
+    val exportScope = ExportScope.One(trackerId, trackerTitle.orEmpty())
 
     // A save/delete result from the record form: hand it to the ViewModel
     // and clear it from the back-stack entry, so it fires exactly once.
@@ -151,24 +169,37 @@ fun TrackerDetailScreen(
                         Text("←")
                     }
                 },
-                // Statistics, then the same controls as the tracker's row on the tracker list.
+                // One overflow menu, like the tracker list's, instead of a row of icons
+                // squeezing the title.
                 actions = {
-                    IconButton(
-                        onClick = onStatsClick,
-                        modifier = Modifier.testTag("statsButton"),
-                    ) { Text("📊") }
-                    IconButton(
-                        onClick = onEditTrackerClick,
-                        modifier = Modifier.testTag("editTrackerButton"),
-                    ) { Text("✎") }
-                    IconButton(
-                        onClick = { showDeleteTrackerDialog = true },
-                        modifier = Modifier.testTag("deleteTrackerButton"),
-                    ) { Text("🗑") }
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.testTag("trackerMenuButton")) {
+                            Text("⋮")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            /** A menu entry that closes the menu before acting. */
+                            @Composable
+                            fun item(label: String, tag: String, action: () -> Unit) = DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    showMenu = false
+                                    action()
+                                },
+                                modifier = Modifier.testTag(tag),
+                            )
+                            item("Статистика", "statsItem", onStatsClick)
+                            item("Сохранить в файл", "exportSaveItem") { exportActions.save(exportScope) }
+                            item("Поделиться", "exportShareItem") { exportActions.share(exportScope) }
+                            HorizontalDivider()
+                            item("Редактировать", "editTrackerItem", onEditTrackerClick)
+                            item("Удалить", "deleteTrackerItem") { showDeleteTrackerDialog = true }
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddRecordClick,

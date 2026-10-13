@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.IconButton
@@ -18,13 +20,17 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,19 +42,29 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.recordsWord
+import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.backup.ExportScope
+import com.spendobserver.ui.backup.ImportDialogs
+import com.spendobserver.ui.backup.ImportState
+import com.spendobserver.ui.backup.ImportViewModel
+import com.spendobserver.ui.backup.rememberExportActions
+import com.spendobserver.ui.backup.rememberImportLauncher
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackerListScreen(
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
+    backupRepository: BackupRepository,
     onTrackerClick: (Tracker) -> Unit = {},
     onEditTrackerClick: (Tracker) -> Unit = {},
     onTrackerCreated: (trackerId: Long) -> Unit = {},
@@ -67,15 +83,69 @@ fun TrackerListScreen(
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var trackerToDelete by remember { mutableStateOf<Tracker?>(null) }
+    var showMenu by remember { mutableStateOf(false) }
+
+    val importViewModel: ImportViewModel = viewModel(
+        factory = remember(backupRepository, trackerRepository) {
+            viewModelFactory { initializer { ImportViewModel(backupRepository, trackerRepository) } }
+        },
+    )
+    val importState by importViewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
+    val exportActions = rememberExportActions(backupRepository, onMessage = showMessage)
+    val pickImportFile = rememberImportLauncher(onText = importViewModel::onFileLoaded)
+
+    LaunchedEffect(importState) {
+        val done = importState as? ImportState.Done ?: return@LaunchedEffect
+        importViewModel.dismiss()
+        val n = done.trackerCount
+        showMessage("Импортировано: $n ${russianPlural(n, "трекер", "трекера", "трекеров")}")
+    }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Список трекеров") },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.testTag("trackerListMenuButton")) {
+                            Text("⋮")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Импорт из файла") },
+                                onClick = {
+                                    showMenu = false
+                                    pickImportFile()
+                                },
+                                modifier = Modifier.testTag("importItem"),
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Сохранить все в файл") },
+                                enabled = trackers.isNotEmpty(),
+                                onClick = {
+                                    showMenu = false
+                                    exportActions.save(ExportScope.All)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Поделиться всеми") },
+                                enabled = trackers.isNotEmpty(),
+                                onClick = {
+                                    showMenu = false
+                                    exportActions.share(ExportScope.All)
+                                },
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showCreateDialog = true },
@@ -130,6 +200,13 @@ fun TrackerListScreen(
             },
         )
     }
+
+    ImportDialogs(
+        state = importState,
+        onSetResolution = importViewModel::setResolution,
+        onConfirm = importViewModel::confirm,
+        onDismiss = importViewModel::dismiss,
+    )
 
     trackerToDelete?.let { tracker ->
         DeleteTrackerDialog(

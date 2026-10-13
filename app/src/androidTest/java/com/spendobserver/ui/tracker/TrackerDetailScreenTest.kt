@@ -14,10 +14,11 @@ import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
-import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -75,6 +76,7 @@ class TrackerDetailScreenTest {
                 trackerId = trackerId,
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
                 onBackClick = {},
                 recordChange = recordChange,
             )
@@ -282,6 +284,7 @@ class TrackerDetailScreenTest {
                 trackerId = trackerId,
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
                 onBackClick = {},
                 onRecordClick = { openedCount++ },
                 recordChange = RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false),
@@ -323,17 +326,44 @@ class TrackerDetailScreenTest {
                 trackerId = trackerId,
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
                 onBackClick = {},
                 onTrackerDeleted = { deletedCount++ },
             )
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("deleteTrackerButton").performClick()
+        composeRule.onNodeWithTag("trackerMenuButton").performClick()
+        composeRule.onNodeWithTag("deleteTrackerItem").performClick()
         composeRule.onNodeWithText("Удалить").performClick()
         composeRule.waitForIdle()
 
         assertEquals(1, deletedCount)
         assertNull(runBlocking { trackerRepository.getTracker(trackerId) })
+    }
+
+    @Test
+    fun menu_holdsStatsExportEditAndDelete() {
+        var statsOpened = false
+        composeRule.setContent {
+            TrackerDetailScreen(
+                trackerId = trackerId,
+                trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
+                onBackClick = {},
+                onStatsClick = { statsOpened = true },
+            )
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("trackerMenuButton").performClick()
+        listOf("statsItem", "exportSaveItem", "exportShareItem", "editTrackerItem", "deleteTrackerItem").forEach {
+            composeRule.onNodeWithTag(it).assertExists()
+        }
+        composeRule.onNodeWithTag("statsItem").performClick()
+
+        assertEquals(true, statsOpened)
+        composeRule.onNodeWithTag("statsItem").assertDoesNotExist()
     }
 }

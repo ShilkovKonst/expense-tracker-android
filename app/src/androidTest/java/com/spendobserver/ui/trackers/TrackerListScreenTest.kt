@@ -2,6 +2,7 @@ package com.spendobserver.ui.trackers
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +16,7 @@ import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import kotlinx.coroutines.flow.first
@@ -55,6 +57,7 @@ class TrackerListScreenTest {
             TrackerListScreen(
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
                 onEditTrackerClick = onEditTrackerClick,
             )
         }
@@ -167,6 +170,7 @@ class TrackerListScreenTest {
             TrackerListScreen(
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
                 onTrackerCreated = { createdId = it },
             )
         }
@@ -192,5 +196,16 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("trackerTitleInput").assertExists() // dialog stays open
         val trackers = runBlocking { trackerRepository.observeTrackers().first() }
         assertEquals(1, trackers.size)
+    }
+
+    @Test
+    fun menu_offersImport_andExportOnlyWhenThereAreTrackers() {
+        setContent()
+
+        composeRule.onNodeWithTag("trackerListMenuButton").performClick()
+
+        composeRule.onNodeWithTag("importItem").assertIsEnabled()
+        composeRule.onNodeWithText("Сохранить все в файл").assertIsNotEnabled()
+        composeRule.onNodeWithText("Поделиться всеми").assertIsNotEnabled()
     }
 }
