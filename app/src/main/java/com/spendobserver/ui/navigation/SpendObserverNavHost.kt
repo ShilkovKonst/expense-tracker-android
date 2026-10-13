@@ -14,6 +14,7 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.record.RecordFormScreen
+import com.spendobserver.ui.stats.StatsScreen
 import com.spendobserver.ui.tracker.TrackerDetailScreen
 import com.spendobserver.ui.trackers.TrackerEditScreen
 import com.spendobserver.ui.trackers.TrackerListScreen
@@ -55,6 +56,7 @@ fun SpendObserverNavHost(
                     navController.navigate(Route.RecordForm(trackerId = route.trackerId, recordId = record.id))
                 },
                 onEditTrackerClick = { navController.navigate(Route.TrackerEdit(route.trackerId)) },
+                onStatsClick = { navController.navigate(Route.TrackerStats(route.trackerId)) },
                 // Back to the start screen; the deleted tracker's entry must not stay on the stack.
                 onTrackerDeleted = { navController.popBackStack(Route.TrackerList, inclusive = false) },
                 recordChange = recordChange,
@@ -84,6 +86,16 @@ fun SpendObserverNavHost(
             TrackerEditScreen(
                 trackerId = route.trackerId,
                 trackerRepository = trackerRepository,
+                tagRepository = tagRepository,
+                onBackClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        composable<Route.TrackerStats> { backStackEntry ->
+            val route: Route.TrackerStats = backStackEntry.toRoute()
+            StatsScreen(
+                trackerId = route.trackerId,
+                recordRepository = recordRepository,
                 tagRepository = tagRepository,
                 onBackClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxSize(),

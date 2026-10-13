@@ -17,3 +17,9 @@ fun recordsWord(count: Int): String = russianPlural(count, "запись", "за
 
 /** 1 часть, 2-4 части, 5+ (and 11-14) частей. */
 fun partsWord(count: Int): String = russianPlural(count, "часть", "части", "частей")
+
+/** 1 расход, 2-4 расхода, 5+ (and 11-14) расходов. */
+fun costsWord(count: Int): String = russianPlural(count, "расход", "расхода", "расходов")
+
+/** 1 доход, 2-4 дохода, 5+ (and 11-14) доходов. */
+fun incomesWord(count: Int): String = russianPlural(count, "доход", "дохода", "доходов")

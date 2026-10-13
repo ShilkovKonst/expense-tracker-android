@@ -60,12 +60,9 @@ import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.partsWord
 import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.MonthNames
 import com.spendobserver.ui.navigation.RecordChange
 
-private val MonthNames = listOf(
-    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-)
 private val IncomeColor = Color(0xFF2E7D32)
 
 // Record-row typography: date, the "Теги:"/"Описание:" labels, and the
@@ -88,6 +85,7 @@ fun TrackerDetailScreen(
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
     onEditTrackerClick: () -> Unit = {},
+    onStatsClick: () -> Unit = {},
     onTrackerDeleted: () -> Unit = {},
     recordChange: RecordChange? = null,
     onRecordChangeConsumed: () -> Unit = {},
@@ -153,8 +151,12 @@ fun TrackerDetailScreen(
                         Text("←")
                     }
                 },
-                // Same controls as the tracker's row on the tracker list.
+                // Statistics, then the same controls as the tracker's row on the tracker list.
                 actions = {
+                    IconButton(
+                        onClick = onStatsClick,
+                        modifier = Modifier.testTag("statsButton"),
+                    ) { Text("📊") }
                     IconButton(
                         onClick = onEditTrackerClick,
                         modifier = Modifier.testTag("editTrackerButton"),
