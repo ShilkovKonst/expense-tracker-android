@@ -175,6 +175,9 @@ private fun PeriodChart(
                         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
                     ),
                 ),
+                // Year labels ("2026") are wider than the default 16dp gap between bars:
+                // packed that tight, Vico hides every label that would overlap a neighbor.
+                columnCollectionSpacing = if (period == StatsPeriod.AllTime) 40.dp else 16.dp,
                 rangeProvider = rangeProvider,
             ),
             startAxis = VerticalAxis.rememberStart(valueFormatter = startFormatter, itemPlacer = startItemPlacer),
