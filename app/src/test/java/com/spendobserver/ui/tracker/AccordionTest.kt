@@ -32,7 +32,7 @@ class AccordionTest {
         val items = accordionItems(groups, expandedYears = setOf(2026), expandedMonths = setOf(2026 to 9))
 
         assertEquals(
-            listOf("year-2026", "month-2026-9", "record-1", "record-2", "month-2026-8", "year-2025"),
+            listOf("year-2026", "month-2026-8", "month-2026-9", "record-2", "record-1", "year-2025"),
             items.map { it.key },
         )
     }

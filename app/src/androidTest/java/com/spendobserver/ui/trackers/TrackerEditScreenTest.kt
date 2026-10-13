@@ -41,7 +41,6 @@ class TrackerEditScreenTest {
     private lateinit var trackerRepository: TrackerRepository
     private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
-    private var savedCount = 0
 
     @Before
     fun setUp() = runBlocking {
@@ -51,7 +50,6 @@ class TrackerEditScreenTest {
         tagRepository = TagRepository(db.tagDao())
 
         trackerId = trackerRepository.insertTracker(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-        savedCount = 0
     }
 
     @After
@@ -65,7 +63,6 @@ class TrackerEditScreenTest {
                 trackerId = trackerId,
                 trackerRepository = trackerRepository,
                 tagRepository = tagRepository,
-                onSaved = { savedCount++ },
                 onBackClick = {},
             )
         }
@@ -90,9 +87,33 @@ class TrackerEditScreenTest {
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
         composeRule.waitForIdle()
 
-        assertEquals(1, savedCount)
         val tracker = runBlocking { trackerRepository.getTracker(trackerId) }
         assertEquals("Home", tracker?.title)
+        // Saved and still on screen: nothing left to save or revert.
+        composeRule.onNodeWithTag("saveTrackerButton").assertIsNotEnabled()
+    }
+
+    @Test
+    fun unchangedName_disablesSaveAndRevert() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("saveTrackerButton").assertIsNotEnabled()
+        composeRule.onNodeWithTag("revertTitleButton").assertIsNotEnabled()
+    }
+
+    @Test
+    fun revert_restoresTheSavedName() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
+        composeRule.onNodeWithTag("trackerNameInput").performTextInput("Home")
+        composeRule.onNodeWithTag("revertTitleButton").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Family").assertExists()
+        composeRule.onNodeWithTag("revertTitleButton").assertIsNotEnabled()
     }
 
     @Test
@@ -105,7 +126,7 @@ class TrackerEditScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Введите название").assertExists()
-        assertEquals(0, savedCount)
+        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 
     @Test
@@ -170,21 +191,7 @@ class TrackerEditScreenTest {
     }
 
     @Test
-    fun unusedTag_movesToTheOtherLevel() {
-        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "Ашан")) }
-        setContent()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("не используется").assertExists()
-        composeRule.onNodeWithTag("toggleTagLevelButton-Ашан").performClick()
-        composeRule.waitForIdle()
-
-        val tag = runBlocking { tagRepository.observeTags(trackerId).first().single() }
-        assertTrue(tag.isGlobal)
-    }
-
-    @Test
-    fun usedTag_cannotChangeLevel() {
+    fun usedTag_showsInHowManyRecords() {
         runBlocking {
             val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "алко"))
             RecordRepository(db).insertRecord(
@@ -196,8 +203,7 @@ class TrackerEditScreenTest {
         setContent()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("в 1 записи — уровень не изменить").assertExists()
-        composeRule.onNodeWithTag("toggleTagLevelButton-алко").assertIsNotEnabled()
+        composeRule.onNodeWithText("в 1 записи").assertExists()
     }
 
     @Test
@@ -212,22 +218,19 @@ class TrackerEditScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
-        assertEquals(0, savedCount)
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 
     @Test
-    fun keepingOwnTitle_withStraySpaces_savesTrimmed() {
+    fun ownTitle_withStraySpaces_doesNotCountAsAChange() {
         setContent()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput("  Family  ")
-        composeRule.onNodeWithTag("saveTrackerButton").performClick()
         composeRule.waitForIdle()
 
-        assertEquals(1, savedCount)
-        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
+        composeRule.onNodeWithTag("saveTrackerButton").assertIsNotEnabled()
     }
 
     @Test
@@ -277,6 +280,6 @@ class TrackerEditScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
-        assertEquals(0, savedCount)
+        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 }

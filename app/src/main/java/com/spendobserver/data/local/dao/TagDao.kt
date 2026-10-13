@@ -44,17 +44,4 @@ interface TagDao {
             "FROM tags t WHERE t.trackerId = :trackerId",
     )
     fun observeUsage(trackerId: Long): Flow<List<TagUsageRow>>
-
-    /**
-     * Moves a tag between the global and local level — but only while no
-     * record uses it, checked in the same statement so nothing can link it
-     * in between. Returns the number of rows changed: 0 means it was in use
-     * (or doesn't exist) and nothing happened.
-     */
-    @Query(
-        "UPDATE tags SET isGlobal = :isGlobal WHERE id = :tagId " +
-            "AND NOT EXISTS (SELECT 1 FROM record_tags WHERE tagId = :tagId) " +
-            "AND NOT EXISTS (SELECT 1 FROM record_part_tags WHERE tagId = :tagId)",
-    )
-    suspend fun setGlobalIfUnused(tagId: Long, isGlobal: Boolean): Int
 }

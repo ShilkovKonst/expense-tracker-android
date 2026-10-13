@@ -20,7 +20,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
@@ -65,7 +69,10 @@ fun AlwaysLabeledTextField(
  * as a minimized [OutlinedTextField] label, for things that aren't a single
  * field (a record's part: its amount, tags, and remove button).
  *
- * The cut is faked by painting the label over the border with the page
+ * An optional [action] (e.g. a "+" chip) cuts into the top border at the
+ * other end, centered on the line.
+ *
+ * The cuts are faked by painting over the border with the page
  * [background] color, so this must sit directly on that background.
  */
 @Composable
@@ -73,16 +80,20 @@ fun LabeledOutlinedBox(
     label: String,
     modifier: Modifier = Modifier,
     background: Color = MaterialTheme.colorScheme.background,
+    action: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Top padding leaves room for the half of the label sticking out above the border.
-    Box(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
+    // Top padding leaves room for what sticks out above the border: half the
+    // label, or half the action's 48dp touch target (its visible 32dp chip
+    // fits within the 16dp).
+    Box(modifier = modifier.fillMaxWidth().padding(top = if (action != null) 16.dp else 8.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, MaterialTheme.colorScheme.outline, OutlinedTextFieldDefaults.shape)
                 // 16dp start, like an OutlinedTextField's text, so content lines up with the fields above.
-                .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                // With an action, more top room so its touch target's lower half stays off the content.
+                .padding(start = 16.dp, end = 12.dp, top = if (action != null) 24.dp else 16.dp, bottom = 12.dp),
             content = content,
         )
         Text(
@@ -94,5 +105,23 @@ fun LabeledOutlinedBox(
                 .background(background)
                 .padding(horizontal = 4.dp),
         )
+        if (action != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-12).dp, y = (-24).dp)
+                    // Erase only a thin band of border behind the action, not its
+                    // whole 48dp box, which would paint over the content below.
+                    .drawBehind {
+                        val band = 4.dp.toPx()
+                        drawRect(
+                            color = background,
+                            topLeft = Offset(0f, size.height / 2 - band / 2),
+                            size = Size(size.width, band),
+                        )
+                    }
+                    .padding(horizontal = 4.dp),
+            ) { action() }
+        }
     }
 }

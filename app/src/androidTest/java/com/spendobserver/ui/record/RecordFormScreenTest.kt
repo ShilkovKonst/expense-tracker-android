@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -193,57 +192,6 @@ class RecordFormScreenTest {
     }
 
     @Test
-    fun managingTags_renamesThroughDialog() {
-        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
-
-        setContent()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithTag("manageTagsButton").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("tagNameInput").performTextClearance()
-        composeRule.onNodeWithTag("tagNameInput").performTextInput("fuel & gas")
-        composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("fuel & gas").assertExists()
-    }
-
-    @Test
-    fun managingTags_deletesAndUnselectsIt() {
-        runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
-
-        setContent()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("fuel").performClick()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithTag("manageTagsButton").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("deleteTagButton-fuel").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("Удалить").performClick()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("fuel").assertDoesNotExist()
-        val remainingTags = runBlocking { tagRepository.observeTags(trackerId).first() }
-        assertTrue(remainingTags.isEmpty())
-
-        // The deleted tag's id must also be gone from in-memory selection, or
-        // saving would try to link the record to a tag id that no longer
-        // exists and violate the record_tags -> tags foreign key.
-        composeRule.onNodeWithTag("amountInput").performTextInput("10")
-        composeRule.onNodeWithTag("saveButton").performClick()
-        composeRule.waitForIdle()
-
-        assertEquals(1, savedCount)
-        val record = runBlocking { recordRepository.observeAll(trackerId).first().single() }
-        assertTrue(record.tags.isEmpty() && record.parts.all { it.tags.isEmpty() })
-    }
-
-    @Test
     fun splitReceipt_savesOneRecordWithTypedPartsAndComputedRemainder() {
         val (shop, groceries, alcohol) = runBlocking {
             Triple(
@@ -263,7 +211,7 @@ class RecordFormScreenTest {
         composeRule.onAllNodesWithText("алко")[0].performScrollTo().performClick()
         composeRule.onAllNodesWithText("продукты")[1].performScrollTo().performClick()
         composeRule.onNodeWithTag("remainderAmount").performScrollTo().assertTextEquals("2650.00")
-        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitForIdle()
 
         assertEquals(1, savedCount)
@@ -283,7 +231,7 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("amountInput").performTextInput("100")
         composeRule.onNodeWithTag("splitButton").performClick()
         composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("150")
-        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Сумма частей должна быть меньше итога чека").assertExists()
@@ -317,7 +265,7 @@ class RecordFormScreenTest {
         composeRule.onNodeWithText("Создать").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("amountInput").performTextInput("100")
-        composeRule.onNodeWithTag("saveButton").performScrollTo().performClick()
+        composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitForIdle()
 
         val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }

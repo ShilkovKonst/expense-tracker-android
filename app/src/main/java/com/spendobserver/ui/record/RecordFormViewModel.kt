@@ -154,34 +154,6 @@ class RecordFormViewModel(
         }
     }
 
-    /** [onRenamed] runs once the name is accepted (or unchanged), so the dialog can close. */
-    fun renameTag(tag: Tag, newName: String, onRenamed: () -> Unit = {}) {
-        val name = newName.trimInvisible()
-        if (name == tag.name) {
-            onRenamed()
-            return
-        }
-        viewModelScope.launch {
-            tagRepository.tagNameError(trackerId, name, exceptTagId = tag.id)?.let {
-                _tagNameError.value = it
-                return@launch
-            }
-            tagRepository.updateTag(tag.copy(name = name))
-            _tagNameError.value = null
-            onRenamed()
-        }
-    }
-
-    fun deleteTag(tag: Tag) {
-        viewModelScope.launch {
-            tagRepository.deleteTag(tag)
-            _globalTagIds.update { it - tag.id }
-            _parts.update { input ->
-                input.parts.filter { tag.id in it.tagIds }.fold(input) { acc, part -> acc.togglePartTag(part.id, tag.id) }
-            }
-        }
-    }
-
     fun save(onSaved: (RecordChange) -> Unit) {
         val drafts = _parts.value.toDrafts(calculatorMode)
         if (drafts == null) {

@@ -8,3 +8,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Personal emulator test-data snapshot and its backup/restore scripts
+/devdata/

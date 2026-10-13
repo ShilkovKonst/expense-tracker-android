@@ -29,7 +29,4 @@ class TagRepository(private val tagDao: TagDao) {
     /** Records using each tag, keyed by tag id. */
     fun observeUsage(trackerId: Long): Flow<Map<Long, Int>> =
         tagDao.observeUsage(trackerId).map { rows -> rows.associate { it.tagId to it.recordCount } }
-
-    /** `false` when the tag is in use — its level can only change while no record carries it. */
-    suspend fun setGlobal(tag: Tag, isGlobal: Boolean): Boolean = tagDao.setGlobalIfUnused(tag.id, isGlobal) == 1
 }

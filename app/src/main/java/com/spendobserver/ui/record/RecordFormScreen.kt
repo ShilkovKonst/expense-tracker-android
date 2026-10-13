@@ -16,14 +16,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -43,8 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -61,6 +57,9 @@ import com.spendobserver.domain.record.PartInput
 import com.spendobserver.domain.record.PartsError
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
+import com.spendobserver.ui.common.AddChip
+import com.spendobserver.ui.common.FormActionButtons
+import com.spendobserver.ui.common.FormActionsBottomPadding
 import com.spendobserver.ui.common.AlwaysLabeledTextField
 import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
@@ -105,9 +104,6 @@ fun RecordFormScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var newTagTarget by remember { mutableStateOf<NewTagTarget?>(null) }
-    var showManageTagsDialog by remember { mutableStateOf(false) }
-    var tagToRename by remember { mutableStateOf<Tag?>(null) }
-    var tagToDelete by remember { mutableStateOf<Tag?>(null) }
     var showDeleteRecordDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -129,13 +125,20 @@ fun RecordFormScreen(
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
+        floatingActionButton = {
+            FormActionButtons(
+                onCancel = onBackClick,
+                onSave = { viewModel.save(onSaved) },
+                saveTestTag = "saveButton",
+            )
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FormActionsBottomPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -201,13 +204,6 @@ fun RecordFormScreen(
                 )
             }
 
-            if (tags.isNotEmpty()) {
-                TextButton(
-                    onClick = { showManageTagsDialog = true },
-                    modifier = Modifier.testTag("manageTagsButton"),
-                ) { Text("Управление тегами") }
-            }
-
             if (!parts.isSplit) {
                 // Simple record: one amount field, exactly like before parts existed.
                 val only = parts.parts.single()
@@ -235,7 +231,16 @@ fun RecordFormScreen(
             }
 
             if (parts.isSplit) {
+                val addPartButton = @Composable {
+                    TextButton(
+                        onClick = viewModel::addPart,
+                        modifier = Modifier.testTag("addPartButton"),
+                    ) { Text("+ Часть") }
+                }
                 parts.parts.forEachIndexed { index, part ->
+                    // New parts are inserted before the remainder, so the
+                    // button that adds them sits right above it too.
+                    if (part.id == parts.remainderPartId) addPartButton()
                     PartCard(
                         index = index,
                         part = part,
@@ -251,10 +256,7 @@ fun RecordFormScreen(
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(
-                        onClick = viewModel::addPart,
-                        modifier = Modifier.testTag("addPartButton"),
-                    ) { Text("+ Часть") }
+                    if (parts.remainderPartId == null) addPartButton()
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = "Итого: ${evaluation.totalCents?.let(::formatCents) ?: "—"}",
@@ -271,11 +273,6 @@ fun RecordFormScreen(
                 placeholder = "Опционально",
                 modifier = Modifier.testTag("descriptionInput"),
             )
-
-            Button(
-                onClick = { viewModel.save(onSaved) },
-                modifier = Modifier.fillMaxWidth().testTag("saveButton"),
-            ) { Text("Сохранить") }
         }
     }
 
@@ -295,48 +292,6 @@ fun RecordFormScreen(
         ) { DatePicker(state = datePickerState) }
     }
 
-    if (showManageTagsDialog) {
-        AlertDialog(
-            onDismissRequest = { showManageTagsDialog = false },
-            title = { Text("Управление тегами") },
-            text = {
-                Column {
-                    for (tag in tags) {
-                        ListItem(
-                            headlineContent = { Text(tag.name) },
-                            supportingContent = if (tag.isGlobal) {
-                                { Text("общий") }
-                            } else {
-                                null
-                            },
-                            trailingContent = {
-                                Row {
-                                    IconButton(
-                                        onClick = {
-                                            showManageTagsDialog = false
-                                            tagToRename = tag
-                                        },
-                                        modifier = Modifier.testTag("renameTagButton-${tag.name}"),
-                                    ) { Text("✎") }
-                                    IconButton(
-                                        onClick = {
-                                            showManageTagsDialog = false
-                                            tagToDelete = tag
-                                        },
-                                        modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
-                                    ) { Text("🗑") }
-                                }
-                            },
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showManageTagsDialog = false }) { Text("Закрыть") }
-            },
-        )
-    }
-
     newTagTarget?.let { target ->
         TagNameDialog(
             title = if (target.isGlobal) "Новый общий тег" else "Новый тег",
@@ -351,38 +306,6 @@ fun RecordFormScreen(
             },
             error = tagNameError,
             onTextChange = viewModel::clearTagNameError,
-        )
-    }
-
-    tagToRename?.let { tag ->
-        TagNameDialog(
-            title = "Переименовать тег",
-            initialName = tag.name,
-            confirmLabel = "Сохранить",
-            onConfirm = { newName -> viewModel.renameTag(tag, newName) { tagToRename = null } },
-            onDismiss = {
-                tagToRename = null
-                viewModel.clearTagNameError()
-            },
-            error = tagNameError,
-            onTextChange = viewModel::clearTagNameError,
-        )
-    }
-
-    tagToDelete?.let { tag ->
-        AlertDialog(
-            onDismissRequest = { tagToDelete = null },
-            title = { Text("Удалить тег «${tag.name}»?") },
-            text = { Text("Тег будет отвязан от всех записей, где он использовался.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteTag(tag)
-                    tagToDelete = null
-                }) { Text("Удалить") }
-            },
-            dismissButton = {
-                TextButton(onClick = { tagToDelete = null }) { Text("Отмена") }
-            },
         )
     }
 
@@ -515,12 +438,18 @@ private fun PartCard(
                     }
                 }
             }
+            // "+" stays inline here: on the card's border it would read as "add a part".
             TagChips(
                 tags = localTags,
                 selectedIds = part.tagIds,
                 onToggle = onToggleTag,
-                onNewTag = onNewTag,
-                newTagChipTestTag = "newTagChip-$index",
+                trailing = {
+                    AddChip(
+                        onClick = onNewTag,
+                        description = "Новый тег",
+                        modifier = Modifier.testTag("newTagChip-$index"),
+                    )
+                },
             )
             if (errors.any { it is PartsError.DuplicateTags && part.id in it.partIds }) {
                 Text("Часть с такими же тегами уже есть", color = MaterialTheme.colorScheme.error)
@@ -540,15 +469,16 @@ private fun TagChipsSection(
     newTagChipTestTag: String,
     modifier: Modifier = Modifier,
 ) {
-    // Same border-cut label as the date, amount, and description fields.
-    LabeledOutlinedBox(label = "$title — $hint", modifier = modifier) {
-        TagChips(
-            tags = tags,
-            selectedIds = selectedIds,
-            onToggle = onToggle,
-            onNewTag = onNewTag,
-            newTagChipTestTag = newTagChipTestTag,
-        )
+    // Same border-cut label as the date, amount, and description fields;
+    // "+" cuts into the border at the other end.
+    LabeledOutlinedBox(
+        label = "$title — $hint",
+        modifier = modifier,
+        action = {
+            AddChip(onClick = onNewTag, description = "Новый тег", modifier = Modifier.testTag(newTagChipTestTag))
+        },
+    ) {
+        TagChips(tags = tags, selectedIds = selectedIds, onToggle = onToggle)
     }
 }
 
@@ -563,9 +493,8 @@ private fun TagChips(
     tags: List<Tag>,
     selectedIds: Set<Long>,
     onToggle: (Long) -> Unit,
-    onNewTag: () -> Unit,
-    newTagChipTestTag: String,
     modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         if (tags.isEmpty()) {
@@ -602,17 +531,10 @@ private fun TagChips(
                 }
             }
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        // Just "+": in a tags box it's clear what gets added; screen
-        // readers still get the full action from the content description.
-        FilterChip(
-            selected = false,
-            onClick = onNewTag,
-            label = { Text("+") },
-            modifier = Modifier
-                .testTag(newTagChipTestTag)
-                .semantics { contentDescription = "Новый тег" },
-        )
+        if (trailing != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            trailing()
+        }
     }
 }
 

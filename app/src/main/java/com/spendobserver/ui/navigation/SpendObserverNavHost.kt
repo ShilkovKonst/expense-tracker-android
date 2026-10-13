@@ -85,7 +85,6 @@ fun SpendObserverNavHost(
                 trackerId = route.trackerId,
                 trackerRepository = trackerRepository,
                 tagRepository = tagRepository,
-                onSaved = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxSize(),
             )

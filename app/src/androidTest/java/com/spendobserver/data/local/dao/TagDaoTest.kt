@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -129,22 +128,5 @@ class TagDaoTest {
         val usage = tagDao.observeUsage(trackerId).first().associate { it.tagId to it.recordCount }
 
         assertEquals(mapOf(shop to 2, alcohol to 2, unused to 0), usage)
-    }
-
-    @Test
-    fun setGlobalIfUnused_changesAnUnusedTag() = runBlocking {
-        val id = tagDao.insert(Tag(trackerId = trackerId, name = "Ашан"))
-
-        assertEquals(1, tagDao.setGlobalIfUnused(id, true))
-        assertTrue(tagDao.getByTrackerAndName(trackerId, "Ашан")!!.isGlobal)
-    }
-
-    @Test
-    fun setGlobalIfUnused_refusesATagUsedByAPart() = runBlocking {
-        val id = tagDao.insert(Tag(trackerId = trackerId, name = "алко"))
-        insertRecord(emptyList(), listOf(id))
-
-        assertEquals(0, tagDao.setGlobalIfUnused(id, true))
-        assertFalse(tagDao.getByTrackerAndName(trackerId, "алко")!!.isGlobal)
     }
 }

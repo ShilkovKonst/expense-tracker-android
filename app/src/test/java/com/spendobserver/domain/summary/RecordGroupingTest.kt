@@ -37,7 +37,7 @@ class RecordGroupingTest {
     }
 
     @Test
-    fun yearsAndMonths_areOrderedNewestFirst() {
+    fun yearsAreNewestFirst_monthsFromJanuary() {
         val records = listOf(
             record(LocalDate(2025, 12, 1)),
             record(LocalDate(2026, 1, 1)),
@@ -47,11 +47,11 @@ class RecordGroupingTest {
         val groups = records.groupByYearMonth()
 
         assertEquals(listOf(2026, 2025), groups.map { it.year })
-        assertEquals(listOf(6, 1), groups[0].months.map { it.month })
+        assertEquals(listOf(1, 6), groups[0].months.map { it.month })
     }
 
     @Test
-    fun recordsWithinAMonth_areOrderedNewestFirst() {
+    fun recordsWithinAMonth_areOrderedFromStartOfMonth() {
         val records = listOf(
             record(LocalDate(2026, 3, 1)),
             record(LocalDate(2026, 3, 20)),
@@ -62,9 +62,23 @@ class RecordGroupingTest {
 
         val dates = groups[0].months[0].records.map { it.record.date }
         assertEquals(
-            listOf(LocalDate(2026, 3, 20), LocalDate(2026, 3, 10), LocalDate(2026, 3, 1)),
+            listOf(LocalDate(2026, 3, 1), LocalDate(2026, 3, 10), LocalDate(2026, 3, 20)),
             dates,
         )
+    }
+
+    @Test
+    fun sameDayRecords_keepEntryOrder() {
+        val day = LocalDate(2026, 3, 5)
+        val records = listOf(
+            recordWithParts(id = 3, date = day),
+            recordWithParts(id = 1, date = day),
+            recordWithParts(id = 2, date = day),
+        )
+
+        val groups = records.groupByYearMonth()
+
+        assertEquals(listOf(1L, 2L, 3L), groups[0].months[0].records.map { it.record.id })
     }
 
     @Test

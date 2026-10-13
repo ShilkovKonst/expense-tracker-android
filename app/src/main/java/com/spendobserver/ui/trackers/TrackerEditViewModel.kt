@@ -11,13 +11,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
  * Backs the tracker-edit screen: renaming the tracker and full tag CRUD
- * for it (create, rename, delete), plus moving an unused tag between the
- * global and local level.
+ * for it (create, rename, delete). Tag changes are stored at once; the
+ * title only on an explicit save, so it can be edited and reverted.
  */
 class TrackerEditViewModel(
     private val trackerId: Long,
@@ -27,6 +28,14 @@ class TrackerEditViewModel(
 
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
+
+    /** The title as stored — what revert goes back to, and what "changed" is measured against. */
+    private val savedTitle = MutableStateFlow("")
+
+    /** Whether saving would change anything; stray spaces don't count, saving trims them anyway. */
+    val isTitleChanged: StateFlow<Boolean> = combine(_title, savedTitle) { title, saved ->
+        title.trimInvisible() != saved
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), false)
 
     val tags: StateFlow<List<Tag>> = tagRepository.observeTags(trackerId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), emptyList())
@@ -40,7 +49,9 @@ class TrackerEditViewModel(
 
     init {
         viewModelScope.launch {
-            _title.value = trackerRepository.getTracker(trackerId)?.title.orEmpty()
+            val title = trackerRepository.getTracker(trackerId)?.title.orEmpty()
+            savedTitle.value = title
+            _title.value = title
         }
     }
 
@@ -49,8 +60,13 @@ class TrackerEditViewModel(
         _saveError.value = null
     }
 
+    fun revertTitle() {
+        _title.value = savedTitle.value
+        _saveError.value = null
+    }
+
     /** Refuses an empty name or one another tracker already has (compared after [trimInvisible]). */
-    fun save(onSaved: () -> Unit) {
+    fun saveTitle(onSaved: () -> Unit = {}) {
         val title = _title.value.trimInvisible()
         viewModelScope.launch {
             trackerRepository.titleError(title, exceptTrackerId = trackerId)?.let {
@@ -60,7 +76,11 @@ class TrackerEditViewModel(
             val tracker = trackerRepository.getTracker(trackerId) ?: return@launch
             catchingTitleClash {
                 trackerRepository.updateTracker(tracker.copy(title = title, updatedAt = System.currentTimeMillis()))
-            }.onSuccess { onSaved() }
+            }.onSuccess {
+                savedTitle.value = title
+                _title.value = title
+                onSaved()
+            }
                 .onFailure { _saveError.value = TITLE_TAKEN_ERROR }
         }
     }
@@ -85,11 +105,6 @@ class TrackerEditViewModel(
             _tagNameError.value = null
             onCreated()
         }
-    }
-
-    /** No-op for a tag in use — the repository refuses, and the screen disables the action anyway. */
-    fun toggleTagLevel(tag: Tag) {
-        viewModelScope.launch { tagRepository.setGlobal(tag, !tag.isGlobal) }
     }
 
     /** [onRenamed] runs once the name is accepted (or unchanged), so the dialog can close. */
