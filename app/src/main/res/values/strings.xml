@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">SpendObserver</string>
+    <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
+    <string name="locale_language" translatable="false">en</string>
 
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>

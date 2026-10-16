@@ -25,6 +25,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.amount
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForText
@@ -216,7 +217,7 @@ class RecordFormScreenTest {
         // Part 0's chips come first, the remainder's second.
         composeRule.onAllNodesWithText("алко")[0].performScrollTo().performClick()
         composeRule.onAllNodesWithText("продукты")[1].performScrollTo().performClick()
-        composeRule.onNodeWithTag("remainderAmount").performScrollTo().assertTextEquals("2650.00")
+        composeRule.onNodeWithTag("remainderAmount").performScrollTo().assertTextEquals(amount(265000))
         composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitFor { savedCount == 1 }
 
@@ -258,7 +259,7 @@ class RecordFormScreenTest {
 
         composeRule.onNodeWithTag("partAmountInput-0").assertTextContains("800.00")
         composeRule.onNodeWithTag("partAmountInput-1").performScrollTo().assertTextContains("2350.00")
-        composeRule.onNodeWithTag("recordTotal").performScrollTo().assertTextEquals("Итого: 3150.00")
+        composeRule.onNodeWithTag("recordTotal").performScrollTo().assertTextEquals("Итого: " + amount(315000))
     }
 
     @Test

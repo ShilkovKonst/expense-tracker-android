@@ -37,9 +37,12 @@ import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
+import com.spendobserver.domain.format.formatAmount
+import com.spendobserver.domain.format.formatWholeNumber
+import com.spendobserver.domain.format.shortMonthName
 import com.spendobserver.domain.stats.ChartBucket
 import com.spendobserver.domain.stats.StatsPeriod
-import com.spendobserver.domain.summary.formatCents
+import com.spendobserver.ui.common.rememberFormatLocale
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -47,10 +50,6 @@ import kotlin.math.roundToLong
 
 /** What the chart's Y axis measures. */
 enum class ChartMetric { COUNT, AMOUNT }
-
-private val ShortMonthNames = listOf(
-    "янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек",
-)
 
 /**
  * The bar chart for [period]: one bar per bucket, the Y value picked by
@@ -90,6 +89,8 @@ private fun PeriodChart(
         }
     }
     val maxValue = values.maxOrNull() ?: 0.0
+    // Vico's formatters below aren't composable, so they get the locale handed in.
+    val locale = rememberFormatLocale()
 
     // The producer owns the chart's data; each transaction re-draws it with an animation.
     val modelProducer = remember { CartesianChartModelProducer() }
@@ -99,20 +100,20 @@ private fun PeriodChart(
         }
     }
 
-    val bottomFormatter = remember(period) {
+    val bottomFormatter = remember(period, locale) {
         CartesianValueFormatter { _, x, _ ->
             val key = x.roundToInt()
             when (period) {
                 StatsPeriod.AllTime -> key.toString()
-                is StatsPeriod.Year -> ShortMonthNames.getOrElse(key - 1) { "" }
+                is StatsPeriod.Year -> if (key in 1..12) shortMonthName(key, locale) else ""
                 is StatsPeriod.Month -> key.toString()
             }
         }
     }
     // Whole values without a fraction, small amounts (an axis step under 1) with one.
-    val startFormatter = remember {
+    val startFormatter = remember(locale) {
         CartesianValueFormatter { _, y, _ ->
-            if (y == floor(y)) y.roundToLong().toString() else formatCents((y * 100).roundToLong())
+            if (y == floor(y)) formatWholeNumber(y.roundToLong(), locale) else formatAmount((y * 100).roundToLong(), locale)
         }
     }
     // Counts are whole numbers, so never step below 1; an all-zero chart gets the
@@ -152,14 +153,14 @@ private fun PeriodChart(
     )
     val marker = rememberDefaultCartesianMarker(
         label = markerLabel,
-        valueFormatter = remember {
+        valueFormatter = remember(locale) {
             DefaultCartesianMarker.ValueFormatter { _, targets ->
                 val key = targets.firstOrNull()?.x?.roundToInt()
                 val bucket = currentBuckets.firstOrNull { it.key == key }
                 when {
                     bucket == null -> ""
                     currentMetric == ChartMetric.COUNT -> bucket.recordCount.toString()
-                    else -> formatCents(bucket.amountCents)
+                    else -> formatAmount(bucket.amountCents, locale)
                 }
             }
         },

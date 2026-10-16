@@ -21,6 +21,7 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.testing.plural
+import com.spendobserver.testing.signedAmount
 import com.spendobserver.testing.string
 import com.spendobserver.testing.waitForNoText
 import com.spendobserver.testing.waitForTag
@@ -111,7 +112,7 @@ class TrackerListScreenTest {
         setContent()
         createTracker("Family")
 
-        composeRule.onNodeWithText(plural(R.plurals.records_count, 0) + " · 0.00").assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 0) + " · " + signedAmount(0)).assertExists()
     }
 
     @Test
@@ -131,7 +132,7 @@ class TrackerListScreenTest {
                 listOf(PartDraft(2000, emptySet())),
             )
         }
-        composeRule.waitForText(plural(R.plurals.records_count, 2) + " · +30.00")
+        composeRule.waitForText(plural(R.plurals.records_count, 2) + " · " + signedAmount(3000))
     }
 
     @Test

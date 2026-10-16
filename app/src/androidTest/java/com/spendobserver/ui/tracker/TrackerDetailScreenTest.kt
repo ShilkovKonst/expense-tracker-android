@@ -20,6 +20,9 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.amount
+import com.spendobserver.testing.month
+import com.spendobserver.testing.signedAmount
 import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
@@ -110,7 +113,7 @@ class TrackerDetailScreenTest {
         composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").assertExists()
-        composeRule.onNodeWithText("Март").assertDoesNotExist()
+        composeRule.onNodeWithText(month(3)).assertDoesNotExist()
         composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
     }
 
@@ -122,10 +125,10 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Март").assertExists()
+        composeRule.onNodeWithText(month(3)).assertExists()
         composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
 
-        composeRule.onNodeWithText("Март").performClick()
+        composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Описание: groceries").assertExists()
     }
@@ -138,16 +141,16 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 1000, "extra")
         }
         setContent()
-        composeRule.waitForText("+20.00")
+        composeRule.waitForText(signedAmount(2000))
 
         // Year nets all three records (5000 - 2000 - 1000 = 2000); only visible before expanding.
-        composeRule.onNodeWithText("+20.00").assertExists()
+        composeRule.onNodeWithText(signedAmount(2000)).assertExists()
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
 
         // March alone nets just its own two records (5000 - 2000 = 3000).
-        composeRule.onNodeWithText("+30.00").assertExists()
+        composeRule.onNodeWithText(signedAmount(3000)).assertExists()
     }
 
     @Test
@@ -198,7 +201,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Март").performClick()
+        composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("groceries").assertExists()
@@ -212,7 +215,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Март").performClick()
+        composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Описание: без описания").assertExists()
@@ -227,7 +230,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Март").performClick()
+        composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Описание: $longDescription").assertExists()
@@ -240,10 +243,10 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 2000, "this year")
         }
         setContent()
-        composeRule.waitForText("2 записи · +30.00")
+        composeRule.waitForText("2 записи · " + signedAmount(3000))
 
         // 2 records total, net across both years: 5000 - 2000 = 3000.
-        composeRule.onNodeWithText("2 записи · +30.00").assertExists()
+        composeRule.onNodeWithText("2 записи · " + signedAmount(3000)).assertExists()
     }
 
     @Test
@@ -260,7 +263,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("Описание: target").assertIsDisplayed()
         // Only the change's own year was opened.
-        composeRule.onNodeWithText("Декабрь").assertDoesNotExist()
+        composeRule.onNodeWithText(month(12)).assertDoesNotExist()
     }
 
     @Test
@@ -271,7 +274,7 @@ class TrackerDetailScreenTest {
         composeRule.waitForText("Описание: kept")
         composeRule.waitForIdle() // let the scroll to it settle
 
-        composeRule.onNodeWithText("Март").assertIsDisplayed()
+        composeRule.onNodeWithText(month(3)).assertIsDisplayed()
         composeRule.onNodeWithText("Описание: kept").assertIsDisplayed()
     }
 
@@ -299,14 +302,14 @@ class TrackerDetailScreenTest {
         composeRule.waitForText("▸ 2 части")
 
         composeRule.onNodeWithText("▸ 2 части").assertExists()
-        composeRule.onNodeWithText("800.00").assertDoesNotExist()
+        composeRule.onNodeWithText(amount(80000)).assertDoesNotExist()
 
         composeRule.onNodeWithTag("partsToggle-$recordId").performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("▾ 2 части").assertExists()
-        composeRule.onNodeWithText("800.00").assertIsDisplayed()
-        composeRule.onNodeWithText("2350.00").assertIsDisplayed()
+        composeRule.onNodeWithText(amount(80000)).assertIsDisplayed()
+        composeRule.onNodeWithText(amount(235000)).assertIsDisplayed()
         assertEquals(0, openedCount)
     }
 

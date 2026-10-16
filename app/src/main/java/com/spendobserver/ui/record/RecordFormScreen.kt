@@ -58,11 +58,13 @@ import com.spendobserver.domain.record.PartsError
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.ui.common.AddChip
+import com.spendobserver.ui.common.AlwaysLabeledTextField
 import com.spendobserver.ui.common.FormActionButtons
 import com.spendobserver.ui.common.FormActionsBottomPadding
-import com.spendobserver.ui.common.AlwaysLabeledTextField
 import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
+import com.spendobserver.ui.common.amountText
+import com.spendobserver.ui.common.dateText
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
@@ -155,7 +157,7 @@ fun RecordFormScreen(
             }
 
             OutlinedTextField(
-                value = formatDate(date),
+                value = dateText(date),
                 onValueChange = {},
                 // enabled = false, not readOnly = true: a read-only field
                 // still runs its own tap-to-focus/cursor gesture handling,
@@ -259,7 +261,7 @@ fun RecordFormScreen(
                     if (parts.remainderPartId == null) addPartButton()
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "Итого: ${evaluation.totalCents?.let(::formatCents) ?: "—"}",
+                        text = "Итого: ${evaluation.totalCents?.let { amountText(it) } ?: "—"}",
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.testTag("recordTotal"),
                     )
@@ -347,8 +349,9 @@ private fun AmountField(
             modifier = modifier.fillMaxWidth(),
         )
         val preview = amountCentsFrom(value)
+        // Compared in the field's own plain form; shown in the locale's.
         if (preview != null && value != formatCents(preview)) {
-            Text("= ${formatCents(preview)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("= ${amountText(preview)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (error != null) {
             Text(error, color = MaterialTheme.colorScheme.error)
@@ -415,7 +418,7 @@ private fun PartCard(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (isRemainder) {
                 Text(
-                    text = evaluation.partCents[part.id]?.let(::formatCents) ?: "—",
+                    text = evaluation.partCents[part.id]?.let { amountText(it) } ?: "—",
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.testTag("remainderAmount"),
                 )
@@ -540,12 +543,6 @@ private fun TagChips(
 
 private fun List<PartsError>.amountErrorFor(partId: Int): String? =
     if (PartsError.InvalidAmount(partId) in this) "Введите сумму больше нуля" else null
-
-private fun formatDate(date: LocalDate): String {
-    val dd = date.day.toString().padStart(2, '0')
-    val mm = date.month.number.toString().padStart(2, '0')
-    return "$dd.$mm.${date.year}"
-}
 
 private const val MILLIS_PER_DAY = 86_400_000L
 

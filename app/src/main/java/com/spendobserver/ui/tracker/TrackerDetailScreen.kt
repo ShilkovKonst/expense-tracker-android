@@ -62,14 +62,14 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
-import com.spendobserver.domain.summary.formatCents
-import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.summary.partsWord
 import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
-import com.spendobserver.ui.common.MonthNames
+import com.spendobserver.ui.common.amountText
+import com.spendobserver.ui.common.monthText
+import com.spendobserver.ui.common.signedAmountText
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.launch
 
@@ -158,7 +158,7 @@ fun TrackerDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(trackerTitle ?: "")
                         Text(
-                            text = "$recordCount ${recordsWord(recordCount)} · ${formatSignedCents(totalNet)}",
+                            text = "$recordCount ${recordsWord(recordCount)} · ${signedAmountText(totalNet)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -279,7 +279,7 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
         modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
         leadingContent = { Text(if (expanded) "▾" else "▸") },
         headlineContent = {
-            Text(MonthNames[monthGroup.month - 1], fontWeight = RecordTextWeight, fontSize = MonthTextSize)
+            Text(monthText(monthGroup.month), fontWeight = RecordTextWeight, fontSize = MonthTextSize)
         },
         supportingContent = { Text("${monthGroup.records.size} ${recordsWord(monthGroup.records.size)}") },
         trailingContent = { NetAmountText(monthGroup.totals) },
@@ -358,7 +358,7 @@ private fun RecordRow(
             RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
         }
         Text(
-            text = formatSignedCents(signedCents),
+            text = signedAmountText(signedCents),
             color = color,
             fontWeight = RecordTextWeight,
             fontSize = RecordTextSize,
@@ -395,7 +395,7 @@ private fun PartLine(tagNames: List<String>, amountCents: Long) {
             }
         }
         Text(
-            text = formatCents(amountCents),
+            text = amountText(amountCents),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.alignByBaseline(),
@@ -475,5 +475,5 @@ private fun NetAmountText(totals: AmountTotals) {
         net < 0 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Text(formatSignedCents(net), color = color)
+    Text(signedAmountText(net), color = color)
 }

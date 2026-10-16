@@ -51,7 +51,6 @@ import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
-import com.spendobserver.domain.summary.formatSignedCents
 import com.spendobserver.domain.text.trimInvisible
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.ImportDialogs
@@ -60,6 +59,7 @@ import com.spendobserver.ui.backup.ImportViewModel
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.backup.rememberImportLauncher
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.signedAmountText
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -258,7 +258,7 @@ private fun TrackerRow(
         supportingContent = {
             Text(
                 text = pluralStringResource(R.plurals.records_count, stats.recordCount, stats.recordCount) +
-                    " · " + formatSignedCents(stats.totals.netCents),
+                    " · " + signedAmountText(stats.totals.netCents),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

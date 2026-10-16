@@ -54,17 +54,19 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
+import com.spendobserver.domain.format.formatAmount
+import com.spendobserver.domain.format.monthName
 import com.spendobserver.domain.stats.PeriodStats
 import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.domain.stats.StatsSubject
 import com.spendobserver.domain.stats.TagStats
 import com.spendobserver.domain.stats.TagTops
 import com.spendobserver.domain.summary.costsWord
-import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.domain.summary.incomesWord
 import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.domain.summary.russianPlural
-import com.spendobserver.ui.common.MonthNames
+import com.spendobserver.ui.common.amountText
+import com.spendobserver.ui.common.rememberFormatLocale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,6 +203,7 @@ private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (
 /** `Всё время › 2026 › Октябрь`: every level above the current one is a link back to it. */
 @Composable
 private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
+    val locale = rememberFormatLocale()
     val crumbs = buildList {
         add("Всё время" to StatsPeriod.AllTime)
         when (period) {
@@ -208,7 +211,7 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
             is StatsPeriod.Year -> add(period.year.toString() to period)
             is StatsPeriod.Month -> {
                 add(period.year.toString() to StatsPeriod.Year(period.year))
-                add(MonthNames[period.month - 1] to period)
+                add(monthName(period.month, locale) to period)
             }
         }
     }
@@ -240,7 +243,7 @@ private fun SummaryCard(type: RecordType, subject: StatsSubject, stats: PeriodSt
                             "${stats.incomeCount} ${incomesWord(stats.incomeCount)})",
                     )
                     Text(
-                        "${typeLabel(type)}: ${formatCents(stats.amountCents)}",
+                        "${typeLabel(type)}: ${amountText(stats.amountCents)}",
                         fontWeight = FontWeight.SemiBold,
                     )
                     TopsBlock("Где/с кем", stats.globalTops)
@@ -250,7 +253,7 @@ private fun SummaryCard(type: RecordType, subject: StatsSubject, stats: PeriodSt
                     val tagStats = stats.tags.first { it.tag.id == subject.tag.id }
                     val count = tagStats.recordCount
                     Text("Встречается в $count ${russianPlural(count, "записи", "записях", "записях")}")
-                    Text("${typeLabel(type)}: ${formatCents(tagStats.amountCents)}", fontWeight = FontWeight.SemiBold)
+                    Text("${typeLabel(type)}: ${amountText(tagStats.amountCents)}", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -272,8 +275,9 @@ private fun TopsBlock(title: String, tops: TagTops) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(top = 8.dp),
     )
+    val locale = rememberFormatLocale()
     Text("Чаще всего: " + tops.byCount.joinToString { "${it.tag.name} (${it.recordCount})" })
-    Text("Больше всего: " + tops.byAmount.joinToString { "${it.tag.name} (${formatCents(it.amountCents)})" })
+    Text("Больше всего: " + tops.byAmount.joinToString { "${it.tag.name} (${formatAmount(it.amountCents, locale)})" })
 }
 
 /** A compact pill showing the current choice; a tap opens the picker over the screen. */
@@ -336,7 +340,7 @@ private fun SubjectPickerDialog(
                         items(levelTags, key = { "tag-${it.tag.id}" }) { stats ->
                             SelectableRow(
                                 title = stats.tag.name,
-                                trailing = "${stats.recordCount} · ${formatCents(stats.amountCents)}",
+                                trailing = "${stats.recordCount} · ${amountText(stats.amountCents)}",
                                 selected = stats.tag.id == selectedId,
                                 dimmed = stats.recordCount == 0,
                                 onClick = { onSelect(stats.tag.id) },

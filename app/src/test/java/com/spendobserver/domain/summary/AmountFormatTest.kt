@@ -19,19 +19,4 @@ class AmountFormatTest {
     fun formatCents_zero_noSign() {
         assertEquals("0.00", formatCents(0))
     }
-
-    @Test
-    fun formatSignedCents_positive_prefixesPlus() {
-        assertEquals("+12.34", formatSignedCents(1234))
-    }
-
-    @Test
-    fun formatSignedCents_negative_reusesMinusFromFormatCents() {
-        assertEquals("-12.34", formatSignedCents(-1234))
-    }
-
-    @Test
-    fun formatSignedCents_zero_noSign() {
-        assertEquals("0.00", formatSignedCents(0))
-    }
 }

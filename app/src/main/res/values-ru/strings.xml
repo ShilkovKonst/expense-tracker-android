@@ -1,4 +1,6 @@
 <resources>
+    <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
+    <string name="locale_language" translatable="false">ru</string>
     <!-- Shared actions -->
     <string name="action_cancel">Отмена</string>
     <string name="action_create">Создать</string>
