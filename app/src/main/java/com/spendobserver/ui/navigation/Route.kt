@@ -26,4 +26,10 @@ sealed interface Route {
 
     @Serializable
     data class TrackerStats(val trackerId: Long) : Route
+
+    @Serializable
+    data object Help : Route
+
+    @Serializable
+    data object Faq : Route
 }

@@ -14,6 +14,8 @@ import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.ui.help.FaqScreen
+import com.spendobserver.ui.help.HelpScreen
 import com.spendobserver.ui.record.RecordFormScreen
 import com.spendobserver.ui.stats.StatsScreen
 import com.spendobserver.ui.tracker.TrackerDetailScreen
@@ -42,6 +44,8 @@ fun SpendObserverNavHost(
                 onTrackerClick = { tracker -> navController.navigate(Route.TrackerDetail(tracker.id)) },
                 onEditTrackerClick = { tracker -> navController.navigate(Route.TrackerEdit(tracker.id)) },
                 onTrackerCreated = { trackerId -> navController.navigate(Route.TrackerDetail(trackerId)) },
+                onHelpClick = { navController.navigate(Route.Help) },
+                onFaqClick = { navController.navigate(Route.Faq) },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -101,6 +105,18 @@ fun SpendObserverNavHost(
                 trackerId = route.trackerId,
                 recordRepository = recordRepository,
                 tagRepository = tagRepository,
+                onBackClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        composable<Route.Help> {
+            HelpScreen(
+                onBackClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        composable<Route.Faq> {
+            FaqScreen(
                 onBackClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxSize(),
             )

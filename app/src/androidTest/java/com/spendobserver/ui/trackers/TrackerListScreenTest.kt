@@ -52,13 +52,19 @@ class TrackerListScreenTest {
         db.close()
     }
 
-    private fun setContent(onEditTrackerClick: (Tracker) -> Unit = {}) {
+    private fun setContent(
+        onEditTrackerClick: (Tracker) -> Unit = {},
+        onHelpClick: () -> Unit = {},
+        onFaqClick: () -> Unit = {},
+    ) {
         composeRule.setContent {
             TrackerListScreen(
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
                 backupRepository = BackupRepository(db),
                 onEditTrackerClick = onEditTrackerClick,
+                onHelpClick = onHelpClick,
+                onFaqClick = onFaqClick,
             )
         }
     }
@@ -207,5 +213,19 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("importItem").assertIsEnabled()
         composeRule.onNodeWithText("Сохранить все в файл").assertIsNotEnabled()
         composeRule.onNodeWithText("Поделиться всеми").assertIsNotEnabled()
+    }
+
+    @Test
+    fun menu_helpAndFaqItems_openTheirScreens() {
+        val opened = mutableListOf<String>()
+        setContent(onHelpClick = { opened += "help" }, onFaqClick = { opened += "faq" })
+
+        composeRule.onNodeWithTag("trackerListMenuButton").performClick()
+        composeRule.onNodeWithTag("helpItem").performClick()
+        composeRule.onNodeWithTag("helpItem").assertDoesNotExist() // menu closed
+        composeRule.onNodeWithTag("trackerListMenuButton").performClick()
+        composeRule.onNodeWithTag("faqItem").performClick()
+
+        assertEquals(listOf("help", "faq"), opened)
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +69,8 @@ fun TrackerListScreen(
     onTrackerClick: (Tracker) -> Unit = {},
     onEditTrackerClick: (Tracker) -> Unit = {},
     onTrackerCreated: (trackerId: Long) -> Unit = {},
+    onHelpClick: () -> Unit = {},
+    onFaqClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerListViewModel = viewModel(
@@ -138,6 +141,23 @@ fun TrackerListScreen(
                                     showMenu = false
                                     exportActions.share(ExportScope.All)
                                 },
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Справка") },
+                                onClick = {
+                                    showMenu = false
+                                    onHelpClick()
+                                },
+                                modifier = Modifier.testTag("helpItem"),
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Вопросы и ответы") },
+                                onClick = {
+                                    showMenu = false
+                                    onFaqClick()
+                                },
+                                modifier = Modifier.testTag("faqItem"),
                             )
                         }
                     }
