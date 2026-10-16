@@ -19,6 +19,8 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.waitFor
+import com.spendobserver.testing.waitForText
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -86,7 +88,7 @@ class TrackerDetailScreenTest {
     @Test
     fun noRecords_showsEmptyStatePlaceholder() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithText("Записей пока нет").assertExists()
     }
@@ -94,7 +96,7 @@ class TrackerDetailScreenTest {
     @Test
     fun trackerTitle_isShownInAppBar() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithText("Family").assertExists()
     }
@@ -103,7 +105,7 @@ class TrackerDetailScreenTest {
     fun yearAndMonth_areCollapsedByDefault() {
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "groceries") }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").assertExists()
         composeRule.onNodeWithText("Март").assertDoesNotExist()
@@ -114,7 +116,7 @@ class TrackerDetailScreenTest {
     fun expandingYearThenMonth_revealsRecords() {
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "groceries") }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
@@ -134,7 +136,7 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 1000, "extra")
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("+20.00")
 
         // Year nets all three records (5000 - 2000 - 1000 = 2000); only visible before expanding.
         composeRule.onNodeWithText("+20.00").assertExists()
@@ -154,7 +156,7 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 1000, "c")
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("3 записи")
 
         // Year header: 3 records total, always visible.
         composeRule.onNodeWithText("3 записи").assertExists()
@@ -173,7 +175,7 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 1, 1), RecordType.COST, 500, "new")
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2025")
 
         composeRule.onNodeWithText("2026").assertExists()
         composeRule.onNodeWithText("2025").assertExists()
@@ -190,7 +192,7 @@ class TrackerDetailScreenTest {
             )
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
@@ -204,7 +206,7 @@ class TrackerDetailScreenTest {
     fun recordPreview_blankDescription_showsPlaceholderInsteadOfEmptyLine() {
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, null) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
@@ -219,7 +221,7 @@ class TrackerDetailScreenTest {
         val longDescription = "very very very very so long and detailed description of record so long that I cant read it in one line"
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, longDescription) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2026")
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
@@ -236,7 +238,7 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 2000, "this year")
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("2 записи · +30.00")
 
         // 2 records total, net across both years: 5000 - 2000 = 3000.
         composeRule.onNodeWithText("2 записи · +30.00").assertExists()
@@ -251,7 +253,8 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 100, "target")
         }
         setContent(RecordChange(recordId = targetId, year = 2026, month = 3, deleted = false))
-        composeRule.waitForIdle()
+        composeRule.waitForText("Описание: target")
+        composeRule.waitForIdle() // let the scroll to it settle
 
         composeRule.onNodeWithText("Описание: target").assertIsDisplayed()
         // Only the change's own year was opened.
@@ -263,7 +266,8 @@ class TrackerDetailScreenTest {
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "kept") }
         // The deleted record (id 999) is already gone from the database.
         setContent(RecordChange(recordId = 999, year = 2026, month = 3, deleted = true))
-        composeRule.waitForIdle()
+        composeRule.waitForText("Описание: kept")
+        composeRule.waitForIdle() // let the scroll to it settle
 
         composeRule.onNodeWithText("Март").assertIsDisplayed()
         composeRule.onNodeWithText("Описание: kept").assertIsDisplayed()
@@ -290,7 +294,7 @@ class TrackerDetailScreenTest {
                 recordChange = RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false),
             )
         }
-        composeRule.waitForIdle()
+        composeRule.waitForText("▸ 2 части")
 
         composeRule.onNodeWithText("▸ 2 части").assertExists()
         composeRule.onNodeWithText("800.00").assertDoesNotExist()
@@ -307,15 +311,14 @@ class TrackerDetailScreenTest {
     @Test
     fun appBarTitle_followsARenameMadeElsewhere() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         runBlocking {
             val tracker = trackerRepository.getTracker(trackerId)!!
             trackerRepository.updateTracker(tracker.copy(title = "Семья"))
         }
-        composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Семья").assertExists()
+        composeRule.waitForText("Семья")
     }
 
     @Test
@@ -331,12 +334,12 @@ class TrackerDetailScreenTest {
                 onTrackerDeleted = { deletedCount++ },
             )
         }
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerMenuButton").performClick()
         composeRule.onNodeWithTag("deleteTrackerItem").performClick()
         composeRule.onNodeWithText("Удалить").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitFor { deletedCount == 1 }
 
         assertEquals(1, deletedCount)
         assertNull(runBlocking { trackerRepository.getTracker(trackerId) })
@@ -355,7 +358,7 @@ class TrackerDetailScreenTest {
                 onStatsClick = { statsOpened = true },
             )
         }
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerMenuButton").performClick()
         listOf("statsItem", "exportSaveItem", "exportShareItem", "editTrackerItem", "deleteTrackerItem").forEach {

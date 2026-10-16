@@ -2,6 +2,8 @@ package com.spendobserver.ui.trackers
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -20,6 +22,10 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.waitForNoNode
+import com.spendobserver.testing.waitForNode
+import com.spendobserver.testing.waitForTag
+import com.spendobserver.testing.waitForText
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -71,7 +77,7 @@ class TrackerEditScreenTest {
     @Test
     fun nameField_prefillsWithCurrentTitle() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").assertExists()
         composeRule.onNodeWithText("Family").assertExists()
@@ -80,12 +86,12 @@ class TrackerEditScreenTest {
     @Test
     fun renamingTracker_savesNewTitle() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput("Home")
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForNode(hasTestTag("saveTrackerButton") and isNotEnabled())
 
         val tracker = runBlocking { trackerRepository.getTracker(trackerId) }
         assertEquals("Home", tracker?.title)
@@ -96,7 +102,7 @@ class TrackerEditScreenTest {
     @Test
     fun unchangedName_disablesSaveAndRevert() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("saveTrackerButton").assertIsNotEnabled()
         composeRule.onNodeWithTag("revertTitleButton").assertIsNotEnabled()
@@ -105,7 +111,7 @@ class TrackerEditScreenTest {
     @Test
     fun revert_restoresTheSavedName() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput("Home")
@@ -119,11 +125,11 @@ class TrackerEditScreenTest {
     @Test
     fun blankName_showsErrorAndDoesNotSave() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Введите название")
 
         composeRule.onNodeWithText("Введите название").assertExists()
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
@@ -132,12 +138,12 @@ class TrackerEditScreenTest {
     @Test
     fun creatingTag_appearsInList() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("newTagButton").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("groceries")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-groceries")
 
         composeRule.onNodeWithText("groceries").assertExists()
         val tags = runBlocking { tagRepository.observeTags(trackerId).first() }
@@ -148,14 +154,14 @@ class TrackerEditScreenTest {
     fun renamingTag_updatesItsName() {
         runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-fuel")
 
         composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("tagNameInput").performTextClearance()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("fuel & gas")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-fuel & gas")
 
         composeRule.onNodeWithText("fuel & gas").assertExists()
     }
@@ -164,12 +170,12 @@ class TrackerEditScreenTest {
     fun deletingTag_removesItFromList() {
         runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("deleteTagButton-fuel")
 
         composeRule.onNodeWithTag("deleteTagButton-fuel").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Удалить").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForNoNode(hasTestTag("deleteTagButton-fuel"))
 
         composeRule.onNodeWithText("fuel").assertDoesNotExist()
         val tags = runBlocking { tagRepository.observeTags(trackerId).first() }
@@ -179,12 +185,12 @@ class TrackerEditScreenTest {
     @Test
     fun creatingGlobalTag_storesItAsGlobal() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("newGlobalTagButton").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-Ашан")
 
         val tag = runBlocking { tagRepository.observeTags(trackerId).first().single() }
         assertTrue(tag.isGlobal)
@@ -201,7 +207,7 @@ class TrackerEditScreenTest {
             )
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("в 1 записи")
 
         composeRule.onNodeWithText("в 1 записи").assertExists()
     }
@@ -210,12 +216,12 @@ class TrackerEditScreenTest {
     fun renamingToAnotherTrackersTitle_showsErrorAndDoesNotSave() {
         runBlocking { trackerRepository.insertTracker(Tracker(title = "Work", createdAt = 0, updatedAt = 0)) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput(" Work​")
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Трекер с таким названием уже есть")
 
         composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
@@ -224,7 +230,7 @@ class TrackerEditScreenTest {
     @Test
     fun ownTitle_withStraySpaces_doesNotCountAsAChange() {
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput("  Family  ")
@@ -240,13 +246,13 @@ class TrackerEditScreenTest {
             tagRepository.insertTag(Tag(trackerId = trackerId, name = "food"))
         }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-food")
 
         composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextClearance()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("FOOD")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Тег с таким названием уже есть")
 
         composeRule.onNodeWithText("Тег с таким названием уже есть").assertExists()
         val names = runBlocking { tagRepository.observeTags(trackerId).first() }.map { it.name }.toSet()
@@ -257,13 +263,13 @@ class TrackerEditScreenTest {
     fun recasingATagsOwnName_isAllowed() {
         runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "fuel")) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-fuel")
 
         composeRule.onNodeWithTag("renameTagButton-fuel").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextClearance()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("Fuel")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("renameTagButton-Fuel")
 
         assertEquals("Fuel", runBlocking { tagRepository.observeTags(trackerId).first() }.single().name)
     }
@@ -272,12 +278,12 @@ class TrackerEditScreenTest {
     fun renamingTrackerToAnotherTitleInADifferentCase_isRefused() {
         runBlocking { trackerRepository.insertTracker(Tracker(title = "Work", createdAt = 0, updatedAt = 0)) }
         setContent()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Family")
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput("work")
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForText("Трекер с таким названием уже есть")
 
         composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })

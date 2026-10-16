@@ -1,8 +1,8 @@
 package com.spendobserver.ui.trackers
 
 import android.content.Context
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,10 +15,13 @@ import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tracker
-import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.waitForNoText
+import com.spendobserver.testing.waitForTag
+import com.spendobserver.testing.waitForText
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -73,7 +76,7 @@ class TrackerListScreenTest {
         composeRule.onNodeWithText("+").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput(title)
         composeRule.onNodeWithText("Создать").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitForTag("editTrackerButton-$title")
     }
 
     @Test
@@ -125,9 +128,7 @@ class TrackerListScreenTest {
                 listOf(PartDraft(2000, emptySet())),
             )
         }
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("2 записи · +30.00").assertExists()
+        composeRule.waitForText("2 записи · +30.00")
     }
 
     @Test
@@ -151,9 +152,8 @@ class TrackerListScreenTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Удалить «Family»?").assertExists()
         composeRule.onNodeWithText("Удалить").performClick()
-        composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Family").assertDoesNotExist()
+        composeRule.waitForNoText("Family")
         composeRule.onNodeWithText("Пока нет трекеров").assertExists()
     }
 
@@ -196,9 +196,8 @@ class TrackerListScreenTest {
         composeRule.onNodeWithText("+").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput("  Family ")
         composeRule.onNodeWithText("Создать").performClick()
-        composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
+        composeRule.waitForText("Трекер с таким названием уже есть")
         composeRule.onNodeWithTag("trackerTitleInput").assertExists() // dialog stays open
         val trackers = runBlocking { trackerRepository.observeTrackers().first() }
         assertEquals(1, trackers.size)

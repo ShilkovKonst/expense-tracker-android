@@ -1,7 +1,6 @@
 package com.spendobserver.ui.stats
 
 import android.content.Context
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
@@ -27,6 +26,8 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.waitFor
+import com.spendobserver.testing.waitForText
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
@@ -80,7 +81,8 @@ class StatsScreenTest {
         )
     }
 
-    private fun setContent() {
+    /** [loadedCosts] is the default view's summary line, shown once the data is in. */
+    private fun setContent(loadedCosts: String = "Расходы: 17.00") {
         composeRule.setContent {
             StatsScreen(
                 trackerId = trackerId,
@@ -89,14 +91,23 @@ class StatsScreenTest {
                 onBackClick = {},
             )
         }
-        composeRule.waitForIdle()
+        composeRule.waitForText(loadedCosts)
     }
 
-    /** Taps the chart near its right edge: the marker snaps to the nearest — so the last — bar. */
-    private fun tapLastBar() {
+    /**
+     * Taps the chart near its right edge — the marker snaps to the nearest, so the
+     * last, bar — until the breadcrumbs reach [crumb]. Vico builds the chart's model
+     * on a background dispatcher, so a tap before it's ready hits no bar; repeating
+     * the tap until it lands is safe, since a landed tap moves on to [crumb].
+     */
+    private fun tapLastBar(crumb: String) {
         composeRule.onNodeWithTag("statsList").performScrollToNode(hasTestTag("statsChart"))
-        composeRule.onNodeWithTag("statsChart").performTouchInput { click(percentOffset(0.95f, 0.5f)) }
-        composeRule.waitForIdle()
+        composeRule.waitFor {
+            composeRule.onNodeWithTag("statsChart").performTouchInput { click(percentOffset(0.95f, 0.5f)) }
+            composeRule.waitForIdle()
+            composeRule.onAllNodes(hasTestTag("breadcrumbs") and hasAnyDescendant(hasText(crumb)))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Test
@@ -176,7 +187,7 @@ class StatsScreenTest {
             )
             id
         }
-        setContent()
+        setContent(loadedCosts = "Расходы: 1.00")
 
         composeRule.onNodeWithTag("incomeTypeButton").assertIsNotEnabled()
         composeRule.onNodeWithTag("costTypeButton").assertIsEnabled()
@@ -197,14 +208,12 @@ class StatsScreenTest {
         setContent()
 
         // All time → the last year (2026).
-        tapLastBar()
-        composeRule.onNodeWithTag("breadcrumbs").assert(hasAnyDescendant(hasText("2026")))
+        tapLastBar(crumb = "2026")
         composeRule.onNodeWithText("2 записи (1 расход, 1 доход)").assertExists()
         composeRule.onNodeWithText("Расходы: 15.00").assertExists()
 
         // 2026 → its last month, December: nothing recorded there.
-        tapLastBar()
-        composeRule.onNodeWithText("Декабрь").assertExists()
+        tapLastBar(crumb = "Декабрь")
         composeRule.onNodeWithText("0 записей (0 расходов, 0 доходов)").assertExists()
 
         composeRule.onNodeWithText("2026").performClick()
