@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
@@ -19,6 +20,7 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
 import com.spendobserver.ui.navigation.RecordChange
@@ -338,7 +340,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithTag("trackerMenuButton").performClick()
         composeRule.onNodeWithTag("deleteTrackerItem").performClick()
-        composeRule.onNodeWithText("Удалить").performClick()
+        composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
         composeRule.waitFor { deletedCount == 1 }
 
         assertEquals(1, deletedCount)

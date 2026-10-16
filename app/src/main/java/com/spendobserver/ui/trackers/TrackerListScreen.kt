@@ -36,20 +36,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.summary.formatSignedCents
-import com.spendobserver.domain.summary.recordsWord
-import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.domain.text.trimInvisible
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.ImportDialogs
@@ -96,6 +98,8 @@ fun TrackerListScreen(
     val importState by importViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    // Plain Resources for strings built outside composition (the snackbar text below).
+    val resources = LocalResources.current
     val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
     val exportActions = rememberExportActions(backupRepository, onMessage = showMessage)
     val pickImportFile = rememberImportLauncher(onText = importViewModel::onFileLoaded)
@@ -104,14 +108,14 @@ fun TrackerListScreen(
         val done = importState as? ImportState.Done ?: return@LaunchedEffect
         importViewModel.dismiss()
         val n = done.trackerCount
-        showMessage("Импортировано: $n ${russianPlural(n, "трекер", "трекера", "трекеров")}")
+        showMessage(resources.getQuantityString(R.plurals.imported_trackers, n, n))
     }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Список трекеров") },
+                title = { Text(stringResource(R.string.tracker_list_title)) },
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.testTag("trackerListMenuButton")) {
@@ -119,7 +123,7 @@ fun TrackerListScreen(
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Импорт из файла") },
+                                text = { Text(stringResource(R.string.menu_import)) },
                                 onClick = {
                                     showMenu = false
                                     pickImportFile()
@@ -127,7 +131,7 @@ fun TrackerListScreen(
                                 modifier = Modifier.testTag("importItem"),
                             )
                             DropdownMenuItem(
-                                text = { Text("Сохранить все в файл") },
+                                text = { Text(stringResource(R.string.menu_save_all)) },
                                 enabled = trackers.isNotEmpty(),
                                 onClick = {
                                     showMenu = false
@@ -135,7 +139,7 @@ fun TrackerListScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Поделиться всеми") },
+                                text = { Text(stringResource(R.string.menu_share_all)) },
                                 enabled = trackers.isNotEmpty(),
                                 onClick = {
                                     showMenu = false
@@ -144,7 +148,7 @@ fun TrackerListScreen(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Справка") },
+                                text = { Text(stringResource(R.string.menu_help)) },
                                 onClick = {
                                     showMenu = false
                                     onHelpClick()
@@ -152,7 +156,7 @@ fun TrackerListScreen(
                                 modifier = Modifier.testTag("helpItem"),
                             )
                             DropdownMenuItem(
-                                text = { Text("Вопросы и ответы") },
+                                text = { Text(stringResource(R.string.menu_faq)) },
                                 onClick = {
                                     showMenu = false
                                     onFaqClick()
@@ -170,7 +174,7 @@ fun TrackerListScreen(
             ExtendedFloatingActionButton(
                 onClick = { showCreateDialog = true },
                 icon = { Text("+") },
-                text = { Text("Добавить трекер") },
+                text = { Text(stringResource(R.string.tracker_list_add)) },
             )
         },
     ) { innerPadding ->
@@ -179,7 +183,7 @@ fun TrackerListScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Пока нет трекеров")
+                Text(stringResource(R.string.tracker_list_empty))
             }
         } else {
             LazyColumn(
@@ -202,9 +206,9 @@ fun TrackerListScreen(
 
     if (showCreateDialog) {
         TrackerTitleDialog(
-            title = "Новый трекер",
+            title = stringResource(R.string.tracker_new_title),
             initialTitle = "",
-            confirmLabel = "Создать",
+            confirmLabel = stringResource(R.string.action_create),
             error = createError,
             onTextChange = viewModel::clearCreateError,
             // Stays open on a refused name (createError explains why); closes once created.
@@ -253,7 +257,8 @@ private fun TrackerRow(
         headlineContent = { Text(tracker.title) },
         supportingContent = {
             Text(
-                text = "${stats.recordCount} ${recordsWord(stats.recordCount)} · ${formatSignedCents(stats.totals.netCents)}",
+                text = pluralStringResource(R.plurals.records_count, stats.recordCount, stats.recordCount) +
+                    " · " + formatSignedCents(stats.totals.netCents),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -296,7 +301,7 @@ private fun TrackerTitleDialog(
                     onTextChange()
                 },
                 singleLine = true,
-                label = { Text("Название") },
+                label = { Text(stringResource(R.string.tracker_name_label)) },
                 isError = error != null,
                 supportingText = error?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth().testTag("trackerTitleInput"),
@@ -309,7 +314,7 @@ private fun TrackerTitleDialog(
             ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }

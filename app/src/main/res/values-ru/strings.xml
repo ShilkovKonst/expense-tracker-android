@@ -1,0 +1,36 @@
+<resources>
+    <!-- Shared actions -->
+    <string name="action_cancel">Отмена</string>
+    <string name="action_create">Создать</string>
+    <string name="action_delete">Удалить</string>
+
+    <!-- Tracker list -->
+    <string name="tracker_list_title">Список трекеров</string>
+    <string name="tracker_list_empty">Пока нет трекеров</string>
+    <string name="tracker_list_add">Добавить трекер</string>
+    <string name="menu_import">Импорт из файла</string>
+    <string name="menu_save_all">Сохранить все в файл</string>
+    <string name="menu_share_all">Поделиться всеми</string>
+    <string name="menu_help">Справка</string>
+    <string name="menu_faq">Вопросы и ответы</string>
+    <string name="tracker_new_title">Новый трекер</string>
+    <string name="tracker_name_label">Название</string>
+    <plurals name="imported_trackers">
+        <item quantity="one">Импортирован %d трекер</item>
+        <item quantity="few">Импортировано %d трекера</item>
+        <item quantity="many">Импортировано %d трекеров</item>
+        <item quantity="other">Импортировано %d трекера</item>
+    </plurals>
+
+    <!-- Delete tracker confirmation -->
+    <string name="delete_tracker_title">Удалить «%1$s»?</string>
+    <string name="delete_tracker_text">Все записи этого трекера будут удалены без возможности восстановления.</string>
+
+    <!-- Counts -->
+    <plurals name="records_count">
+        <item quantity="one">%d запись</item>
+        <item quantity="few">%d записи</item>
+        <item quantity="many">%d записей</item>
+        <item quantity="other">%d записи</item>
+    </plurals>
+</resources>

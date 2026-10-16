@@ -1,3 +1,34 @@
 <resources>
     <string name="app_name">SpendObserver</string>
+
+    <!-- Shared actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_create">Create</string>
+    <string name="action_delete">Delete</string>
+
+    <!-- Tracker list -->
+    <string name="tracker_list_title">Trackers</string>
+    <string name="tracker_list_empty">No trackers yet</string>
+    <string name="tracker_list_add">Add tracker</string>
+    <string name="menu_import">Import from file</string>
+    <string name="menu_save_all">Save all to file</string>
+    <string name="menu_share_all">Share all</string>
+    <string name="menu_help">Help</string>
+    <string name="menu_faq">FAQ</string>
+    <string name="tracker_new_title">New tracker</string>
+    <string name="tracker_name_label">Name</string>
+    <plurals name="imported_trackers">
+        <item quantity="one">Imported %d tracker</item>
+        <item quantity="other">Imported %d trackers</item>
+    </plurals>
+
+    <!-- Delete tracker confirmation -->
+    <string name="delete_tracker_title">Delete “%1$s”?</string>
+    <string name="delete_tracker_text">All records of this tracker will be permanently deleted.</string>
+
+    <!-- Counts -->
+    <plurals name="records_count">
+        <item quantity="one">%d record</item>
+        <item quantity="other">%d records</item>
+    </plurals>
 </resources>

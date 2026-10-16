@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
@@ -19,6 +20,8 @@ import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.plural
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitForNoText
 import com.spendobserver.testing.waitForTag
 import com.spendobserver.testing.waitForText
@@ -75,7 +78,7 @@ class TrackerListScreenTest {
     private fun createTracker(title: String) {
         composeRule.onNodeWithText("+").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput(title)
-        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.onNodeWithText(string(R.string.action_create)).performClick()
         composeRule.waitForTag("editTrackerButton-$title")
     }
 
@@ -83,7 +86,7 @@ class TrackerListScreenTest {
     fun emptyState_showsPlaceholder() {
         setContent()
 
-        composeRule.onNodeWithText("Пока нет трекеров").assertExists()
+        composeRule.onNodeWithText(string(R.string.tracker_list_empty)).assertExists()
     }
 
     @Test
@@ -92,7 +95,7 @@ class TrackerListScreenTest {
         createTracker("Family")
 
         composeRule.onNodeWithText("Family").assertExists()
-        composeRule.onNodeWithText("Пока нет трекеров").assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.tracker_list_empty)).assertDoesNotExist()
     }
 
     @Test
@@ -100,7 +103,7 @@ class TrackerListScreenTest {
         setContent()
         composeRule.onNodeWithText("+").performClick()
 
-        composeRule.onNodeWithText("Создать").assertIsNotEnabled()
+        composeRule.onNodeWithText(string(R.string.action_create)).assertIsNotEnabled()
     }
 
     @Test
@@ -108,7 +111,7 @@ class TrackerListScreenTest {
         setContent()
         createTracker("Family")
 
-        composeRule.onNodeWithText("0 записей · 0.00").assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 0) + " · 0.00").assertExists()
     }
 
     @Test
@@ -128,7 +131,7 @@ class TrackerListScreenTest {
                 listOf(PartDraft(2000, emptySet())),
             )
         }
-        composeRule.waitForText("2 записи · +30.00")
+        composeRule.waitForText(plural(R.plurals.records_count, 2) + " · +30.00")
     }
 
     @Test
@@ -150,11 +153,11 @@ class TrackerListScreenTest {
 
         composeRule.onNodeWithTag("deleteTrackerButton-Family").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Удалить «Family»?").assertExists()
-        composeRule.onNodeWithText("Удалить").performClick()
+        composeRule.onNodeWithText(string(R.string.delete_tracker_title, "Family")).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
 
         composeRule.waitForNoText("Family")
-        composeRule.onNodeWithText("Пока нет трекеров").assertExists()
+        composeRule.onNodeWithText(string(R.string.tracker_list_empty)).assertExists()
     }
 
     @Test
@@ -164,7 +167,7 @@ class TrackerListScreenTest {
 
         composeRule.onNodeWithTag("deleteTrackerButton-Family").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Отмена").performClick()
+        composeRule.onNodeWithText(string(R.string.action_cancel)).performClick()
 
         composeRule.onNodeWithText("Family").assertExists()
     }
@@ -195,7 +198,7 @@ class TrackerListScreenTest {
         // Same name with stray spaces: still a duplicate once trimmed.
         composeRule.onNodeWithText("+").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput("  Family ")
-        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.onNodeWithText(string(R.string.action_create)).performClick()
 
         composeRule.waitForText("Трекер с таким названием уже есть")
         composeRule.onNodeWithTag("trackerTitleInput").assertExists() // dialog stays open
@@ -210,8 +213,8 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("trackerListMenuButton").performClick()
 
         composeRule.onNodeWithTag("importItem").assertIsEnabled()
-        composeRule.onNodeWithText("Сохранить все в файл").assertIsNotEnabled()
-        composeRule.onNodeWithText("Поделиться всеми").assertIsNotEnabled()
+        composeRule.onNodeWithText(string(R.string.menu_save_all)).assertIsNotEnabled()
+        composeRule.onNodeWithText(string(R.string.menu_share_all)).assertIsNotEnabled()
     }
 
     @Test
