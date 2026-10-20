@@ -3,8 +3,8 @@ package com.spendobserver.ui.stats
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -40,12 +41,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -206,7 +212,14 @@ private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (
     }
 }
 
-/** `Всё время › 2026 › Октябрь`: every level above the current one is a link back to it. */
+private const val CRUMB_SEPARATOR = "›"
+private val CrumbPadding = 8.dp
+
+/**
+ * `Всё время › 2026 › Октябрь`: every level above the current one is a link back to it.
+ * Always one line: where the labels don't fit beside the type toggle (a month in
+ * French or German), all crumbs shrink by the same factor rather than wrap.
+ */
 @Composable
 private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
     val locale = rememberFormatLocale()
@@ -222,16 +235,45 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
             }
         }
     }
-    FlowRow(
-        modifier = modifier.padding(horizontal = 4.dp).testTag("breadcrumbs"),
-        itemVerticalAlignment = Alignment.CenterVertically,
-    ) {
-        crumbs.forEachIndexed { index, (label, target) ->
-            if (index > 0) Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (index == crumbs.lastIndex) {
-                Text(label, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 12.dp))
-            } else {
-                TextButton(onClick = { onSelect(target) }) { Text(label) }
+    val linkStyle = MaterialTheme.typography.titleSmall
+    val currentStyle = linkStyle.copy(fontWeight = FontWeight.SemiBold)
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier = modifier.padding(horizontal = 4.dp).testTag("breadcrumbs")) {
+        val density = LocalDensity.current
+        val scale = remember(crumbs, constraints.maxWidth, linkStyle, density) {
+            val textWidth = crumbs.withIndex().sumOf { (index, crumb) ->
+                measurer.measure(crumb.first, if (index == crumbs.lastIndex) currentStyle else linkStyle).size.width
+            } + (crumbs.size - 1) * measurer.measure(CRUMB_SEPARATOR, linkStyle).size.width
+            val paddingWidth = with(density) { (CrumbPadding * 2).roundToPx() } * crumbs.size
+            val fit = (constraints.maxWidth - paddingWidth).toFloat() / textWidth
+            // A little short of the exact fit: glyph widths don't scale perfectly linearly.
+            if (fit >= 1f) 1f else fit * 0.97f
+        }
+        val scaled = { style: TextStyle -> style.copy(fontSize = style.fontSize * scale) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            crumbs.forEachIndexed { index, (label, target) ->
+                if (index > 0) {
+                    Text(CRUMB_SEPARATOR, style = scaled(linkStyle), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (index == crumbs.lastIndex) {
+                    Text(label, style = scaled(currentStyle), maxLines = 1, softWrap = false, modifier = Modifier.padding(horizontal = CrumbPadding))
+                } else {
+                    // A bare clickable label, not a TextButton: its 58dp minimum width
+                    // and wide padding would push the current crumb off the line.
+                    Text(
+                        label,
+                        style = scaled(linkStyle),
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable(role = Role.Button) { onSelect(target) }
+                            .padding(horizontal = CrumbPadding)
+                            .wrapContentHeight(),
+                    )
+                }
             }
         }
     }
