@@ -41,7 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.spendobserver.ui.theme.IncomeColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -73,8 +73,6 @@ import com.spendobserver.ui.common.monthText
 import com.spendobserver.ui.common.signedAmountText
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.launch
-
-private val IncomeColor = Color(0xFF2E7D32)
 
 // Record-row typography: date, the "Теги:"/"Описание:" labels, and the
 // amount all share one size+weight so they read as one line; month and

@@ -160,6 +160,7 @@ fun StatsScreen(
                             period = current.period,
                             buckets = current.buckets,
                             metric = metric,
+                            type = current.type,
                             onDrillDown = viewModel::setPeriod,
                             modifier = Modifier.fillMaxWidth().testTag("statsChart"),
                         )

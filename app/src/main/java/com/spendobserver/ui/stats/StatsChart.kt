@@ -37,12 +37,14 @@ import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
+import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.domain.format.formatAmount
 import com.spendobserver.domain.format.formatWholeNumber
 import com.spendobserver.domain.format.shortMonthName
 import com.spendobserver.domain.stats.ChartBucket
 import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.ui.common.rememberFormatLocale
+import com.spendobserver.ui.theme.IncomeColor
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -55,12 +57,15 @@ enum class ChartMetric { COUNT, AMOUNT }
  * The bar chart for [period]: one bar per bucket, the Y value picked by
  * [metric]. A tap on a bar drills into it ([ChartBucket.drillDown]); on the
  * day level, where there's nothing finer, it shows the bar's value instead.
+ * Amount bars take the [type]'s color — red expenses, green income, as amounts
+ * are colored in the record list; record counts keep the theme's primary.
  */
 @Composable
 fun StatsChart(
     period: StatsPeriod,
     buckets: List<ChartBucket>,
     metric: ChartMetric,
+    type: RecordType,
     onDrillDown: (StatsPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -69,7 +74,7 @@ fun StatsChart(
         // A fresh chart per period: the tapped bar's marker and the axis
         // formatters belong to one level and must not carry over to the next.
         key(period) {
-            PeriodChart(period, buckets, metric, onDrillDown, modifier)
+            PeriodChart(period, buckets, metric, type, onDrillDown, modifier)
         }
     }
 }
@@ -79,6 +84,7 @@ private fun PeriodChart(
     period: StatsPeriod,
     buckets: List<ChartBucket>,
     metric: ChartMetric,
+    type: RecordType,
     onDrillDown: (StatsPeriod) -> Unit,
     modifier: Modifier,
 ) {
@@ -142,7 +148,11 @@ private fun PeriodChart(
         }
     }
 
-    val primary = MaterialTheme.colorScheme.primary
+    val barColor = when {
+        metric == ChartMetric.COUNT -> MaterialTheme.colorScheme.primary
+        type == RecordType.COST -> MaterialTheme.colorScheme.error
+        else -> IncomeColor
+    }
     val markerLabel = rememberTextComponent(
         style = TextStyle(color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp),
         padding = Insets(8.dp, 4.dp),
@@ -171,7 +181,7 @@ private fun PeriodChart(
             rememberColumnCartesianLayer(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(
                     rememberLineComponent(
-                        fill = Fill(primary),
+                        fill = Fill(barColor),
                         thickness = 16.dp,
                         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
                     ),
