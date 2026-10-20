@@ -34,6 +34,20 @@ class ChartBucketsTest {
     }
 
     @Test
+    fun emptyBars_openNothing() {
+        val records = listOf(
+            cost(1, LocalDate(2024, 3, 1), TestPart(1000, listOf(food))),
+            cost(2, LocalDate(2026, 5, 1), TestPart(300)),
+        )
+
+        // 2025 has no records at all; in 2026 nothing carries the tag.
+        val years = records.chartBuckets(StatsPeriod.AllTime, RecordType.COST, StatsSubject.Overview, today)
+        assertEquals(listOf(StatsPeriod.Year(2024), null, StatsPeriod.Year(2026)), years.map { it.drillDown })
+        val tagMonths = records.chartBuckets(StatsPeriod.Year(2026), RecordType.COST, StatsSubject.OfTag(food), today)
+        assertEquals(listOf<StatsPeriod?>(null), tagMonths.map { it.drillDown }.distinct())
+    }
+
+    @Test
     fun allTime_yearRangeIgnoresTypeToggle() {
         val records = listOf(
             taggedRecord(id = 1, date = LocalDate(2024, 1, 1), type = RecordType.INCOME, parts = listOf(TestPart(100))),

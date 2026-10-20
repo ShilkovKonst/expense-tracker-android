@@ -18,7 +18,8 @@ sealed interface StatsSubject {
 /**
  * One bar of the chart. [key] is the year, month number or day number,
  * depending on the period; [drillDown] is the period a tap on the bar
- * opens, or null for days — the finest level.
+ * opens, or null where there's nothing to open: days — the finest level —
+ * and empty bars, so a tap that misses its bar doesn't land in an empty period.
  */
 data class ChartBucket(
     val key: Int,
@@ -57,7 +58,12 @@ fun List<RecordWithParts>.chartBuckets(
     return keys.map { key ->
         val records = byKey[key].orEmpty()
         val (count, amount) = records.measure(subject)
-        ChartBucket(key = key, drillDown = period.drillDown(key), recordCount = count, amountCents = amount)
+        ChartBucket(
+            key = key,
+            drillDown = if (count > 0) period.drillDown(key) else null,
+            recordCount = count,
+            amountCents = amount,
+        )
     }
 }
 

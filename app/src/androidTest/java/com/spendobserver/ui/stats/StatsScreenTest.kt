@@ -112,15 +112,35 @@ class StatsScreenTest {
      * on a background dispatcher, so a tap before it's ready hits no bar; repeating
      * the tap until it lands is safe, since a landed tap moves on to [crumb].
      */
-    private fun tapLastBar(crumb: String) {
-        composeRule.onNodeWithTag("statsList").performScrollToNode(hasTestTag("statsChart"))
-        composeRule.waitFor {
-            composeRule.onNodeWithTag("statsChart").performTouchInput { click(percentOffset(0.95f, 0.5f)) }
-            composeRule.waitForIdle()
-            composeRule.onAllNodes(hasTestTag("breadcrumbs") and hasAnyDescendant(hasText(crumb)))
-                .fetchSemanticsNodes().isNotEmpty()
+    private fun tapLastBar(crumb: String) = tapChartUntil(crumb) { 0.95f }
+
+    /**
+     * Taps across the chart, left to right and round again, until the breadcrumbs
+     * reach [crumb]. A tap snaps to the nearest bar, so the sweep hits every bar —
+     * and the empty ones on the way must open nothing, or the breadcrumbs would
+     * move elsewhere and never reach [crumb].
+     */
+    private fun sweepBars(crumb: String) {
+        var x = 0f
+        tapChartUntil(crumb) {
+            x = if (x >= 0.95f) 0.05f else x + 0.03f
+            x
         }
     }
+
+    private fun tapChartUntil(crumb: String, nextX: () -> Float) {
+        composeRule.onNodeWithTag("statsList").performScrollToNode(hasTestTag("statsChart"))
+        composeRule.waitFor {
+            val x = nextX()
+            composeRule.onNodeWithTag("statsChart").performTouchInput { click(percentOffset(x, 0.5f)) }
+            composeRule.waitForIdle()
+            hasCrumb(crumb)
+        }
+    }
+
+    private fun hasCrumb(crumb: String) =
+        composeRule.onAllNodes(hasTestTag("breadcrumbs") and hasAnyDescendant(hasText(crumb)))
+            .fetchSemanticsNodes().isNotEmpty()
 
     @Test
     fun overview_showsCountsCostTotalAndTopsPerLevel() {
@@ -214,12 +234,12 @@ class StatsScreenTest {
         composeRule.waitForText(counts(2, 1, 1))
         composeRule.onNodeWithText(costs(1500)).assertExists()
 
-        // 2026 → its last month, December: nothing recorded there.
-        tapLastBar(crumb = month(12))
-        composeRule.waitForText(counts(0, 0, 0))
+        // 2026 → March, its only month with records; the empty months open nothing.
+        sweepBars(crumb = month(3))
+        composeRule.waitForText(costs(1500))
 
         composeRule.onNodeWithText("2026").performClick()
-        composeRule.waitForText(counts(2, 1, 1))
+        composeRule.waitFor { !hasCrumb(month(3)) }
         composeRule.onNodeWithText(string(R.string.stats_all_time)).performClick()
         composeRule.waitForText(counts(3, 2, 1))
     }
