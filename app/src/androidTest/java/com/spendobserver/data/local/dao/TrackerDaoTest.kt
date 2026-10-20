@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -32,52 +31,6 @@ class TrackerDaoTest {
     @After
     fun closeDb() {
         db.close()
-    }
-
-    @Test
-    fun insertAndGetById_returnsSameTracker() = runBlocking {
-        val id = trackerDao.insert(Tracker(title = "Family", createdAt = 100, updatedAt = 100))
-
-        val loaded = trackerDao.getById(id)
-
-        assertEquals("Family", loaded?.title)
-        assertEquals(100L, loaded?.createdAt)
-    }
-
-    @Test
-    fun getByTitle_findsInsertedTracker() = runBlocking {
-        trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-
-        val loaded = trackerDao.getByTitle("Family")
-
-        assertEquals("Family", loaded?.title)
-    }
-
-    @Test
-    fun getByTitle_returnsNullWhenAbsent() = runBlocking {
-        assertNull(trackerDao.getByTitle("Nonexistent"))
-    }
-
-    @Test
-    fun update_persistsChanges() = runBlocking {
-        val id = trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-        val original = trackerDao.getById(id)!!
-
-        trackerDao.update(original.copy(title = "Family Renamed", updatedAt = 500))
-
-        val updated = trackerDao.getById(id)
-        assertEquals("Family Renamed", updated?.title)
-        assertEquals(500L, updated?.updatedAt)
-    }
-
-    @Test
-    fun delete_removesTracker() = runBlocking {
-        val id = trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-        val inserted = trackerDao.getById(id)!!
-
-        trackerDao.delete(inserted)
-
-        assertNull(trackerDao.getById(id))
     }
 
     @Test

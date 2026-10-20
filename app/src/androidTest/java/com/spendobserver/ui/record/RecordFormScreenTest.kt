@@ -1,6 +1,5 @@
 package com.spendobserver.ui.record
 
-import android.content.Context
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -14,10 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -29,10 +25,10 @@ import com.spendobserver.testing.amount
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForText
+import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -44,10 +40,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RecordFormScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val dbRule = InMemoryDatabaseRule()
+
+    @get:Rule(order = 1)
     val composeRule = createComposeRule()
 
-    private lateinit var db: AppDatabase
+    private val db get() = dbRule.db
     private lateinit var recordRepository: RecordRepository
     private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
@@ -55,18 +54,11 @@ class RecordFormScreenTest {
 
     @Before
     fun setUp() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao())
 
         trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
         savedCount = 0
-    }
-
-    @After
-    fun tearDown() {
-        db.close()
     }
 
     private fun setContent(recordId: Long? = null) {

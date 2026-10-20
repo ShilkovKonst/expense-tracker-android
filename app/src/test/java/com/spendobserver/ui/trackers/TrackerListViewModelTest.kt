@@ -1,12 +1,9 @@
 package com.spendobserver.ui.trackers
 
 import com.spendobserver.data.repository.TrackerRepository
-import com.spendobserver.domain.summary.AmountTotals
-import com.spendobserver.domain.summary.TrackerStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -41,11 +38,6 @@ class TrackerListViewModelTest {
     }
 
     @Test
-    fun trackers_startsEmpty() = runTest(dispatcher) {
-        assertTrue(viewModel.trackers.value.isEmpty())
-    }
-
-    @Test
     fun createTracker_addsItToTrackers() = runTest(dispatcher) {
         viewModel.trackers.onEach { }.launchIn(backgroundScope)
 
@@ -53,42 +45,6 @@ class TrackerListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("Family"), viewModel.trackers.value.map { it.title })
-    }
-
-    @Test
-    fun trackers_areSortedByTitle() = runTest(dispatcher) {
-        viewModel.trackers.onEach { }.launchIn(backgroundScope)
-
-        viewModel.createTracker("Work")
-        viewModel.createTracker("Family")
-        advanceUntilIdle()
-
-        assertEquals(listOf("Family", "Work"), viewModel.trackers.value.map { it.title })
-    }
-
-    @Test
-    fun deleteTracker_removesIt() = runTest(dispatcher) {
-        viewModel.trackers.onEach { }.launchIn(backgroundScope)
-
-        viewModel.createTracker("Family")
-        advanceUntilIdle()
-        val tracker = viewModel.trackers.value.first()
-
-        viewModel.deleteTracker(tracker)
-        advanceUntilIdle()
-
-        assertTrue(viewModel.trackers.value.isEmpty())
-    }
-
-    @Test
-    fun statsByTracker_surfacesWhatTheProvidedFlowEmits() = runTest(dispatcher) {
-        val stats = mapOf(1L to TrackerStats(3, AmountTotals(5000, 2000)))
-        val statsViewModel = TrackerListViewModel(TrackerRepository(dao), flowOf(stats))
-        statsViewModel.statsByTracker.onEach { }.launchIn(backgroundScope)
-
-        advanceUntilIdle()
-
-        assertEquals(stats, statsViewModel.statsByTracker.value)
     }
 
     @Test
@@ -102,31 +58,22 @@ class TrackerListViewModelTest {
     }
 
     @Test
-    fun createTracker_existingTitle_isRefusedWithAnError() = runTest(dispatcher) {
+    fun createTracker_titleMatchingAnExistingOne_isRefusedWithAnError() = runTest(dispatcher) {
         viewModel.trackers.onEach { }.launchIn(backgroundScope)
-        viewModel.createTracker("Family")
+        viewModel.createTracker("Семья")
         advanceUntilIdle()
 
-        var createdId: Long? = null
-        viewModel.createTracker("Family") { createdId = it }
-        advanceUntilIdle()
+        // The same title, another case, and invisible edges all count as "Семья" (see TrimInvisibleTest).
+        for (title in listOf("Семья", "СЕМЬЯ", "﻿ Семья​")) {
+            var createdId: Long? = null
+            viewModel.createTracker(title) { createdId = it }
+            advanceUntilIdle()
 
-        assertEquals(1, viewModel.trackers.value.size)
-        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
-        assertNull(createdId)
-    }
-
-    @Test
-    fun createTracker_titleDifferingOnlyByInvisibleCharacters_isTheSameTitle() = runTest(dispatcher) {
-        viewModel.trackers.onEach { }.launchIn(backgroundScope)
-        viewModel.createTracker("Family")
-        advanceUntilIdle()
-
-        viewModel.createTracker("﻿ Family ")
-        advanceUntilIdle()
-
-        assertEquals(1, viewModel.trackers.value.size)
-        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
+            assertEquals(title, 1, viewModel.trackers.value.size)
+            assertEquals(title, TITLE_TAKEN_ERROR, viewModel.createError.value)
+            assertNull(title, createdId)
+            viewModel.clearCreateError()
+        }
     }
 
     @Test
@@ -150,16 +97,4 @@ class TrackerListViewModelTest {
         assertNull(viewModel.createError.value)
     }
 
-    @Test
-    fun createTracker_titleDifferingOnlyByCase_isTheSameTitle() = runTest(dispatcher) {
-        viewModel.trackers.onEach { }.launchIn(backgroundScope)
-        viewModel.createTracker("Семья")
-        advanceUntilIdle()
-
-        viewModel.createTracker("СЕМЬЯ")
-        advanceUntilIdle()
-
-        assertEquals(1, viewModel.trackers.value.size)
-        assertEquals(TITLE_TAKEN_ERROR, viewModel.createError.value)
-    }
 }

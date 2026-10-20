@@ -1,24 +1,22 @@
 package com.spendobserver.ui.backup
 
-import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.testing.waitFor
+import com.spendobserver.testing.waitForText
+import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -33,10 +31,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ImportFlowTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val dbRule = InMemoryDatabaseRule()
+
+    @get:Rule(order = 1)
     val composeRule = createComposeRule()
 
-    private lateinit var db: AppDatabase
+    private val db get() = dbRule.db
     private lateinit var trackerRepository: TrackerRepository
     private lateinit var recordRepository: RecordRepository
     private lateinit var viewModel: ImportViewModel
@@ -54,8 +55,6 @@ class ImportFlowTest {
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         trackerRepository = TrackerRepository(db.trackerDao())
         recordRepository = RecordRepository(db)
         viewModel = ImportViewModel(BackupRepository(db, recordRepository), trackerRepository)
@@ -65,20 +64,14 @@ class ImportFlowTest {
         }
     }
 
-    @After
-    fun tearDown() {
-        db.close()
-    }
-
     /** Parsing runs off the main thread, which Compose's idling doesn't track — so wait for the text. */
     private fun loadAndWaitFor(text: String?, expected: String) {
         composeRule.runOnIdle { viewModel.onFileLoaded(text) }
-        composeRule.waitUntil(5_000) { composeRule.onAllNodesWithText(expected).fetchSemanticsNodes().isNotEmpty() }
+        composeRule.waitForText(expected)
     }
 
-    private fun waitForState(predicate: (ImportState) -> Boolean) {
-        composeRule.waitUntil(5_000) { predicate(viewModel.state.value) }
-    }
+    /** The import itself runs in viewModelScope over Room. */
+    private fun waitForState(predicate: (ImportState) -> Boolean) = composeRule.waitFor { predicate(viewModel.state.value) }
 
     private fun titles() = runBlocking { trackerRepository.observeTrackers().first().map { it.title } }
 

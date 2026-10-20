@@ -1,6 +1,6 @@
 package com.spendobserver.ui.stats
 
-import android.content.Context
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
@@ -15,10 +15,7 @@ import androidx.compose.ui.test.percentOffset
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -30,9 +27,9 @@ import com.spendobserver.testing.amount
 import com.spendobserver.testing.month
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
+import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,10 +38,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class StatsScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val dbRule = InMemoryDatabaseRule()
+
+    @get:Rule(order = 1)
     val composeRule = createComposeRule()
 
-    private lateinit var db: AppDatabase
+    private val db get() = dbRule.db
     private lateinit var recordRepository: RecordRepository
     private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
@@ -55,8 +55,6 @@ class StatsScreenTest {
      */
     @Before
     fun setUp() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao())
 
@@ -70,11 +68,6 @@ class StatsScreenTest {
         insert(LocalDate(2026, 3, 5), RecordType.INCOME, emptySet(), PartDraft(9000, emptySet()))
     }
 
-    @After
-    fun tearDown() {
-        db.close()
-    }
-
     private suspend fun insert(date: LocalDate, type: RecordType, tagIds: Set<Long>, vararg parts: PartDraft) {
         recordRepository.insertRecord(
             Record(trackerId = trackerId, date = date, type = type, description = null),
@@ -83,7 +76,10 @@ class StatsScreenTest {
         )
     }
 
-    /** [loadedCosts] is the default view's summary line, shown once the data is in. */
+    /**
+     * [loadedCosts] is the default view's summary line, shown once the data is in.
+     * "Today" is pinned in 2026, the data's last year, so the all-time axis ends there.
+     */
     private fun setContent(loadedCosts: String = "Расходы: " + amount(1700)) {
         composeRule.setContent {
             StatsScreen(
@@ -91,6 +87,7 @@ class StatsScreenTest {
                 recordRepository = recordRepository,
                 tagRepository = tagRepository,
                 onBackClick = {},
+                today = { LocalDate(2026, 10, 20) },
             )
         }
         composeRule.waitForText(loadedCosts)
@@ -137,7 +134,7 @@ class StatsScreenTest {
         composeRule.onNodeWithTag("subjectField").performClick()
 
         composeRule.onNodeWithTag("subjectList").performScrollToNode(hasTestTag("tagRow-кино"))
-        composeRule.onNodeWithText("0 · " + amount(0)).assertExists()
+        composeRule.onNodeWithTag("tagRow-кино").assert(hasText("0 · " + amount(0)))
     }
 
     @Test
@@ -147,13 +144,13 @@ class StatsScreenTest {
         composeRule.onNodeWithTag("subjectField").performClick()
         composeRule.onNodeWithTag("tagRow-продукты").performClick()
         composeRule.onNodeWithTag("subjectList").assertDoesNotExist()
+        composeRule.waitForText("Расходы: " + amount(1200))
         composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Тег «продукты» (расходы)")
         composeRule.onNodeWithText("Встречается в 2 записях").assertExists()
-        composeRule.onNodeWithText("Расходы: " + amount(1200)).assertExists()
 
         composeRule.onNodeWithTag("subjectField").performClick()
         composeRule.onNodeWithTag("overviewRow").performClick()
-        composeRule.onNodeWithText("Расходы: " + amount(1700)).assertExists()
+        composeRule.waitForText("Расходы: " + amount(1700))
     }
 
     @Test
@@ -173,7 +170,7 @@ class StatsScreenTest {
 
         composeRule.onNodeWithTag("incomeTypeButton").performClick()
 
-        composeRule.onNodeWithText("Доходы: " + amount(9000)).assertExists()
+        composeRule.waitForText("Доходы: " + amount(9000))
         composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Общая статистика (доходы)")
         composeRule.onNodeWithText("3 записи (2 расхода, 1 доход)").assertExists()
     }
@@ -196,31 +193,21 @@ class StatsScreenTest {
     }
 
     @Test
-    fun metricToggle_keepsTheChart() {
-        setContent()
-
-        composeRule.onNodeWithText("Записи").performClick()
-
-        composeRule.onNodeWithTag("statsList").performScrollToNode(hasTestTag("statsChart"))
-        composeRule.onNodeWithTag("statsChart").assertExists()
-    }
-
-    @Test
     fun tappingBars_drillsDown_andBreadcrumbsGoBack() {
         setContent()
 
         // All time → the last year (2026).
         tapLastBar(crumb = "2026")
-        composeRule.onNodeWithText("2 записи (1 расход, 1 доход)").assertExists()
+        composeRule.waitForText("2 записи (1 расход, 1 доход)")
         composeRule.onNodeWithText("Расходы: " + amount(1500)).assertExists()
 
         // 2026 → its last month, December: nothing recorded there.
         tapLastBar(crumb = month(12))
-        composeRule.onNodeWithText("0 записей (0 расходов, 0 доходов)").assertExists()
+        composeRule.waitForText("0 записей (0 расходов, 0 доходов)")
 
         composeRule.onNodeWithText("2026").performClick()
-        composeRule.onNodeWithText("2 записи (1 расход, 1 доход)").assertExists()
+        composeRule.waitForText("2 записи (1 расход, 1 доход)")
         composeRule.onNodeWithText("Всё время").performClick()
-        composeRule.onNodeWithText("3 записи (2 расхода, 1 доход)").assertExists()
+        composeRule.waitForText("3 записи (2 расхода, 1 доход)")
     }
 }

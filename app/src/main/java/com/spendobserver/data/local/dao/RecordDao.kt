@@ -11,7 +11,6 @@ import com.spendobserver.data.local.dto.TrackerRecordStatsRow
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.relation.RecordWithParts
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.LocalDate
 
 @Dao
 interface RecordDao {
@@ -31,14 +30,6 @@ interface RecordDao {
     @Transaction
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getWithPartsById(id: Long): RecordWithParts?
-
-    @Transaction
-    @Query(
-        "SELECT * FROM records " +
-            "WHERE trackerId = :trackerId AND date >= :from AND date < :to " +
-            "ORDER BY date ASC",
-    )
-    fun observeInRange(trackerId: Long, from: LocalDate, to: LocalDate): Flow<List<RecordWithParts>>
 
     @Transaction
     @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")

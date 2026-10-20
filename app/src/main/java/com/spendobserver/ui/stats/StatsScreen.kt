@@ -67,6 +67,7 @@ import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.rememberFormatLocale
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,11 +77,13 @@ fun StatsScreen(
     tagRepository: TagRepository,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Overridable so a test's "all time" axis doesn't grow with the real calendar. */
+    today: () -> LocalDate = ::systemToday,
 ) {
     val viewModel: StatsViewModel = viewModel(
         factory = remember(trackerId, recordRepository, tagRepository) {
             viewModelFactory {
-                initializer { StatsViewModel(trackerId, recordRepository, tagRepository) }
+                initializer { StatsViewModel(trackerId, recordRepository, tagRepository, today) }
             }
         },
     )

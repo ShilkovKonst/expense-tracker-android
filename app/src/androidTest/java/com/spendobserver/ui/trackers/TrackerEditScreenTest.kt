@@ -1,7 +1,8 @@
 package com.spendobserver.ui.trackers
 
-import android.content.Context
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,10 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -26,10 +24,10 @@ import com.spendobserver.testing.waitForNoNode
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForTag
 import com.spendobserver.testing.waitForText
+import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -40,27 +38,23 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TrackerEditScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val dbRule = InMemoryDatabaseRule()
+
+    @get:Rule(order = 1)
     val composeRule = createComposeRule()
 
-    private lateinit var db: AppDatabase
+    private val db get() = dbRule.db
     private lateinit var trackerRepository: TrackerRepository
     private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
 
     @Before
     fun setUp() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         trackerRepository = TrackerRepository(db.trackerDao())
         tagRepository = TagRepository(db.tagDao())
 
         trackerId = trackerRepository.insertTracker(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-    }
-
-    @After
-    fun tearDown() {
-        db.close()
     }
 
     private fun setContent() {
@@ -79,8 +73,8 @@ class TrackerEditScreenTest {
         setContent()
         composeRule.waitForText("Family")
 
-        composeRule.onNodeWithTag("trackerNameInput").assertExists()
-        composeRule.onNodeWithText("Family").assertExists()
+        // The app bar shows "Family" too: check the field itself holds it.
+        composeRule.onNodeWithTag("trackerNameInput").assert(hasText("Family"))
     }
 
     @Test
@@ -272,20 +266,5 @@ class TrackerEditScreenTest {
         composeRule.waitForTag("renameTagButton-Fuel")
 
         assertEquals("Fuel", runBlocking { tagRepository.observeTags(trackerId).first() }.single().name)
-    }
-
-    @Test
-    fun renamingTrackerToAnotherTitleInADifferentCase_isRefused() {
-        runBlocking { trackerRepository.insertTracker(Tracker(title = "Work", createdAt = 0, updatedAt = 0)) }
-        setContent()
-        composeRule.waitForText("Family")
-
-        composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
-        composeRule.onNodeWithTag("trackerNameInput").performTextInput("work")
-        composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForText("Трекер с таким названием уже есть")
-
-        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
-        assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 }

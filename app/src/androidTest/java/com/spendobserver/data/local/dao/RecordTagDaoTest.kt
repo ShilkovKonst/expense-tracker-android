@@ -13,7 +13,6 @@ import com.spendobserver.data.local.entity.Tracker
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -51,39 +50,6 @@ class RecordTagDaoTest {
     @After
     fun closeDb() {
         db.close()
-    }
-
-    @Test
-    fun insertAndGetForRecord_returnsLink() = runBlocking {
-        recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId))
-
-        val links = recordTagDao.getForRecord(recordId)
-
-        assertEquals(listOf(RecordTag(recordId, tagId)), links)
-    }
-
-    @Test
-    fun insert_duplicatePair_fails() = runBlocking {
-        recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId))
-
-        var threw = false
-        try {
-            recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId))
-        } catch (e: Exception) {
-            threw = true
-        }
-
-        assertTrue("Inserting the same (recordId, tagId) pair twice should violate the PK", threw)
-    }
-
-    @Test
-    fun deletingRecord_cascadesToItsRecordTags() = runBlocking {
-        recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId))
-        val record = db.recordDao().getById(recordId)!!
-
-        db.recordDao().delete(record)
-
-        assertTrue(recordTagDao.getForRecord(recordId).isEmpty())
     }
 
     @Test

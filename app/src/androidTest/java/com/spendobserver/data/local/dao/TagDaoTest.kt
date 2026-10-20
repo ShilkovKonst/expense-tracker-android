@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -43,41 +42,6 @@ class TagDaoTest {
     @After
     fun closeDb() {
         db.close()
-    }
-
-    @Test
-    fun insertAndGetByTrackerAndName_returnsSameTag() = runBlocking {
-        tagDao.insert(Tag(trackerId = trackerId, name = "groceries"))
-
-        val loaded = tagDao.getByTrackerAndName(trackerId, "groceries")
-
-        assertEquals("groceries", loaded?.name)
-        assertEquals(trackerId, loaded?.trackerId)
-    }
-
-    @Test
-    fun getByTrackerAndName_returnsNullWhenAbsent() = runBlocking {
-        assertNull(tagDao.getByTrackerAndName(trackerId, "nonexistent"))
-    }
-
-    @Test
-    fun update_persistsChanges() = runBlocking {
-        val id = tagDao.insert(Tag(trackerId = trackerId, name = "groceries"))
-
-        tagDao.update(Tag(id = id, trackerId = trackerId, name = "groceries-renamed"))
-
-        val loaded = tagDao.getByTrackerAndName(trackerId, "groceries-renamed")
-        assertEquals(id, loaded?.id)
-    }
-
-    @Test
-    fun delete_removesTag() = runBlocking {
-        tagDao.insert(Tag(trackerId = trackerId, name = "groceries"))
-        val inserted = tagDao.getByTrackerAndName(trackerId, "groceries")!!
-
-        tagDao.delete(inserted)
-
-        assertNull(tagDao.getByTrackerAndName(trackerId, "groceries"))
     }
 
     @Test

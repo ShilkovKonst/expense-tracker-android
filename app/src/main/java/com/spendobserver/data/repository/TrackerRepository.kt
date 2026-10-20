@@ -13,8 +13,6 @@ class TrackerRepository(private val trackerDao: TrackerDao) {
 
     fun observeTracker(id: Long): Flow<Tracker?> = trackerDao.observeById(id)
 
-    suspend fun findByTitle(title: String): Tracker? = trackerDao.getByTitle(title)
-
     /**
      * Whether another tracker already has [title] by [isSameNameAs] — so
      * also ignoring case and invisible edges, which the database's unique

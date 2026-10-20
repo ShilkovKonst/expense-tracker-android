@@ -137,6 +137,17 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun copy_skipsTitlesTheFileItselfBrings() = runBlocking {
+        db.trackerDao().insert(Tracker(title = "Дом", createdAt = 0, updatedAt = 0))
+        // "Дом (2)" isn't in the database, so it needs no resolution — but the copy mustn't take its name.
+        val home2 = homeFile.copy(title = "Дом (2)")
+
+        repository.import(listOf(ImportItem(homeFile, ClashResolution.COPY), ImportItem(home2)))
+
+        assertEquals(listOf("Дом", "Дом (2)", "Дом (3)"), trackers().map { it.title })
+    }
+
+    @Test
     fun exportThenImport_asCopy_reproducesTheTracker() = runBlocking {
         val id = repository.import(listOf(ImportItem(homeFile))).single()
         db.tagDao().insert(Tag(trackerId = id, name = "кино")) // unused tags travel too

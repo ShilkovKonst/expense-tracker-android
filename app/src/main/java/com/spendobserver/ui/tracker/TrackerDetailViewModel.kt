@@ -7,6 +7,7 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.domain.summary.groupByYearMonth
 import com.spendobserver.ui.navigation.RecordChange
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Holds the accordion's expanded years/months here rather than in the
@@ -39,7 +41,9 @@ class TrackerDetailViewModel(
         )
 
     val yearGroups: StateFlow<List<YearGroup>> = recordRepository.observeAll(trackerId)
-        .map { it.groupByYearMonth() }
+        // Grouping and summing walk every record: off the main thread — inside map, not
+        // flowOn() before stateIn(), which would fuse and set the state off the main thread.
+        .map { withContext(Dispatchers.Default) { it.groupByYearMonth() } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -52,6 +56,10 @@ class TrackerDetailViewModel(
     /** Split records whose part lines are shown; collapsed by default to keep the list compact. */
     private val expandedRecords = MutableStateFlow(emptySet<Long>())
 
+    /**
+     * Left on the main thread, unlike [yearGroups]: flattening the groups is
+     * cheap, and a toggle then redraws in the same frame as the tap.
+     */
     val items: StateFlow<List<AccordionItem>> =
         combine(yearGroups, expandedYears, expandedMonths, expandedRecords, ::accordionItems)
         .stateIn(

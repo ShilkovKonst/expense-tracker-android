@@ -58,10 +58,16 @@ class BackupRepository(
      *   that has no [ImportItem.resolution]: the caller must ask first.
      */
     suspend fun import(items: List<ImportItem>): List<Long> = db.withTransaction {
-        items.map { item -> importOne(item) }
+        val fileTitles = items.map { it.tracker.title }
+        items.map { item -> importOne(item, fileTitles) }
     }
 
-    private suspend fun importOne(item: ImportItem): Long {
+    /**
+     * A copy's name dodges [fileTitles] too — the same rule as the preview,
+     * so the name shown there is the name stored, and a copy never takes the
+     * title of a later item that had no clash and so no resolution.
+     */
+    private suspend fun importOne(item: ImportItem, fileTitles: List<String>): Long {
         val imported = item.tracker
         // Read inside the loop: an earlier item of this same import may have taken a title.
         val existing = trackerDao.getAll()
@@ -72,7 +78,7 @@ class BackupRepository(
                 trackerDao.delete(clash) // its tags, records and parts follow via CASCADE
                 imported.title
             }
-            item.resolution == ClashResolution.COPY -> copyTitle(imported.title, existing.map { it.title })
+            item.resolution == ClashResolution.COPY -> copyTitle(imported.title, existing.map { it.title } + fileTitles)
             else -> error("Tracker «${imported.title}» already exists; choose REPLACE or COPY")
         }
 

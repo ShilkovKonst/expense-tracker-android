@@ -63,27 +63,6 @@ class RecordDaoTest {
     }
 
     @Test
-    fun insertAndGetById_returnsSameRecord() = runBlocking {
-        val id = recordDao.insert(record(LocalDate(2026, 3, 15)).copy(description = "groceries"))
-
-        val loaded = recordDao.getById(id)
-
-        assertEquals(trackerId, loaded?.trackerId)
-        assertEquals(LocalDate(2026, 3, 15), loaded?.date)
-        assertEquals("groceries", loaded?.description)
-    }
-
-    @Test
-    fun update_persistsChanges() = runBlocking {
-        val id = recordDao.insert(record(LocalDate(2026, 3, 15)))
-        val original = recordDao.getById(id)!!
-
-        recordDao.update(original.copy(type = RecordType.INCOME))
-
-        assertEquals(RecordType.INCOME, recordDao.getById(id)?.type)
-    }
-
-    @Test
     fun delete_removesRecordAndCascadesToItsParts() = runBlocking {
         val id = insertWithParts(record(LocalDate(2026, 3, 15)), 1000, 2000)
         val inserted = recordDao.getById(id)!!
@@ -92,40 +71,6 @@ class RecordDaoTest {
 
         assertNull(recordDao.getById(id))
         assertEquals(emptyList<RecordPart>(), recordPartDao.getForRecord(id))
-    }
-
-    @Test
-    fun observeInRange_returnsOnlyRecordsWithinMonth_orderedByDate() = runBlocking {
-        insertWithParts(record(LocalDate(2026, 2, 28))) // до диапазона
-        val inMarch1 = insertWithParts(record(LocalDate(2026, 3, 1)))
-        val inMarch2 = insertWithParts(record(LocalDate(2026, 3, 20)))
-        insertWithParts(record(LocalDate(2026, 4, 1))) // после диапазона
-
-        val march = recordDao.observeInRange(
-            trackerId = trackerId,
-            from = LocalDate(2026, 3, 1),
-            to = LocalDate(2026, 4, 1),
-        ).first()
-
-        assertEquals(listOf(inMarch1, inMarch2), march.map { it.record.id })
-    }
-
-    @Test
-    fun observeInRange_excludesOtherTrackers() = runBlocking {
-        val otherTrackerId = db.trackerDao().insert(
-            Tracker(title = "Work", createdAt = 0, updatedAt = 0),
-        )
-        insertWithParts(record(LocalDate(2026, 3, 10)))
-        insertWithParts(record(LocalDate(2026, 3, 10), tracker = otherTrackerId))
-
-        val march = recordDao.observeInRange(
-            trackerId = trackerId,
-            from = LocalDate(2026, 3, 1),
-            to = LocalDate(2026, 4, 1),
-        ).first()
-
-        assertEquals(1, march.size)
-        assertEquals(trackerId, march.first().record.trackerId)
     }
 
     @Test

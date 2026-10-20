@@ -52,6 +52,7 @@ import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
+import com.spendobserver.domain.calculator.CalculatorMode
 import com.spendobserver.domain.calculator.amountCentsFrom
 import com.spendobserver.domain.record.PartInput
 import com.spendobserver.domain.record.PartsError
@@ -214,6 +215,7 @@ fun RecordFormScreen(
                         value = only.amountExpression,
                         onValueChange = { viewModel.setPartAmount(only.id, it) },
                         label = "Сумма",
+                        mode = viewModel.calculatorMode,
                         error = errors.amountErrorFor(only.id),
                         modifier = Modifier.testTag("amountInput"),
                     )
@@ -226,6 +228,7 @@ fun RecordFormScreen(
                 ReceiptTotalSection(
                     expression = parts.receiptTotalExpression,
                     errors = errors,
+                    mode = viewModel.calculatorMode,
                     onChange = viewModel::setReceiptTotal,
                     onAdd = { viewModel.setReceiptTotal("") },
                     onClear = viewModel::clearReceiptTotal,
@@ -250,6 +253,7 @@ fun RecordFormScreen(
                         canRemove = parts.parts.size > 1 && part.id != parts.remainderPartId,
                         evaluation = evaluation,
                         errors = errors,
+                        mode = viewModel.calculatorMode,
                         localTags = localTags,
                         onAmountChange = { viewModel.setPartAmount(part.id, it) },
                         onToggleTag = { viewModel.togglePartTag(part.id, it) },
@@ -336,6 +340,7 @@ private fun AmountField(
     onValueChange: (String) -> Unit,
     label: String,
     error: String?,
+    mode: CalculatorMode,
     modifier: Modifier = Modifier,
 ) {
     Column {
@@ -348,7 +353,8 @@ private fun AmountField(
             isError = error != null,
             modifier = modifier.fillMaxWidth(),
         )
-        val preview = amountCentsFrom(value)
+        // Only re-parsed when the field's text changes, not on every recomposition of the form.
+        val preview = remember(value, mode) { amountCentsFrom(value, mode) }
         // Compared in the field's own plain form; shown in the locale's.
         if (preview != null && value != formatCents(preview)) {
             Text("= ${amountText(preview)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -363,6 +369,7 @@ private fun AmountField(
 private fun ReceiptTotalSection(
     expression: String?,
     errors: List<PartsError>,
+    mode: CalculatorMode,
     onChange: (String) -> Unit,
     onAdd: () -> Unit,
     onClear: () -> Unit,
@@ -384,6 +391,7 @@ private fun ReceiptTotalSection(
                 PartsError.PartsExceedReceiptTotal in errors -> "Сумма частей должна быть меньше итога чека"
                 else -> null
             },
+            mode = mode,
             modifier = Modifier.testTag("receiptTotalInput"),
         )
         TextButton(
@@ -405,6 +413,7 @@ private fun PartCard(
     canRemove: Boolean,
     evaluation: PartsEvaluation,
     errors: List<PartsError>,
+    mode: CalculatorMode,
     localTags: List<Tag>,
     onAmountChange: (String) -> Unit,
     onToggleTag: (Long) -> Unit,
@@ -429,6 +438,7 @@ private fun PartCard(
                             value = part.amountExpression,
                             onValueChange = onAmountChange,
                             label = "Сумма",
+                            mode = mode,
                             error = errors.amountErrorFor(part.id),
                             modifier = Modifier.testTag("partAmountInput-$index"),
                         )

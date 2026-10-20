@@ -48,7 +48,8 @@ class RecordFormViewModel(
     private val tagRepository: TagRepository,
 ) : ViewModel() {
 
-    private val calculatorMode = CalculatorMode.LEFT_TO_RIGHT
+    /** How amount expressions are evaluated; the form's "= …" previews use it too. */
+    val calculatorMode = CalculatorMode.LEFT_TO_RIGHT
 
     val isEditing: Boolean get() = recordId != null
 

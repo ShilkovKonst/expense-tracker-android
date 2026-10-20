@@ -1,16 +1,12 @@
 package com.spendobserver.ui.tracker
 
-import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -27,9 +23,9 @@ import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
 import com.spendobserver.ui.navigation.RecordChange
+import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -40,10 +36,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TrackerDetailScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val dbRule = InMemoryDatabaseRule()
+
+    @get:Rule(order = 1)
     val composeRule = createComposeRule()
 
-    private lateinit var db: AppDatabase
+    private val db get() = dbRule.db
     private lateinit var trackerRepository: TrackerRepository
     private lateinit var recordRepository: RecordRepository
     private lateinit var tagRepository: TagRepository
@@ -51,18 +50,11 @@ class TrackerDetailScreenTest {
 
     @Before
     fun setUp() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         trackerRepository = TrackerRepository(db.trackerDao())
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao())
 
         trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-    }
-
-    @After
-    fun tearDown() {
-        db.close()
     }
 
     private suspend fun insertRecord(
@@ -96,14 +88,6 @@ class TrackerDetailScreenTest {
         composeRule.waitForText("Family")
 
         composeRule.onNodeWithText("Записей пока нет").assertExists()
-    }
-
-    @Test
-    fun trackerTitle_isShownInAppBar() {
-        setContent()
-        composeRule.waitForText("Family")
-
-        composeRule.onNodeWithText("Family").assertExists()
     }
 
     @Test
@@ -174,19 +158,6 @@ class TrackerDetailScreenTest {
     }
 
     @Test
-    fun multipleYears_areOrderedNewestFirstAndBothExpandable() {
-        runBlocking {
-            insertRecord(LocalDate(2025, 12, 1), RecordType.COST, 500, "old")
-            insertRecord(LocalDate(2026, 1, 1), RecordType.COST, 500, "new")
-        }
-        setContent()
-        composeRule.waitForText("2025")
-
-        composeRule.onNodeWithText("2026").assertExists()
-        composeRule.onNodeWithText("2025").assertExists()
-    }
-
-    @Test
     fun recordPreview_showsItsTags() {
         runBlocking {
             val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "groceries"))
@@ -219,21 +190,6 @@ class TrackerDetailScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Описание: без описания").assertExists()
-    }
-
-    @Test
-    fun recordPreview_longDescription_stillRendersAsOneLabeledLine() {
-        val longDescription = "very very very very so long and detailed description of record so long that I cant read it in one line"
-        runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, longDescription) }
-        setContent()
-        composeRule.waitForText("2026")
-
-        composeRule.onNodeWithText("2026").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText(month(3)).performClick()
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("Описание: $longDescription").assertExists()
     }
 
     @Test

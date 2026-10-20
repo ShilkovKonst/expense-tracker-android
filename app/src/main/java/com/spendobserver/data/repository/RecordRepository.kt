@@ -15,7 +15,6 @@ import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.TrackerStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.LocalDate
 
 class RecordRepository(
     private val db: AppDatabase,
@@ -23,9 +22,6 @@ class RecordRepository(
     private val recordTagDao: RecordTagDao = db.recordTagDao(),
     private val recordPartDao: RecordPartDao = db.recordPartDao(),
 ) {
-
-    fun observeInRange(trackerId: Long, from: LocalDate, to: LocalDate): Flow<List<RecordWithParts>> =
-        recordDao.observeInRange(trackerId, from, to).map { list -> list.map { it.withSortedParts() } }
 
     fun observeAll(trackerId: Long): Flow<List<RecordWithParts>> =
         recordDao.observeAll(trackerId).map { list -> list.map { it.withSortedParts() } }

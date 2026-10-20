@@ -10,9 +10,6 @@ class TagRepository(private val tagDao: TagDao) {
 
     fun observeTags(trackerId: Long): Flow<List<Tag>> = tagDao.observeForTracker(trackerId)
 
-    suspend fun findByName(trackerId: Long, name: String): Tag? =
-        tagDao.getByTrackerAndName(trackerId, name)
-
     suspend fun insertTag(tag: Tag): Long = tagDao.insert(tag)
 
     suspend fun updateTag(tag: Tag) = tagDao.update(tag)

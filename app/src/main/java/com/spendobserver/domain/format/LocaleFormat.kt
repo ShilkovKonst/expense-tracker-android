@@ -44,11 +44,19 @@ fun monthName(month: Int, locale: Locale): String =
 fun shortMonthName(month: Int, locale: Locale): String =
     Month.of(month).getDisplayName(TextStyle.SHORT_STANDALONE, locale)
 
+/**
+ * Built once per locale and digit count instead of per call — lists and chart
+ * axes format on every frame. Per thread, since a NumberFormat isn't thread-safe.
+ */
+private val amountFormats = ThreadLocal.withInitial { HashMap<Pair<Locale, Int>, NumberFormat>() }
+
 private fun amountFormat(locale: Locale, fractionDigits: Int): NumberFormat =
-    NumberFormat.getNumberInstance(locale).apply {
-        minimumFractionDigits = fractionDigits
-        maximumFractionDigits = fractionDigits
-        isGroupingUsed = true
+    amountFormats.get()!!.getOrPut(locale to fractionDigits) {
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = fractionDigits
+            maximumFractionDigits = fractionDigits
+            isGroupingUsed = true
+        }
     }
 
 private fun String.capitalized(locale: Locale): String =
