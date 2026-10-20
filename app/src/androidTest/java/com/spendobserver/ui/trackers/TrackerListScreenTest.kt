@@ -193,7 +193,7 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput("  Family ")
         composeRule.onNodeWithText(string(R.string.action_create)).performClick()
 
-        composeRule.waitForText("Трекер с таким названием уже есть")
+        composeRule.waitForText(string(R.string.error_tracker_name_taken))
         composeRule.onNodeWithTag("trackerTitleInput").assertExists() // dialog stays open
         val trackers = runBlocking { trackerRepository.observeTrackers().first() }
         assertEquals(1, trackers.size)

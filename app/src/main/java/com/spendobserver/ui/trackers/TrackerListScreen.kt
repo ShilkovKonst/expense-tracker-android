@@ -60,6 +60,7 @@ import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.backup.rememberImportLauncher
 import com.spendobserver.ui.common.DeleteTrackerDialog
 import com.spendobserver.ui.common.signedAmountText
+import com.spendobserver.ui.common.trackerNameText
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,7 +210,7 @@ fun TrackerListScreen(
             title = stringResource(R.string.tracker_new_title),
             initialTitle = "",
             confirmLabel = stringResource(R.string.action_create),
-            error = createError,
+            error = createError?.trackerNameText(),
             onTextChange = viewModel::clearCreateError,
             // Stays open on a refused name (createError explains why); closes once created.
             onConfirm = { title ->
@@ -301,7 +302,7 @@ private fun TrackerTitleDialog(
                     onTextChange()
                 },
                 singleLine = true,
-                label = { Text(stringResource(R.string.tracker_name_label)) },
+                label = { Text(stringResource(R.string.name_label)) },
                 isError = error != null,
                 supportingText = error?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth().testTag("trackerTitleInput"),

@@ -12,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.spendobserver.R
 import com.spendobserver.domain.text.trimInvisible
 
 /**
@@ -42,7 +44,7 @@ fun TagNameDialog(
                     onTextChange()
                 },
                 singleLine = true,
-                label = { Text("Название") },
+                label = { Text(stringResource(R.string.name_label)) },
                 isError = error != null,
                 supportingText = error?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth().testTag("tagNameInput"),
@@ -56,7 +58,7 @@ fun TagNameDialog(
             ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }

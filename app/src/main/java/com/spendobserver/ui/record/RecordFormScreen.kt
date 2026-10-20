@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.RecordRepository
@@ -67,6 +69,7 @@ import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.dateText
 import com.spendobserver.ui.navigation.RecordChange
+import com.spendobserver.ui.common.tagNameText
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
@@ -113,7 +116,7 @@ fun RecordFormScreen(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if (viewModel.isEditing) "Редактировать запись" else "Новая запись") },
+                title = { Text(stringResource(if (viewModel.isEditing) R.string.record_edit_title else R.string.record_new_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Text("←") }
                 },
@@ -149,12 +152,12 @@ fun RecordFormScreen(
                     selected = type == RecordType.COST,
                     onClick = { viewModel.setType(RecordType.COST) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text("Расход") }
+                ) { Text(stringResource(R.string.record_type_cost)) }
                 SegmentedButton(
                     selected = type == RecordType.INCOME,
                     onClick = { viewModel.setType(RecordType.INCOME) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text("Доход") }
+                ) { Text(stringResource(R.string.record_type_income)) }
             }
 
             OutlinedTextField(
@@ -170,7 +173,7 @@ fun RecordFormScreen(
                 // below so it still looks like a normal field, not greyed
                 // out.
                 enabled = false,
-                label = { Text("Дата") },
+                label = { Text(stringResource(R.string.record_date_label)) },
                 colors = OutlinedTextFieldDefaults.colors(
                     disabledTextColor = MaterialTheme.colorScheme.onSurface,
                     disabledBorderColor = MaterialTheme.colorScheme.outline,
@@ -186,8 +189,8 @@ fun RecordFormScreen(
             // local. A split record's local tags belong to each part, inside
             // its card, so then only the global row is here.
             TagChipsSection(
-                title = "Общие теги",
-                hint = "где, с кем",
+                title = stringResource(R.string.tags_global_title),
+                hint = stringResource(R.string.tags_global_hint),
                 tags = globalTags,
                 selectedIds = globalTagIds,
                 onToggle = viewModel::toggleGlobalTag,
@@ -197,8 +200,8 @@ fun RecordFormScreen(
             if (!parts.isSplit) {
                 val only = parts.parts.single()
                 TagChipsSection(
-                    title = "Теги",
-                    hint = "на что",
+                    title = stringResource(R.string.tags_local_title),
+                    hint = stringResource(R.string.tags_local_hint),
                     tags = localTags,
                     selectedIds = only.tagIds,
                     onToggle = { viewModel.togglePartTag(only.id, it) },
@@ -214,15 +217,15 @@ fun RecordFormScreen(
                     AmountField(
                         value = only.amountExpression,
                         onValueChange = { viewModel.setPartAmount(only.id, it) },
-                        label = "Сумма",
-                        mode = viewModel.calculatorMode,
+                        label = stringResource(R.string.amount_label),
                         error = errors.amountErrorFor(only.id),
+                        mode = viewModel.calculatorMode,
                         modifier = Modifier.testTag("amountInput"),
                     )
                     TextButton(
                         onClick = viewModel::split,
                         modifier = Modifier.testTag("splitButton"),
-                    ) { Text("Разбить по частям") }
+                    ) { Text(stringResource(R.string.record_split)) }
                 }
             } else {
                 ReceiptTotalSection(
@@ -240,7 +243,7 @@ fun RecordFormScreen(
                     TextButton(
                         onClick = viewModel::addPart,
                         modifier = Modifier.testTag("addPartButton"),
-                    ) { Text("+ Часть") }
+                    ) { Text(stringResource(R.string.part_add)) }
                 }
                 parts.parts.forEachIndexed { index, part ->
                     // New parts are inserted before the remainder, so the
@@ -265,7 +268,7 @@ fun RecordFormScreen(
                     if (parts.remainderPartId == null) addPartButton()
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "Итого: ${evaluation.totalCents?.let { amountText(it) } ?: "—"}",
+                        text = stringResource(R.string.record_total, evaluation.totalCents?.let { amountText(it) } ?: "—"),
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.testTag("recordTotal"),
                     )
@@ -275,8 +278,8 @@ fun RecordFormScreen(
             AlwaysLabeledTextField(
                 value = description,
                 onValueChange = viewModel::setDescription,
-                label = "Описание",
-                placeholder = "Опционально",
+                label = stringResource(R.string.description_label),
+                placeholder = stringResource(R.string.description_placeholder),
                 modifier = Modifier.testTag("descriptionInput"),
             )
         }
@@ -290,19 +293,19 @@ fun RecordFormScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { viewModel.setDate(it.toLocalDateFromUtcMillis()) }
                     showDatePicker = false
-                }) { Text("ОК") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) { DatePicker(state = datePickerState) }
     }
 
     newTagTarget?.let { target ->
         TagNameDialog(
-            title = if (target.isGlobal) "Новый общий тег" else "Новый тег",
+            title = stringResource(if (target.isGlobal) R.string.tag_new_global else R.string.tag_new),
             initialName = "",
-            confirmLabel = "Создать",
+            confirmLabel = stringResource(R.string.action_create),
             onConfirm = { name ->
                 viewModel.createTag(name, isGlobal = target.isGlobal, forPartId = target.partId) { newTagTarget = null }
             },
@@ -310,7 +313,7 @@ fun RecordFormScreen(
                 newTagTarget = null
                 viewModel.clearTagNameError()
             },
-            error = tagNameError,
+            error = tagNameError?.tagNameText(),
             onTextChange = viewModel::clearTagNameError,
         )
     }
@@ -318,16 +321,16 @@ fun RecordFormScreen(
     if (showDeleteRecordDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteRecordDialog = false },
-            title = { Text("Удалить запись?") },
-            text = { Text("Это действие нельзя отменить.") },
+            title = { Text(stringResource(R.string.record_delete_title)) },
+            text = { Text(stringResource(R.string.record_delete_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteRecordDialog = false
                     viewModel.delete(onSaved)
-                }) { Text("Удалить") }
+                }) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteRecordDialog = false }) { Text("Отмена") }
+                TextButton(onClick = { showDeleteRecordDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -378,17 +381,17 @@ private fun ReceiptTotalSection(
         TextButton(
             onClick = onAdd,
             modifier = Modifier.testTag("addReceiptTotalButton"),
-        ) { Text("+ Итог по чеку") }
+        ) { Text(stringResource(R.string.receipt_total_add)) }
         return
     }
     Column {
         AmountField(
             value = expression,
             onValueChange = onChange,
-            label = "Итог по чеку",
+            label = stringResource(R.string.receipt_total_label),
             error = when {
-                PartsError.InvalidReceiptTotal in errors -> "Введите итог чека"
-                PartsError.PartsExceedReceiptTotal in errors -> "Сумма частей должна быть меньше итога чека"
+                PartsError.InvalidReceiptTotal in errors -> stringResource(R.string.error_receipt_total)
+                PartsError.PartsExceedReceiptTotal in errors -> stringResource(R.string.error_parts_exceed_total)
                 else -> null
             },
             mode = mode,
@@ -397,7 +400,7 @@ private fun ReceiptTotalSection(
         TextButton(
             onClick = onClear,
             modifier = Modifier.testTag("clearReceiptTotalButton"),
-        ) { Text("Убрать итог") }
+        ) { Text(stringResource(R.string.receipt_total_clear)) }
     }
 }
 
@@ -421,7 +424,7 @@ private fun PartCard(
     onRemove: () -> Unit,
 ) {
     LabeledOutlinedBox(
-        label = if (isRemainder) "Остаток" else "Часть ${index + 1}",
+        label = if (isRemainder) stringResource(R.string.part_remainder) else stringResource(R.string.part_number, index + 1),
         modifier = Modifier.testTag("partCard-$index"),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -437,9 +440,9 @@ private fun PartCard(
                         AmountField(
                             value = part.amountExpression,
                             onValueChange = onAmountChange,
-                            label = "Сумма",
-                            mode = mode,
+                            label = stringResource(R.string.amount_label),
                             error = errors.amountErrorFor(part.id),
+                            mode = mode,
                             modifier = Modifier.testTag("partAmountInput-$index"),
                         )
                     }
@@ -459,13 +462,13 @@ private fun PartCard(
                 trailing = {
                     AddChip(
                         onClick = onNewTag,
-                        description = "Новый тег",
+                        description = stringResource(R.string.tag_new),
                         modifier = Modifier.testTag("newTagChip-$index"),
                     )
                 },
             )
             if (errors.any { it is PartsError.DuplicateTags && part.id in it.partIds }) {
-                Text("Часть с такими же тегами уже есть", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.error_duplicate_part_tags), color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -488,7 +491,7 @@ private fun TagChipsSection(
         label = "$title — $hint",
         modifier = modifier,
         action = {
-            AddChip(onClick = onNewTag, description = "Новый тег", modifier = Modifier.testTag(newTagChipTestTag))
+            AddChip(onClick = onNewTag, description = stringResource(R.string.tag_new), modifier = Modifier.testTag(newTagChipTestTag))
         },
     ) {
         TagChips(tags = tags, selectedIds = selectedIds, onToggle = onToggle)
@@ -518,7 +521,7 @@ private fun TagChips(
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp),
             ) {
                 Text(
-                    text = "Тегов пока нет",
+                    text = stringResource(R.string.tags_none),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -551,8 +554,9 @@ private fun TagChips(
     }
 }
 
+@Composable
 private fun List<PartsError>.amountErrorFor(partId: Int): String? =
-    if (PartsError.InvalidAmount(partId) in this) "Введите сумму больше нуля" else null
+    if (PartsError.InvalidAmount(partId) in this) stringResource(R.string.error_amount) else null
 
 private const val MILLIS_PER_DAY = 86_400_000L
 

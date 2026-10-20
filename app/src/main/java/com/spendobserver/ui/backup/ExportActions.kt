@@ -10,6 +10,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import com.spendobserver.R
 import com.spendobserver.data.repository.BackupRepository
 import kotlinx.coroutines.launch
 
@@ -29,6 +31,8 @@ fun rememberExportActions(backupRepository: BackupRepository, onMessage: (String
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val currentOnMessage by rememberUpdatedState(onMessage)
+    // Read when a result arrives, so a language change since then is respected.
+    val resources by rememberUpdatedState(LocalResources.current)
     val exporter = remember(context, backupRepository) { BackupExporter(context.applicationContext, backupRepository) }
 
     // What the open create-document screen is for; the launcher result only carries the Uri.
@@ -39,8 +43,8 @@ fun rememberExportActions(backupRepository: BackupRepository, onMessage: (String
         if (uri != null && target != null) {
             scope.launch {
                 runCatching { exporter.saveTo(uri, target) }
-                    .onSuccess { currentOnMessage("Файл сохранён") }
-                    .onFailure { currentOnMessage("Не удалось сохранить файл") }
+                    .onSuccess { currentOnMessage(resources.getString(R.string.export_saved)) }
+                    .onFailure { currentOnMessage(resources.getString(R.string.export_save_failed)) }
             }
         }
     }
@@ -55,7 +59,7 @@ fun rememberExportActions(backupRepository: BackupRepository, onMessage: (String
                 scope.launch {
                     runCatching { exporter.shareIntent(target) }
                         .onSuccess { context.startActivity(it) }
-                        .onFailure { currentOnMessage("Не удалось подготовить файл") }
+                        .onFailure { currentOnMessage(resources.getString(R.string.export_prepare_failed)) }
                 }
             },
         )

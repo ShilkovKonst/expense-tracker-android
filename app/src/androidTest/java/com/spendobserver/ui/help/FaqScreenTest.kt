@@ -5,6 +5,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.testing.string
+import com.spendobserver.testing.stringArray
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,8 +26,8 @@ class FaqScreenTest {
         setContent()
 
         FAQ.forEach { entry ->
-            composeRule.onNodeWithText(entry.question).performScrollTo().assertExists()
-            composeRule.onNodeWithText(entry.answer.first()).assertDoesNotExist()
+            composeRule.onNodeWithText(string(entry.question)).performScrollTo().assertExists()
+            composeRule.onNodeWithText(stringArray(entry.answer).first()).assertDoesNotExist()
         }
     }
 
@@ -34,11 +36,11 @@ class FaqScreenTest {
         setContent()
         val entry = FAQ[2]
 
-        composeRule.onNodeWithText(entry.question).performScrollTo().performClick()
-        entry.answer.forEach { composeRule.onNodeWithText(it).assertExists() }
-        composeRule.onNodeWithText(FAQ[1].answer.first()).assertDoesNotExist()
+        composeRule.onNodeWithText(string(entry.question)).performScrollTo().performClick()
+        stringArray(entry.answer).forEach { composeRule.onNodeWithText(it).assertExists() }
+        composeRule.onNodeWithText(stringArray(FAQ[1].answer).first()).assertDoesNotExist()
 
-        composeRule.onNodeWithText(entry.question).performClick()
-        composeRule.onNodeWithText(entry.answer.first()).assertDoesNotExist()
+        composeRule.onNodeWithText(string(entry.question)).performClick()
+        composeRule.onNodeWithText(stringArray(entry.answer).first()).assertDoesNotExist()
     }
 }

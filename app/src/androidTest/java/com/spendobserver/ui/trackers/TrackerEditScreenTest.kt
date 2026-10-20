@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -20,6 +21,8 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.testing.plural
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitForNoNode
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForTag
@@ -123,9 +126,7 @@ class TrackerEditScreenTest {
 
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForText("Введите название")
-
-        composeRule.onNodeWithText("Введите название").assertExists()
+        composeRule.waitForText(string(R.string.error_name_empty))
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 
@@ -168,7 +169,7 @@ class TrackerEditScreenTest {
 
         composeRule.onNodeWithTag("deleteTagButton-fuel").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Удалить").performClick()
+        composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
         composeRule.waitForNoNode(hasTestTag("deleteTagButton-fuel"))
 
         composeRule.onNodeWithText("fuel").assertDoesNotExist()
@@ -201,9 +202,9 @@ class TrackerEditScreenTest {
             )
         }
         setContent()
-        composeRule.waitForText("в 1 записи")
+        composeRule.waitForText(plural(R.plurals.tag_usage, 1))
 
-        composeRule.onNodeWithText("в 1 записи").assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.tag_usage, 1)).assertExists()
     }
 
     @Test
@@ -215,9 +216,7 @@ class TrackerEditScreenTest {
         composeRule.onNodeWithTag("trackerNameInput").performTextClearance()
         composeRule.onNodeWithTag("trackerNameInput").performTextInput(" Work​")
         composeRule.onNodeWithTag("saveTrackerButton").performClick()
-        composeRule.waitForText("Трекер с таким названием уже есть")
-
-        composeRule.onNodeWithText("Трекер с таким названием уже есть").assertExists()
+        composeRule.waitForText(string(R.string.error_tracker_name_taken))
         assertEquals("Family", runBlocking { trackerRepository.getTracker(trackerId)?.title })
     }
 
@@ -246,9 +245,7 @@ class TrackerEditScreenTest {
         composeRule.onNodeWithTag("tagNameInput").performTextClearance()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("FOOD")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForText("Тег с таким названием уже есть")
-
-        composeRule.onNodeWithText("Тег с таким названием уже есть").assertExists()
+        composeRule.waitForText(string(R.string.error_tag_name_taken))
         val names = runBlocking { tagRepository.observeTags(trackerId).first() }.map { it.name }.toSet()
         assertEquals(setOf("fuel", "food"), names)
     }

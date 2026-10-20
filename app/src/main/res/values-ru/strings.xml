@@ -1,6 +1,6 @@
 <resources>
     <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
-    <string name="locale_language" translatable="false">ru</string>
+    <string name="locale_language">ru</string>
     <!-- Shared actions -->
     <string name="action_cancel">Отмена</string>
     <string name="action_create">Создать</string>
@@ -16,7 +16,7 @@
     <string name="menu_help">Справка</string>
     <string name="menu_faq">Вопросы и ответы</string>
     <string name="tracker_new_title">Новый трекер</string>
-    <string name="tracker_name_label">Название</string>
+    <string name="name_label">Название</string>
     <plurals name="imported_trackers">
         <item quantity="one">Импортирован %d трекер</item>
         <item quantity="few">Импортировано %d трекера</item>
@@ -35,4 +35,234 @@
         <item quantity="many">%d записей</item>
         <item quantity="other">%d записи</item>
     </plurals>
+
+    <!-- Tracker screen -->
+    <string name="menu_stats">Статистика</string>
+    <string name="menu_save_to_file">Сохранить в файл</string>
+    <string name="menu_share">Поделиться</string>
+    <string name="menu_edit">Редактировать</string>
+    <string name="record_add">Добавить запись</string>
+    <string name="tracker_no_records">Записей пока нет</string>
+    <string name="record_tags_label">Теги:</string>
+    <string name="record_description_label">Описание:</string>
+    <string name="record_no_description">без описания</string>
+    <string name="part_no_tags">без тегов</string>
+    <plurals name="parts_count">
+        <item quantity="one">%d часть</item>
+        <item quantity="few">%d части</item>
+        <item quantity="many">%d частей</item>
+        <item quantity="other">%d части</item>
+    </plurals>
+
+    <!-- Export -->
+    <string name="export_saved">Файл сохранён</string>
+    <string name="export_save_failed">Не удалось сохранить файл</string>
+    <string name="export_prepare_failed">Не удалось подготовить файл</string>
+
+    <!-- Shared form pieces -->
+    <string name="action_save">Сохранить</string>
+    <string name="action_ok">ОК</string>
+    <string name="tags_global_title">Общие теги</string>
+    <string name="tags_global_hint">где, с кем</string>
+    <string name="tags_local_title">Теги</string>
+    <string name="tags_local_hint">на что</string>
+    <string name="tags_none">Тегов пока нет</string>
+    <string name="tag_new">Новый тег</string>
+    <string name="tag_new_global">Новый общий тег</string>
+
+    <!-- Record form -->
+    <string name="record_new_title">Новая запись</string>
+    <string name="record_edit_title">Редактировать запись</string>
+    <string name="record_type_cost">Расход</string>
+    <string name="record_type_income">Доход</string>
+    <string name="record_date_label">Дата</string>
+    <string name="amount_label">Сумма</string>
+    <string name="record_split">Разбить по частям</string>
+    <string name="part_add">+ Часть</string>
+    <string name="part_number">Часть %1$d</string>
+    <string name="part_remainder">Остаток</string>
+    <string name="record_total">Итого: %1$s</string>
+    <string name="description_label">Описание</string>
+    <string name="description_placeholder">Опционально</string>
+    <string name="receipt_total_add">+ Итог по чеку</string>
+    <string name="receipt_total_label">Итог по чеку</string>
+    <string name="receipt_total_clear">Убрать итог</string>
+    <string name="record_delete_title">Удалить запись?</string>
+    <string name="record_delete_text">Это действие нельзя отменить.</string>
+    <string name="error_amount">Введите сумму больше нуля</string>
+    <string name="error_receipt_total">Введите итог чека</string>
+    <string name="error_parts_exceed_total">Сумма частей должна быть меньше итога чека</string>
+    <string name="error_duplicate_part_tags">Часть с такими же тегами уже есть</string>
+    <string name="error_name_empty">Введите название</string>
+    <string name="error_tracker_name_taken">Трекер с таким названием уже есть</string>
+    <string name="error_tag_name_taken">Тег с таким названием уже есть</string>
+
+    <!-- Tracker edit -->
+    <string name="tracker_edit_title">Редактировать трекер</string>
+    <string name="tracker_name_revert">Вернуть название</string>
+    <string name="tracker_name_save">Сохранить название</string>
+    <string name="tag_rename_title">Переименовать тег</string>
+    <string name="tag_delete_title">Удалить тег «%1$s»?</string>
+    <string name="tag_delete_text">Тег будет отвязан от всех записей, где он использовался.</string>
+    <string name="tag_unused">не используется</string>
+    <plurals name="tag_usage">
+        <item quantity="one">в %d записи</item>
+        <item quantity="few">в %d записях</item>
+        <item quantity="many">в %d записях</item>
+        <item quantity="other">в %d записи</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="stats_title">Статистика</string>
+    <string name="stats_all_time">Всё время</string>
+    <string name="stats_overview">Общая</string>
+    <string name="stats_subject_overview">Общая статистика (%1$s)</string>
+    <string name="stats_subject_tag">Тег «%1$s» (%2$s)</string>
+    <string name="stats_costs">Расходы</string>
+    <string name="stats_incomes">Доходы</string>
+    <string name="stats_costs_inline">расходы</string>
+    <string name="stats_incomes_inline">доходы</string>
+    <string name="stats_costs_amount">Расходы: %1$s</string>
+    <string name="stats_incomes_amount">Доходы: %1$s</string>
+    <string name="stats_counts">%1$s (%2$s, %3$s)</string>
+    <plurals name="stats_costs_count">
+        <item quantity="one">%d расход</item>
+        <item quantity="few">%d расхода</item>
+        <item quantity="many">%d расходов</item>
+        <item quantity="other">%d расхода</item>
+    </plurals>
+    <plurals name="stats_incomes_count">
+        <item quantity="one">%d доход</item>
+        <item quantity="few">%d дохода</item>
+        <item quantity="many">%d доходов</item>
+        <item quantity="other">%d дохода</item>
+    </plurals>
+    <string name="stats_level_global">Где/с кем</string>
+    <string name="stats_level_local">На что</string>
+    <string name="stats_most_often">Чаще всего: %1$s</string>
+    <string name="stats_most_amount">Больше всего: %1$s</string>
+    <plurals name="stats_tag_found_in">
+        <item quantity="one">Встречается в %d записи</item>
+        <item quantity="few">Встречается в %d записях</item>
+        <item quantity="many">Встречается в %d записях</item>
+        <item quantity="other">Встречается в %d записи</item>
+    </plurals>
+    <string name="stats_metric_amount">Сумма</string>
+    <string name="stats_metric_records">Записи</string>
+
+    <!-- Import -->
+    <string name="import_title">Импорт</string>
+    <string name="import_failed_title">Импорт невозможен</string>
+    <string name="import_confirm">Импортировать</string>
+    <plurals name="tags_count">
+        <item quantity="one">%d тег</item>
+        <item quantity="few">%d тега</item>
+        <item quantity="many">%d тегов</item>
+        <item quantity="other">%d тега</item>
+    </plurals>
+    <string name="import_clash">Трекер «%1$s» уже есть</string>
+    <string name="import_copy">Копия</string>
+    <string name="import_replace">Заменить</string>
+    <string name="import_copy_note">Будет добавлен как «%1$s»</string>
+    <string name="import_replace_note">«%1$s» и все его записи будут удалены</string>
+    <!-- Import: why a file can't be imported. "import_error_at" joins a place (import_where_*) and a problem (import_issue_*). -->
+    <string name="import_error_unreadable">Не удалось прочитать файл</string>
+    <string name="import_error_write">Не удалось импортировать</string>
+    <string name="import_error_damaged">Файл повреждён или это не файл SpendObserver</string>
+    <string name="import_error_not_spendobserver">Это не файл SpendObserver</string>
+    <string name="import_error_newer_version">Файл создан более новой версией приложения — обновите приложение</string>
+    <string name="import_error_no_trackers">В файле нет трекеров</string>
+    <string name="import_error_duplicate_tracker">Трекер «%1$s» встречается в файле дважды</string>
+    <string name="import_error_at">%1$s: %2$s</string>
+    <string name="import_where_tracker">Трекер «%1$s»</string>
+    <string name="import_where_tracker_number">Трекер №%1$d</string>
+    <string name="import_where_record">%1$s, запись от %2$s</string>
+    <string name="import_where_part">%1$s, часть %2$d</string>
+    <string name="import_issue_empty_title">пустое название</string>
+    <string name="import_issue_bad_created_at">неверная дата создания «%1$s»</string>
+    <string name="import_issue_empty_tag_name">тег с пустым названием</string>
+    <string name="import_issue_duplicate_tag">тег «%1$s» объявлен дважды</string>
+    <string name="import_issue_bad_record_date">неверная дата записи «%1$s»</string>
+    <string name="import_issue_unknown_type">неизвестный тип «%1$s»</string>
+    <string name="import_issue_unknown_tag">неизвестный тег «%1$s»</string>
+    <string name="import_issue_tag_not_global">тег «%1$s» не общий — он ставится на части записи</string>
+    <string name="import_issue_tag_is_global">тег «%1$s» общий — он ставится на запись, а не на её часть</string>
+    <string name="import_issue_no_parts">нет ни одной части</string>
+    <string name="import_issue_non_positive_amount">сумма должна быть больше нуля</string>
+    <string name="import_issue_duplicate_part_tags">две части с одинаковыми тегами</string>
+
+    <!-- Help -->
+    <string name="help_title">Справка</string>
+    <string name="help_about_title">О приложении</string>
+    <string name="help_about_text">SpendObserver — приложение для учёта расходов и доходов. Приложение работает полностью локально: для его работы не требуются подключение к интернету, регистрация или облачные сервисы.</string>
+    <string name="help_version">Версия: %1$s</string>
+    <string name="help_author">Автор: %1$s</string>
+    <string name="help_email">Электронная почта: %1$s</string>
+    <string name="help_write">Написать разработчику</string>
+    <string name="help_data_title">Данные пользователя</string>
+    <string name="help_data_local">Приложение не передаёт данные пользователя третьим лицам и не отправляет их по сети. Все трекеры, записи и теги хранятся в памяти устройства.</string>
+    <string name="help_data_backup">Если в настройках устройства включено резервное копирование в аккаунт Google, операционная система Android может сохранять данные приложения в облачное хранилище этого аккаунта. Такое копирование выполняется системой в соответствии с настройками устройства; приложение в нём не участвует.</string>
+    <string name="help_data_uninstall">При удалении приложения его данные удаляются с устройства. Для сохранения данных или их переноса на другое устройство рекомендуется использовать экспорт в файл (меню «⋮» → «%1$s») и последующий импорт (меню «⋮» → «%2$s»).</string>
+    <string name="help_licenses_title">Лицензии</string>
+    <string name="help_licenses_intro">В приложении используются следующие библиотеки с открытым исходным кодом:</string>
+    <string name="help_no_mail_title">Почтовое приложение не найдено</string>
+    <string name="help_no_mail_text">На устройстве не установлено приложение для отправки электронной почты. Вы можете скопировать адрес и написать на него из любого почтового сервиса: %1$s</string>
+    <string name="help_copy_address">Скопировать адрес</string>
+    <string name="help_address_copied">Адрес скопирован</string>
+    <string name="action_close">Закрыть</string>
+    <string name="faq_title">Вопросы и ответы</string>
+    <string name="feedback_subject">SpendObserver — обратная связь</string>
+
+    <!-- FAQ: a question and its answer paragraphs per topic; FAQ in FaqScreen.kt lists the topics. -->
+    <string name="faq_trackers_q">Что такое трекер?</string>
+    <string-array name="faq_trackers_a">
+        <item>Трекер — это отдельный журнал учёта со своими записями и тегами, например личный, семейный или рабочий. Трекеры не зависят друг от друга.</item>
+        <item>Для создания трекера нажмите «Добавить трекер» на главном экране и введите название. Созданный трекер сразу открывается.</item>
+        <item>Переименовать или удалить трекер можно кнопками ✎ и 🗑 в его строке на главном экране, а также через меню «⋮» на экране трекера. При удалении трекера удаляются все его записи.</item>
+    </string-array>
+    <string name="faq_records_q">Как добавить, изменить или удалить запись?</string>
+    <string-array name="faq_records_a">
+        <item>Откройте трекер и нажмите «Добавить запись». Выберите тип записи («Расход» или «Доход»), укажите дату и сумму, при необходимости отметьте теги и добавьте описание, затем нажмите «Сохранить».</item>
+        <item>Записи сгруппированы по годам и месяцам; для каждой группы указаны количество записей и итог. Чтобы изменить запись, нажмите на неё в списке. Удалить запись можно кнопкой 🗑 в верхней части формы записи.</item>
+    </string-array>
+    <string name="faq_parts_q">Что такое части записи и итог по чеку?</string>
+    <string-array name="faq_parts_a">
+        <item>Запись соответствует одному событию, например одному чеку, и может состоять из нескольких частей. У каждой части своя сумма и свои теги. Сумма записи всегда равна сумме её частей.</item>
+        <item>Чтобы разделить запись, нажмите «Разбить по частям» под полем суммы. Новые части добавляются кнопкой «+ Часть», лишние удаляются кнопкой ✕.</item>
+        <item>Если известна общая сумма чека, укажите её в поле «Итог по чеку» и выделите отдельные части. Остаток рассчитывается автоматически и становится последней частью. Сумма выделенных частей должна быть меньше итога по чеку.</item>
+        <item>Две части одной записи не могут иметь одинаковый набор тегов.</item>
+    </string-array>
+    <string name="faq_tag_levels_q">Чем общие теги отличаются от обычных?</string>
+    <string-array name="faq_tag_levels_a">
+        <item>Общие теги описывают запись целиком: где или с кем она совершена (например, название магазина или поездки). Они отмечаются в поле «Общие теги» формы записи.</item>
+        <item>Обычные теги описывают, на что потрачены или откуда получены средства (например, «продукты»). Они отмечаются у каждой части записи отдельно.</item>
+        <item>Уровень тега выбирается при создании и в дальнейшем не меняется. Новый тег создаётся кнопкой «+» в соответствующем поле формы записи или на экране редактирования трекера.</item>
+    </string-array>
+    <string name="faq_tag_manage_q">Как переименовать или удалить тег?</string>
+    <string-array name="faq_tag_manage_a">
+        <item>Откройте трекер, в меню «⋮» выберите «Редактировать» и воспользуйтесь кнопками ✎ и 🗑 рядом с нужным тегом. Для каждого тега указано, в скольких записях он используется.</item>
+        <item>При удалении тег снимается со всех записей; сами записи при этом сохраняются.</item>
+    </string-array>
+    <string name="faq_calculator_q">Как пользоваться калькулятором в поле суммы?</string>
+    <string-array name="faq_calculator_a">
+        <item>В поле суммы можно ввести выражение с операциями +, −, × (*) и ÷ (/), например 120+50/2. Результат отображается под полем и сохраняется как сумма.</item>
+        <item>Выражение вычисляется последовательно слева направо, без приоритета умножения и деления: 120+50/2 = 85. В качестве десятичного разделителя допускаются точка и запятая. Результат округляется до двух знаков после запятой и должен быть больше нуля.</item>
+    </string-array>
+    <string name="faq_stats_q">Как пользоваться статистикой?</string>
+    <string-array name="faq_stats_a">
+        <item>Откройте трекер и в меню «⋮» выберите «Статистика». Переключатель «−»/«+» в верхней части экрана выбирает расходы или доходы.</item>
+        <item>Сводка показывает количество записей, сумму за выбранный период и теги обоих уровней, которые встречаются чаще всего и на которые приходится наибольшая сумма. В поле выбора можно указать отдельный тег, чтобы просмотреть статистику только по нему.</item>
+        <item>На графике отображаются суммы или количество записей (переключатель «Сумма»/«Записи») по годам, месяцам или дням. Нажатие на столбец открывает соответствующий год или месяц; для возврата к более крупному периоду используйте ссылки в верхней строке.</item>
+    </string-array>
+    <string name="faq_export_q">Как сохранить данные в файл?</string>
+    <string-array name="faq_export_a">
+        <item>Для сохранения всех трекеров откройте меню «⋮» на главном экране и выберите «Сохранить все в файл» или «Поделиться всеми». Для сохранения одного трекера воспользуйтесь пунктами «Сохранить в файл» или «Поделиться» в меню «⋮» на экране трекера.</item>
+        <item>Данные сохраняются в файл формата JSON, который можно хранить как резервную копию или использовать для переноса данных на другое устройство.</item>
+    </string-array>
+    <string name="faq_import_q">Как загрузить данные из файла?</string>
+    <string-array name="faq_import_a">
+        <item>Откройте меню «⋮» на главном экране, выберите «Импорт из файла» и укажите ранее сохранённый файл. Перед импортом отображается список трекеров из файла.</item>
+        <item>Если трекер с таким же названием уже существует, выберите действие: «Копия» — добавить трекер из файла под новым названием, «Заменить» — удалить существующий трекер со всеми записями и загрузить трекер из файла.</item>
+        <item>Перед импортом файл проверяется целиком. При обнаружении ошибки данные не загружаются, а в сообщении указывается место ошибки.</item>
+    </string-array>
 </resources>

@@ -28,11 +28,15 @@ class BackupImportTest {
 
     private fun success(json: String) = parseBackup(json) as BackupParseResult.Success
 
-    private fun failureMessage(json: String): String {
+    private fun failure(json: String): BackupError {
         val result = parseBackup(json)
         assertTrue("expected a failure, got $result", result is BackupParseResult.Failure)
-        return (result as BackupParseResult.Failure).message
+        return (result as BackupParseResult.Failure).error
     }
+
+    /** The file's only tracker, and its record of 2025-10-02. */
+    private val inTracker = BackupLocation(trackerTitle = "домашний", trackerNumber = 1)
+    private val inRecord = inTracker.copy(recordDate = "2025-10-02")
 
     @Test
     fun validFile_becomesTypedTrackers() {
@@ -84,62 +88,56 @@ class BackupImportTest {
 
     @Test
     fun notJsonOrMissingFields_isReportedAsDamaged() {
-        assertEquals("Файл повреждён или это не файл SpendObserver", failureMessage("hello"))
-        assertEquals("Файл повреждён или это не файл SpendObserver", failureMessage("""{"format": "spendobserver"}"""))
+        assertEquals(BackupError.Damaged, failure("hello"))
+        assertEquals(BackupError.Damaged, failure("""{"format": "spendobserver"}"""))
     }
 
     @Test
     fun foreignFormat_andNewerVersion_areRefused() {
-        assertEquals("Это не файл SpendObserver", failureMessage(file(format = "other")))
-        assertEquals(
-            "Файл создан более новой версией приложения — обновите приложение",
-            failureMessage(file(version = BACKUP_VERSION + 1)),
-        )
+        assertEquals(BackupError.NotSpendObserver, failure(file(format = "other")))
+        assertEquals(BackupError.NewerVersion, failure(file(version = BACKUP_VERSION + 1)))
     }
 
     @Test
     fun tagNamesMustBeUniqueIgnoringCase() {
-        val message = failureMessage(file(tags = """{"name": "g20", "global": true}, {"name": "G20", "global": false}"""))
+        val error = failure(file(tags = """{"name": "g20", "global": true}, {"name": "G20", "global": false}"""))
 
-        assertEquals("Трекер «домашний»: тег «G20» объявлен дважды", message)
+        assertEquals(BackupError.Invalid(inTracker, BackupIssue.DuplicateTag("G20")), error)
     }
 
     @Test
     fun unknownTagReference_namesTheRecord() {
-        val message = failureMessage(file(records = """{"date": "2025-10-02", "type": "cost", "tags": ["lidl"], "parts": [{"amount": 1}]}"""))
+        val error = failure(file(records = """{"date": "2025-10-02", "type": "cost", "tags": ["lidl"], "parts": [{"amount": 1}]}"""))
 
-        assertEquals("Трекер «домашний», запись от 2025-10-02: неизвестный тег «lidl»", message)
+        assertEquals(BackupError.Invalid(inRecord, BackupIssue.UnknownTag("lidl")), error)
     }
 
     @Test
     fun tagsMustSitOnTheirLevel() {
-        val localOnRecord = failureMessage(
+        val localOnRecord = failure(
             file(records = """{"date": "2025-10-02", "type": "cost", "tags": ["алко"], "parts": [{"amount": 1}]}"""),
         )
-        val globalOnPart = failureMessage(
+        val globalOnPart = failure(
             file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 1, "tags": ["g20"]}]}"""),
         )
 
-        assertEquals("Трекер «домашний», запись от 2025-10-02: тег «алко» не общий — он ставится на части записи", localOnRecord)
-        assertEquals(
-            "Трекер «домашний», запись от 2025-10-02, часть 1: тег «g20» общий — он ставится на запись, а не на её часть",
-            globalOnPart,
-        )
+        assertEquals(BackupError.Invalid(inRecord, BackupIssue.TagNotGlobal("алко")), localOnRecord)
+        assertEquals(BackupError.Invalid(inRecord.copy(partNumber = 1), BackupIssue.TagIsGlobal("g20")), globalOnPart)
     }
 
     @Test
     fun partsRules() {
         assertEquals(
-            "Трекер «домашний», запись от 2025-10-02: нет ни одной части",
-            failureMessage(file(records = """{"date": "2025-10-02", "type": "cost", "parts": []}""")),
+            BackupError.Invalid(inRecord, BackupIssue.NoParts),
+            failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": []}""")),
         )
         assertEquals(
-            "Трекер «домашний», запись от 2025-10-02, часть 2: сумма должна быть больше нуля",
-            failureMessage(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 5}, {"amount": 0, "tags": ["алко"]}]}""")),
+            BackupError.Invalid(inRecord.copy(partNumber = 2), BackupIssue.NonPositiveAmount),
+            failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 5}, {"amount": 0, "tags": ["алко"]}]}""")),
         )
         assertEquals(
-            "Трекер «домашний», запись от 2025-10-02: две части с одинаковыми тегами",
-            failureMessage(
+            BackupError.Invalid(inRecord, BackupIssue.DuplicatePartTags),
+            failure(
                 file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 1, "tags": ["алко", "продукты"]}, {"amount": 2, "tags": ["продукты", "алко"]}]}"""),
             ),
         )
@@ -148,13 +146,20 @@ class BackupImportTest {
     @Test
     fun badDatesAndTypes_areNamed() {
         assertEquals(
-            "Трекер «домашний»: неверная дата записи «02/10/2025»",
-            failureMessage(file(records = """{"date": "02/10/2025", "type": "cost", "parts": [{"amount": 1}]}""")),
+            BackupError.Invalid(inTracker, BackupIssue.BadRecordDate("02/10/2025")),
+            failure(file(records = """{"date": "02/10/2025", "type": "cost", "parts": [{"amount": 1}]}""")),
         )
         assertEquals(
-            "Трекер «домашний», запись от 2025-10-02: неизвестный тип «expense»",
-            failureMessage(file(records = """{"date": "2025-10-02", "type": "expense", "parts": [{"amount": 1}]}""")),
+            BackupError.Invalid(inRecord, BackupIssue.UnknownType("expense")),
+            failure(file(records = """{"date": "2025-10-02", "type": "expense", "parts": [{"amount": 1}]}""")),
         )
+    }
+
+    @Test
+    fun blankTrackerTitle_isLocatedByItsNumber() {
+        val error = failure(file().replace("\"title\": \"домашний\"", "\"title\": \" \""))
+
+        assertEquals(BackupError.Invalid(BackupLocation(trackerTitle = null, trackerNumber = 1), BackupIssue.EmptyTitle), error)
     }
 
     @Test
@@ -162,6 +167,6 @@ class BackupImportTest {
         val tracker = """{"title": "Дом", "createdAt": "2025-12-01T02:05:41"}"""
         val json = """{"format": "spendobserver", "version": 1, "exportedAt": "x", "trackers": [$tracker, ${tracker.replace("Дом", " дом ")}]}"""
 
-        assertEquals("Трекер «дом» встречается в файле дважды", failureMessage(json))
+        assertEquals(BackupError.DuplicateTracker("дом"), failure(json))
     }
 }

@@ -16,9 +16,9 @@ class FeedbackBodyTest {
 
         assertEquals(
             "\n\n---\n" +
-                "Версия приложения: 1.0\n" +
+                "App version: 1.0\n" +
                 "Android: 15 (API 35)\n" +
-                "Устройство: Google Pixel 8",
+                "Device: Google Pixel 8",
             body,
         )
     }

@@ -34,7 +34,7 @@ sealed interface ImportState {
     data object Idle : ImportState
     data object Working : ImportState
     data class Preview(val candidates: List<ImportCandidate>) : ImportState
-    data class Failed(val message: String) : ImportState
+    data class Failed(val failure: ImportFailure) : ImportState
     data class Done(val trackerCount: Int) : ImportState
 }
 
@@ -49,13 +49,13 @@ class ImportViewModel(
 
     fun onFileLoaded(text: String?) {
         if (text == null) {
-            _state.value = ImportState.Failed("Не удалось прочитать файл")
+            _state.value = ImportState.Failed(ImportFailure.Unreadable)
             return
         }
         _state.value = ImportState.Working
         viewModelScope.launch {
             _state.value = when (val result = withContext(Dispatchers.Default) { parseBackup(text) }) {
-                is BackupParseResult.Failure -> ImportState.Failed(result.message)
+                is BackupParseResult.Failure -> ImportState.Failed(ImportFailure.Invalid(result.error))
                 is BackupParseResult.Success -> ImportState.Preview(candidates(result.trackers))
             }
         }
@@ -92,7 +92,7 @@ class ImportViewModel(
                 backupRepository.import(preview.candidates.map { ImportItem(it.tracker, it.resolution) })
             }.fold(
                 onSuccess = { ImportState.Done(it.size) },
-                onFailure = { ImportState.Failed("Не удалось импортировать: ${it.message}") },
+                onFailure = { ImportState.Failed(ImportFailure.WriteFailed) },
             )
         }
     }

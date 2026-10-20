@@ -12,6 +12,7 @@ import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.record.PartsInput
 import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.common.NameError
 import com.spendobserver.ui.common.tagNameError
 import com.spendobserver.ui.navigation.RecordChange
 import kotlin.time.Clock
@@ -124,8 +125,8 @@ class RecordFormViewModel(
     fun toggleGlobalTag(tagId: Long) = _globalTagIds.update { if (tagId in it) it - tagId else it + tagId }
 
     /** Why the open create/rename tag dialog's name was refused; the dialog stays open meanwhile. */
-    private val _tagNameError = MutableStateFlow<String?>(null)
-    val tagNameError: StateFlow<String?> = _tagNameError.asStateFlow()
+    private val _tagNameError = MutableStateFlow<NameError?>(null)
+    val tagNameError: StateFlow<NameError?> = _tagNameError.asStateFlow()
 
     fun clearTagNameError() {
         _tagNameError.value = null

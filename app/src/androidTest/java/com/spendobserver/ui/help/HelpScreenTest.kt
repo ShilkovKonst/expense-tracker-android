@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.spendobserver.R
+import com.spendobserver.testing.string
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -49,8 +51,8 @@ class HelpScreenTest {
 
         val version = appVersionName(context)
         assertNotEquals("—", version)
-        composeRule.onNodeWithText("Версия: $version").assertExists()
-        composeRule.onNodeWithText("Электронная почта: $FEEDBACK_EMAIL").assertExists()
+        composeRule.onNodeWithText(string(R.string.help_version, version)).assertExists()
+        composeRule.onNodeWithText(string(R.string.help_email, FEEDBACK_EMAIL)).assertExists()
     }
 
     @Test
@@ -61,7 +63,7 @@ class HelpScreenTest {
         composeRule.onNodeWithTag("feedbackButton").performScrollTo().performClick()
 
         assertEquals(1, calls)
-        composeRule.onNodeWithText("Почтовое приложение не найдено").assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.help_no_mail_title)).assertDoesNotExist()
     }
 
     @Test
@@ -69,11 +71,11 @@ class HelpScreenTest {
         setContent(openFeedback = { false })
 
         composeRule.onNodeWithTag("feedbackButton").performScrollTo().performClick()
-        composeRule.onNodeWithText("Почтовое приложение не найдено").assertExists()
+        composeRule.onNodeWithText(string(R.string.help_no_mail_title)).assertExists()
         composeRule.onNodeWithTag("copyEmailButton").performClick()
 
-        composeRule.onNodeWithText("Адрес скопирован").assertExists()
-        composeRule.onNodeWithText("Почтовое приложение не найдено").assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.help_address_copied)).assertExists()
+        composeRule.onNodeWithText(string(R.string.help_no_mail_title)).assertDoesNotExist()
         var copied: String? = null
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val clipboard = context.getSystemService(ClipboardManager::class.java)
@@ -89,8 +91,8 @@ class HelpScreenTest {
         assertEquals(Intent.ACTION_SENDTO, intent.action)
         assertEquals("mailto:", intent.data.toString())
         assertArrayEquals(arrayOf(FEEDBACK_EMAIL), intent.getStringArrayExtra(Intent.EXTRA_EMAIL))
-        assertEquals(FEEDBACK_SUBJECT, intent.getStringExtra(Intent.EXTRA_SUBJECT))
+        assertEquals(string(R.string.feedback_subject), intent.getStringExtra(Intent.EXTRA_SUBJECT))
         val body = intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty()
-        assertTrue(body, "Версия приложения: ${appVersionName(context)}" in body)
+        assertTrue(body, "App version: ${appVersionName(context)}" in body)
     }
 }

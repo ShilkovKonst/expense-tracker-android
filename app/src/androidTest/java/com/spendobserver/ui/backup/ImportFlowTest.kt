@@ -8,10 +8,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.testing.plural
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
 import com.spendobserver.testing.InMemoryDatabaseRule
@@ -79,8 +82,8 @@ class ImportFlowTest {
     fun newTracker_previewsCounts_andImportsOnConfirm() {
         loadAndWaitFor(homeFile, "Дом")
 
-        composeRule.onNodeWithText("1 запись · 2 тега").assertExists()
-        composeRule.onNodeWithText("Трекер «Дом» уже есть").assertDoesNotExist()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 1) + " · " + plural(R.plurals.tags_count, 2)).assertExists()
+        composeRule.onNodeWithText(string(R.string.import_clash, "Дом")).assertDoesNotExist()
         composeRule.onNodeWithTag("importConfirmButton").performClick()
         waitForState { it is ImportState.Done }
 
@@ -91,9 +94,9 @@ class ImportFlowTest {
     fun clash_defaultsToCopy_underAFreeName() {
         runBlocking { trackerRepository.insertTracker(Tracker(title = "дом", createdAt = 0, updatedAt = 0)) }
 
-        loadAndWaitFor(homeFile, "Трекер «дом» уже есть")
+        loadAndWaitFor(homeFile, string(R.string.import_clash, "дом"))
 
-        composeRule.onNodeWithText("Будет добавлен как «Дом (2)»").assertExists()
+        composeRule.onNodeWithText(string(R.string.import_copy_note, "Дом (2)")).assertExists()
         composeRule.onNodeWithTag("importConfirmButton").performClick()
         waitForState { it is ImportState.Done }
 
@@ -104,10 +107,10 @@ class ImportFlowTest {
     fun clash_replace_warnsAndSwapsTheTracker() {
         val oldId = runBlocking { trackerRepository.insertTracker(Tracker(title = "Дом", createdAt = 0, updatedAt = 0)) }
 
-        loadAndWaitFor(homeFile, "Трекер «Дом» уже есть")
+        loadAndWaitFor(homeFile, string(R.string.import_clash, "Дом"))
         composeRule.onNodeWithTag("resolveReplace-Дом").performClick()
 
-        composeRule.onNodeWithText("«Дом» и все его записи будут удалены").assertExists()
+        composeRule.onNodeWithText(string(R.string.import_replace_note, "Дом")).assertExists()
         composeRule.onNodeWithTag("importConfirmButton").performClick()
         waitForState { it is ImportState.Done }
 
@@ -119,27 +122,29 @@ class ImportFlowTest {
 
     @Test
     fun invalidFile_showsWhereTheProblemIs() {
-        loadAndWaitFor(homeFile.replace("\"type\": \"cost\"", "\"type\": \"expense\""), "Импорт невозможен")
+        loadAndWaitFor(homeFile.replace("\"type\": \"cost\"", "\"type\": \"expense\""), string(R.string.import_failed_title))
 
         composeRule.onNodeWithTag("importError")
             .assertExists()
-        composeRule.onNodeWithText("Трекер «Дом», запись от 2025-10-02: неизвестный тип «expense»").assertExists()
-        composeRule.onNodeWithText("OK").performClick()
+        // The place and the problem, joined from their own resources.
+        val where = string(R.string.import_where_record, string(R.string.import_where_tracker, "Дом"), "2025-10-02")
+        composeRule.onNodeWithText(string(R.string.import_error_at, where, string(R.string.import_issue_unknown_type, "expense"))).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_ok)).performClick()
 
-        composeRule.onNodeWithText("Импорт невозможен").assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.import_failed_title)).assertDoesNotExist()
         assertEquals(emptyList<String>(), titles())
     }
 
     @Test
     fun unreadableFile_isReported() {
-        loadAndWaitFor(null, "Не удалось прочитать файл")
+        loadAndWaitFor(null, string(R.string.import_error_unreadable))
     }
 
     @Test
     fun cancel_importsNothing() {
         loadAndWaitFor(homeFile, "Дом")
 
-        composeRule.onNodeWithText("Отмена").performClick()
+        composeRule.onNodeWithText(string(R.string.action_cancel)).performClick()
 
         composeRule.onNodeWithTag("importConfirmButton").assertDoesNotExist()
         assertEquals(emptyList<String>(), titles())

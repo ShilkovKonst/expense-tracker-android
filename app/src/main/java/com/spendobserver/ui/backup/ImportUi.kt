@@ -23,11 +23,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.spendobserver.R
 import com.spendobserver.domain.backup.ClashResolution
-import com.spendobserver.domain.summary.recordsWord
-import com.spendobserver.domain.summary.russianPlural
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,13 +72,13 @@ fun ImportDialogs(
         )
         is ImportState.Failed -> AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Импорт невозможен") },
-            text = { Text(state.message, modifier = Modifier.testTag("importError")) },
-            confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },
+            title = { Text(stringResource(R.string.import_failed_title)) },
+            text = { Text(state.failure.text(), modifier = Modifier.testTag("importError")) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok)) } },
         )
         is ImportState.Preview -> AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Импорт") },
+            title = { Text(stringResource(R.string.import_title)) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -89,9 +90,9 @@ fun ImportDialogs(
                 }
             },
             confirmButton = {
-                TextButton(onClick = onConfirm, modifier = Modifier.testTag("importConfirmButton")) { Text("Импортировать") }
+                TextButton(onClick = onConfirm, modifier = Modifier.testTag("importConfirmButton")) { Text(stringResource(R.string.import_confirm)) }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
@@ -104,33 +105,34 @@ private fun CandidateBlock(candidate: ImportCandidate, onSelect: (ClashResolutio
         val records = tracker.records.size
         val tags = tracker.tags.size
         Text(
-            "$records ${recordsWord(records)} · $tags ${russianPlural(tags, "тег", "тега", "тегов")}",
+            pluralStringResource(R.plurals.records_count, records, records) + " · " +
+                pluralStringResource(R.plurals.tags_count, tags, tags),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         val existing = candidate.clashesWith ?: return@Column
-        Text("Трекер «$existing» уже есть", modifier = Modifier.padding(top = 4.dp))
+        Text(stringResource(R.string.import_clash, existing), modifier = Modifier.padding(top = 4.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
                 selected = candidate.resolution == ClashResolution.COPY,
                 onClick = { onSelect(ClashResolution.COPY) },
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                 modifier = Modifier.testTag("resolveCopy-${tracker.title}"),
-            ) { Text("Копия") }
+            ) { Text(stringResource(R.string.import_copy)) }
             SegmentedButton(
                 selected = candidate.resolution == ClashResolution.REPLACE,
                 onClick = { onSelect(ClashResolution.REPLACE) },
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                 modifier = Modifier.testTag("resolveReplace-${tracker.title}"),
-            ) { Text("Заменить") }
+            ) { Text(stringResource(R.string.import_replace)) }
         }
         when (candidate.resolution) {
             ClashResolution.COPY -> Text(
-                "Будет добавлен как «${candidate.copyTitle}»",
+                stringResource(R.string.import_copy_note, candidate.copyTitle.orEmpty()),
                 style = MaterialTheme.typography.bodySmall,
             )
             ClashResolution.REPLACE -> Text(
-                "«$existing» и все его записи будут удалены",
+                stringResource(R.string.import_replace_note, existing),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )

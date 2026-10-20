@@ -43,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.relation.RecordWithParts
@@ -62,8 +65,6 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
-import com.spendobserver.domain.summary.partsWord
-import com.spendobserver.domain.summary.recordsWord
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
@@ -158,7 +159,8 @@ fun TrackerDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(trackerTitle ?: "")
                         Text(
-                            text = "$recordCount ${recordsWord(recordCount)} · ${signedAmountText(totalNet)}",
+                            text = pluralStringResource(R.plurals.records_count, recordCount, recordCount) +
+                                " · " + signedAmountText(totalNet),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -187,12 +189,12 @@ fun TrackerDetailScreen(
                                 },
                                 modifier = Modifier.testTag(tag),
                             )
-                            item("Статистика", "statsItem", onStatsClick)
-                            item("Сохранить в файл", "exportSaveItem") { exportActions.save(exportScope) }
-                            item("Поделиться", "exportShareItem") { exportActions.share(exportScope) }
+                            item(stringResource(R.string.menu_stats), "statsItem", onStatsClick)
+                            item(stringResource(R.string.menu_save_to_file), "exportSaveItem") { exportActions.save(exportScope) }
+                            item(stringResource(R.string.menu_share), "exportShareItem") { exportActions.share(exportScope) }
                             HorizontalDivider()
-                            item("Редактировать", "editTrackerItem", onEditTrackerClick)
-                            item("Удалить", "deleteTrackerItem") { showDeleteTrackerDialog = true }
+                            item(stringResource(R.string.menu_edit), "editTrackerItem", onEditTrackerClick)
+                            item(stringResource(R.string.action_delete), "deleteTrackerItem") { showDeleteTrackerDialog = true }
                         }
                     }
                 },
@@ -204,7 +206,7 @@ fun TrackerDetailScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddRecordClick,
                 icon = { Text("+") },
-                text = { Text("Добавить запись") },
+                text = { Text(stringResource(R.string.record_add)) },
             )
         },
     ) { innerPadding ->
@@ -213,7 +215,7 @@ fun TrackerDetailScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Записей пока нет")
+                Text(stringResource(R.string.tracker_no_records))
             }
         } else {
             LazyColumn(
@@ -268,7 +270,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
         headlineContent = {
             Text(yearGroup.year.toString(), fontWeight = RecordTextWeight, fontSize = YearTextSize)
         },
-        supportingContent = { Text("$count ${recordsWord(count)}") },
+        supportingContent = { Text(pluralStringResource(R.plurals.records_count, count, count)) },
         trailingContent = { NetAmountText(yearGroup.totals) },
     )
 }
@@ -281,7 +283,9 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
         headlineContent = {
             Text(monthText(monthGroup.month), fontWeight = RecordTextWeight, fontSize = MonthTextSize)
         },
-        supportingContent = { Text("${monthGroup.records.size} ${recordsWord(monthGroup.records.size)}") },
+        supportingContent = {
+            Text(pluralStringResource(R.plurals.records_count, monthGroup.records.size, monthGroup.records.size))
+        },
         trailingContent = { NetAmountText(monthGroup.totals) },
     )
 }
@@ -337,7 +341,7 @@ private fun RecordRow(
         ) {
             val globalChips = details.tags.map { TagChip(it.name, global = true) }
             val headerChips = if (isSplit) globalChips else globalChips + details.parts.single().tags.map { TagChip(it.name) }
-            LabeledTagsField("Теги", headerChips)
+            LabeledTagsField(stringResource(R.string.record_tags_label), headerChips)
             if (isSplit) {
                 PartsToggle(
                     count = details.parts.size,
@@ -351,7 +355,7 @@ private fun RecordRow(
                     }
                 }
             }
-            DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: "без описания")
+            DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
         }
         val (signedCents, color) = when (record.type) {
             RecordType.INCOME -> details.amountCents to IncomeColor
@@ -370,7 +374,7 @@ private fun RecordRow(
 @Composable
 private fun PartsToggle(count: Int, expanded: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Text(
-        text = "${if (expanded) "▾" else "▸"} $count ${partsWord(count)}",
+        text = "${if (expanded) "▾" else "▸"} " + pluralStringResource(R.plurals.parts_count, count, count),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.clickable(onClick = onClick).padding(vertical = 2.dp),
@@ -386,7 +390,7 @@ private fun PartLine(tagNames: List<String>, amountCents: Long) {
         Box(modifier = Modifier.weight(1f).padding(end = 8.dp).alignByBaseline()) {
             if (tagNames.isEmpty()) {
                 Text(
-                    "без тегов",
+                    stringResource(R.string.part_no_tags),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -405,11 +409,13 @@ private fun PartLine(tagNames: List<String>, amountCents: Long) {
 
 @Composable
 private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.record_description_label)
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     Text(
         text = buildAnnotatedString {
             withStyle(SpanStyle(fontWeight = RecordTextWeight, fontSize = RecordTextSize, color = labelColor)) {
-                append("Описание: ")
+                append(label)
+                append(" ")
             }
             append(text)
         },
@@ -429,7 +435,7 @@ private fun DescriptionLine(text: String, modifier: Modifier = Modifier) {
 private fun LabeledTagsField(label: String, chips: List<TagChip>, modifier: Modifier = Modifier) {
     Row(modifier = modifier) {
         Text(
-            text = "$label: ",
+            text = "$label ",
             fontWeight = RecordTextWeight,
             fontSize = RecordTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

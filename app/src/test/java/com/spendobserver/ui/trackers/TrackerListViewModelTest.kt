@@ -1,6 +1,7 @@
 package com.spendobserver.ui.trackers
 
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.ui.common.NameError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
@@ -70,7 +71,7 @@ class TrackerListViewModelTest {
             advanceUntilIdle()
 
             assertEquals(title, 1, viewModel.trackers.value.size)
-            assertEquals(title, TITLE_TAKEN_ERROR, viewModel.createError.value)
+            assertEquals(title, NameError.TAKEN, viewModel.createError.value)
             assertNull(title, createdId)
             viewModel.clearCreateError()
         }
@@ -84,7 +85,7 @@ class TrackerListViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.trackers.value.isEmpty())
-        assertEquals(TITLE_EMPTY_ERROR, viewModel.createError.value)
+        assertEquals(NameError.EMPTY, viewModel.createError.value)
     }
 
     @Test

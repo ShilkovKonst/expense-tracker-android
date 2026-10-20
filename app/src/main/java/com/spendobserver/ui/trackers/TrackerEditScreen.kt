@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -35,13 +37,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
-import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
+import com.spendobserver.ui.common.tagNameText
+import com.spendobserver.ui.common.trackerNameText
 
 /** Renaming a tracker and managing its tags (create/rename/delete) — one screen, reached via the ✎ button on a tracker row. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,7 +78,7 @@ fun TrackerEditScreen(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Редактировать трекер") },
+                title = { Text(stringResource(R.string.tracker_edit_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Text("←") }
                 },
@@ -97,17 +101,20 @@ fun TrackerEditScreen(
                     OutlinedTextField(
                         value = title,
                         onValueChange = viewModel::setTitle,
-                        label = { Text("Название") },
+                        label = { Text(stringResource(R.string.name_label)) },
                         singleLine = true,
                         isError = saveError != null,
                         modifier = Modifier.weight(1f).testTag("trackerNameInput"),
                     )
+                    // Read here: the semantics blocks below aren't composable.
+                    val revertDescription = stringResource(R.string.tracker_name_revert)
+                    val saveDescription = stringResource(R.string.tracker_name_save)
                     IconButton(
                         onClick = viewModel::revertTitle,
                         enabled = isTitleChanged,
                         modifier = Modifier
                             .testTag("revertTitleButton")
-                            .semantics { contentDescription = "Вернуть название" },
+                            .semantics { contentDescription = revertDescription },
                     ) { Text("✕") }
                     IconButton(
                         onClick = { viewModel.saveTitle() },
@@ -115,17 +122,17 @@ fun TrackerEditScreen(
                         colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier
                             .testTag("saveTrackerButton")
-                            .semantics { contentDescription = "Сохранить название" },
+                            .semantics { contentDescription = saveDescription },
                     ) { Text("✓", fontWeight = FontWeight.Bold) }
                 }
                 if (saveError != null) {
-                    Text(saveError!!, color = MaterialTheme.colorScheme.error)
+                    Text(saveError!!.trackerNameText(), color = MaterialTheme.colorScheme.error)
                 }
             }
 
             TagSection(
-                title = "Общие теги",
-                hint = "где, с кем",
+                title = stringResource(R.string.tags_global_title),
+                hint = stringResource(R.string.tags_global_hint),
                 tags = tags.filter { it.isGlobal },
                 tagUsage = tagUsage,
                 onNewTag = { newTagIsGlobal = true },
@@ -135,8 +142,8 @@ fun TrackerEditScreen(
             )
 
             TagSection(
-                title = "Теги",
-                hint = "на что",
+                title = stringResource(R.string.tags_local_title),
+                hint = stringResource(R.string.tags_local_hint),
                 tags = tags.filterNot { it.isGlobal },
                 tagUsage = tagUsage,
                 onNewTag = { newTagIsGlobal = false },
@@ -149,30 +156,30 @@ fun TrackerEditScreen(
 
     newTagIsGlobal?.let { isGlobal ->
         TagNameDialog(
-            title = if (isGlobal) "Новый общий тег" else "Новый тег",
+            title = stringResource(if (isGlobal) R.string.tag_new_global else R.string.tag_new),
             initialName = "",
-            confirmLabel = "Создать",
+            confirmLabel = stringResource(R.string.action_create),
             onConfirm = { name -> viewModel.createTag(name, isGlobal) { newTagIsGlobal = null } },
             onDismiss = {
                 newTagIsGlobal = null
                 viewModel.clearTagNameError()
             },
-            error = tagNameError,
+            error = tagNameError?.tagNameText(),
             onTextChange = viewModel::clearTagNameError,
         )
     }
 
     tagToRename?.let { tag ->
         TagNameDialog(
-            title = "Переименовать тег",
+            title = stringResource(R.string.tag_rename_title),
             initialName = tag.name,
-            confirmLabel = "Сохранить",
+            confirmLabel = stringResource(R.string.action_save),
             onConfirm = { newName -> viewModel.renameTag(tag, newName) { tagToRename = null } },
             onDismiss = {
                 tagToRename = null
                 viewModel.clearTagNameError()
             },
-            error = tagNameError,
+            error = tagNameError?.tagNameText(),
             onTextChange = viewModel::clearTagNameError,
         )
     }
@@ -180,16 +187,16 @@ fun TrackerEditScreen(
     tagToDelete?.let { tag ->
         AlertDialog(
             onDismissRequest = { tagToDelete = null },
-            title = { Text("Удалить тег «${tag.name}»?") },
-            text = { Text("Тег будет отвязан от всех записей, где он использовался.") },
+            title = { Text(stringResource(R.string.tag_delete_title, tag.name)) },
+            text = { Text(stringResource(R.string.tag_delete_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteTag(tag)
                     tagToDelete = null
-                }) { Text("Удалить") }
+                }) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { tagToDelete = null }) { Text("Отмена") }
+                TextButton(onClick = { tagToDelete = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -215,12 +222,12 @@ private fun TagSection(
     LabeledOutlinedBox(
         label = "$title — $hint",
         action = {
-            AddChip(onClick = onNewTag, description = "Новый тег", modifier = Modifier.testTag(newTagButtonTestTag))
+            AddChip(onClick = onNewTag, description = stringResource(R.string.tag_new), modifier = Modifier.testTag(newTagButtonTestTag))
         },
     ) {
         if (tags.isEmpty()) {
             Text(
-                text = "Тегов пока нет",
+                text = stringResource(R.string.tags_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -235,9 +242,9 @@ private fun TagSection(
                     Text(tag.name, style = MaterialTheme.typography.bodyLarge)
                     Text(
                         text = if (usage == 0) {
-                            "не используется"
+                            stringResource(R.string.tag_unused)
                         } else {
-                            "в $usage ${recordsInWord(usage)}"
+                            pluralStringResource(R.plurals.tag_usage, usage, usage)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -255,6 +262,3 @@ private fun TagSection(
         }
     }
 }
-
-/** Prepositional case for "в N …": в 1 записи, в 2 записях, в 5 записях. */
-private fun recordsInWord(count: Int) = russianPlural(count, "записи", "записях", "записях")

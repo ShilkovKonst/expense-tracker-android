@@ -6,6 +6,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.common.NameError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,8 +42,8 @@ class TrackerListViewModel(
         )
 
     /** Why the last [createTracker] call was refused; shown in the create dialog, which stays open. */
-    private val _createError = MutableStateFlow<String?>(null)
-    val createError: StateFlow<String?> = _createError.asStateFlow()
+    private val _createError = MutableStateFlow<NameError?>(null)
+    val createError: StateFlow<NameError?> = _createError.asStateFlow()
 
     fun clearCreateError() {
         _createError.value = null
@@ -66,7 +67,7 @@ class TrackerListViewModel(
             }.onSuccess { id ->
                 _createError.value = null
                 onCreated(id)
-            }.onFailure { _createError.value = TITLE_TAKEN_ERROR }
+            }.onFailure { _createError.value = NameError.TAKEN }
         }
     }
 

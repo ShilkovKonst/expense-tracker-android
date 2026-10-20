@@ -8,7 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.spendobserver.R
 
 /**
  * Bottom room a form's scrolling content needs so its last field can scroll
@@ -32,10 +34,10 @@ fun FormActionButtons(
             onClick = onCancel,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.testTag("cancelButton"),
-        ) { Text("Отмена") }
+        ) { Text(stringResource(R.string.action_cancel)) }
         ExtendedFloatingActionButton(
             onClick = onSave,
             modifier = Modifier.testTag(saveTestTag),
-        ) { Text("Сохранить") }
+        ) { Text(stringResource(R.string.action_save)) }
     }
 }

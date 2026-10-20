@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">SpendObserver</string>
+    <string name="app_name" translatable="false">SpendObserver</string>
     <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
-    <string name="locale_language" translatable="false">en</string>
+    <string name="locale_language">en</string>
 
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>
@@ -18,7 +18,7 @@
     <string name="menu_help">Help</string>
     <string name="menu_faq">FAQ</string>
     <string name="tracker_new_title">New tracker</string>
-    <string name="tracker_name_label">Name</string>
+    <string name="name_label">Name</string>
     <plurals name="imported_trackers">
         <item quantity="one">Imported %d tracker</item>
         <item quantity="other">Imported %d trackers</item>
@@ -33,4 +33,224 @@
         <item quantity="one">%d record</item>
         <item quantity="other">%d records</item>
     </plurals>
+
+    <!-- Tracker screen -->
+    <string name="menu_stats">Statistics</string>
+    <string name="menu_save_to_file">Save to file</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_edit">Edit</string>
+    <string name="record_add">Add record</string>
+    <string name="tracker_no_records">No records yet</string>
+    <string name="record_tags_label">Tags:</string>
+    <string name="record_description_label">Description:</string>
+    <string name="record_no_description">no description</string>
+    <string name="part_no_tags">no tags</string>
+    <plurals name="parts_count">
+        <item quantity="one">%d part</item>
+        <item quantity="other">%d parts</item>
+    </plurals>
+
+    <!-- Export -->
+    <string name="export_saved">File saved</string>
+    <string name="export_save_failed">Couldn’t save the file</string>
+    <string name="export_prepare_failed">Couldn’t prepare the file</string>
+
+    <!-- Shared form pieces -->
+    <string name="action_save">Save</string>
+    <string name="action_ok">OK</string>
+    <string name="tags_global_title">Global tags</string>
+    <string name="tags_global_hint">where, with whom</string>
+    <string name="tags_local_title">Tags</string>
+    <string name="tags_local_hint">what for</string>
+    <string name="tags_none">No tags yet</string>
+    <string name="tag_new">New tag</string>
+    <string name="tag_new_global">New global tag</string>
+
+    <!-- Record form -->
+    <string name="record_new_title">New record</string>
+    <string name="record_edit_title">Edit record</string>
+    <string name="record_type_cost">Expense</string>
+    <string name="record_type_income">Income</string>
+    <string name="record_date_label">Date</string>
+    <string name="amount_label">Amount</string>
+    <string name="record_split">Split into parts</string>
+    <string name="part_add">+ Part</string>
+    <string name="part_number">Part %1$d</string>
+    <string name="part_remainder">Remainder</string>
+    <string name="record_total">Total: %1$s</string>
+    <string name="description_label">Description</string>
+    <string name="description_placeholder">Optional</string>
+    <string name="receipt_total_add">+ Receipt total</string>
+    <string name="receipt_total_label">Receipt total</string>
+    <string name="receipt_total_clear">Remove total</string>
+    <string name="record_delete_title">Delete record?</string>
+    <string name="record_delete_text">This can’t be undone.</string>
+    <string name="error_amount">Enter an amount greater than zero</string>
+    <string name="error_receipt_total">Enter the receipt total</string>
+    <string name="error_parts_exceed_total">The parts must add up to less than the receipt total</string>
+    <string name="error_duplicate_part_tags">Another part already has the same tags</string>
+    <string name="error_name_empty">Enter a name</string>
+    <string name="error_tracker_name_taken">A tracker with this name already exists</string>
+    <string name="error_tag_name_taken">A tag with this name already exists</string>
+
+    <!-- Tracker edit -->
+    <string name="tracker_edit_title">Edit tracker</string>
+    <string name="tracker_name_revert">Revert name</string>
+    <string name="tracker_name_save">Save name</string>
+    <string name="tag_rename_title">Rename tag</string>
+    <string name="tag_delete_title">Delete tag “%1$s”?</string>
+    <string name="tag_delete_text">The tag will be removed from every record that uses it.</string>
+    <string name="tag_unused">not used</string>
+    <plurals name="tag_usage">
+        <item quantity="one">in %d record</item>
+        <item quantity="other">in %d records</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_all_time">All time</string>
+    <string name="stats_overview">Overview</string>
+    <string name="stats_subject_overview">Overview (%1$s)</string>
+    <string name="stats_subject_tag">Tag “%1$s” (%2$s)</string>
+    <string name="stats_costs">Expenses</string>
+    <string name="stats_incomes">Income</string>
+    <!-- The type inside a title's parentheses: lowercase in English, a noun keeps its capital in German. -->
+    <string name="stats_costs_inline">expenses</string>
+    <string name="stats_incomes_inline">income</string>
+    <string name="stats_costs_amount">Expenses: %1$s</string>
+    <string name="stats_incomes_amount">Income: %1$s</string>
+    <!-- "12 records (10 expenses, 2 incomes)" -->
+    <string name="stats_counts">%1$s (%2$s, %3$s)</string>
+    <plurals name="stats_costs_count">
+        <item quantity="one">%d expense</item>
+        <item quantity="other">%d expenses</item>
+    </plurals>
+    <plurals name="stats_incomes_count">
+        <item quantity="one">%d income</item>
+        <item quantity="other">%d incomes</item>
+    </plurals>
+    <string name="stats_level_global">Where, with whom</string>
+    <string name="stats_level_local">What for</string>
+    <string name="stats_most_often">Most often: %1$s</string>
+    <string name="stats_most_amount">Largest amount: %1$s</string>
+    <plurals name="stats_tag_found_in">
+        <item quantity="one">Found in %d record</item>
+        <item quantity="other">Found in %d records</item>
+    </plurals>
+    <string name="stats_metric_amount">Amount</string>
+    <string name="stats_metric_records">Records</string>
+
+    <!-- Import -->
+    <string name="import_title">Import</string>
+    <string name="import_failed_title">Can’t import</string>
+    <string name="import_confirm">Import</string>
+    <plurals name="tags_count">
+        <item quantity="one">%d tag</item>
+        <item quantity="other">%d tags</item>
+    </plurals>
+    <string name="import_clash">Tracker “%1$s” already exists</string>
+    <string name="import_copy">Copy</string>
+    <string name="import_replace">Replace</string>
+    <string name="import_copy_note">Will be added as “%1$s”</string>
+    <string name="import_replace_note">“%1$s” and all its records will be deleted</string>
+    <!-- Import: why a file can't be imported. "import_error_at" joins a place (import_where_*) and a problem (import_issue_*). -->
+    <string name="import_error_unreadable">Couldn’t read the file</string>
+    <string name="import_error_write">Couldn’t import</string>
+    <string name="import_error_damaged">The file is damaged or isn’t a SpendObserver file</string>
+    <string name="import_error_not_spendobserver">This isn’t a SpendObserver file</string>
+    <string name="import_error_newer_version">The file was made by a newer version of the app — please update the app</string>
+    <string name="import_error_no_trackers">The file has no trackers</string>
+    <string name="import_error_duplicate_tracker">Tracker “%1$s” appears in the file twice</string>
+    <string name="import_error_at">%1$s: %2$s</string>
+    <string name="import_where_tracker">Tracker “%1$s”</string>
+    <string name="import_where_tracker_number">Tracker #%1$d</string>
+    <string name="import_where_record">%1$s, record of %2$s</string>
+    <string name="import_where_part">%1$s, part %2$d</string>
+    <string name="import_issue_empty_title">empty name</string>
+    <string name="import_issue_bad_created_at">invalid creation date “%1$s”</string>
+    <string name="import_issue_empty_tag_name">a tag with an empty name</string>
+    <string name="import_issue_duplicate_tag">tag “%1$s” is declared twice</string>
+    <string name="import_issue_bad_record_date">invalid record date “%1$s”</string>
+    <string name="import_issue_unknown_type">unknown type “%1$s”</string>
+    <string name="import_issue_unknown_tag">unknown tag “%1$s”</string>
+    <string name="import_issue_tag_not_global">tag “%1$s” isn’t global — it belongs on the record’s parts</string>
+    <string name="import_issue_tag_is_global">tag “%1$s” is global — it belongs on the record, not on its parts</string>
+    <string name="import_issue_no_parts">no parts</string>
+    <string name="import_issue_non_positive_amount">the amount must be greater than zero</string>
+    <string name="import_issue_duplicate_part_tags">two parts have the same tags</string>
+
+    <!-- Help -->
+    <string name="help_title">Help</string>
+    <string name="help_about_title">About the app</string>
+    <string name="help_about_text">SpendObserver is an app for keeping track of expenses and income. The app works entirely locally: it requires no internet connection, registration or cloud services.</string>
+    <string name="help_version">Version: %1$s</string>
+    <string name="help_author">Author: %1$s</string>
+    <string name="help_email">Email: %1$s</string>
+    <string name="help_write">Write to the developer</string>
+    <string name="help_data_title">User data</string>
+    <string name="help_data_local">The app does not share user data with third parties and does not send it over the network. All trackers, records and tags are stored in the device’s memory.</string>
+    <string name="help_data_backup">If backup to a Google account is enabled in the device settings, the Android operating system may save the app’s data to that account’s cloud storage. Such backup is performed by the system according to the device settings; the app takes no part in it.</string>
+    <string name="help_data_uninstall">When the app is uninstalled, its data is deleted from the device. To keep the data or move it to another device, it is recommended to export it to a file (menu “⋮” → “%1$s”) and then import it (menu “⋮” → “%2$s”).</string>
+    <string name="help_licenses_title">Licenses</string>
+    <string name="help_licenses_intro">The app uses the following open-source libraries:</string>
+    <string name="help_no_mail_title">No email app found</string>
+    <string name="help_no_mail_text">No app for sending email is installed on this device. You can copy the address and write to it from any email service: %1$s</string>
+    <string name="help_copy_address">Copy address</string>
+    <string name="help_address_copied">Address copied</string>
+    <string name="action_close">Close</string>
+    <string name="faq_title">Frequently asked questions</string>
+    <string name="feedback_subject">SpendObserver — feedback</string>
+
+    <!-- FAQ: a question and its answer paragraphs per topic; FAQ in FaqScreen.kt lists the topics. -->
+    <string name="faq_trackers_q">What is a tracker?</string>
+    <string-array name="faq_trackers_a">
+        <item>A tracker is a separate log with its own records and tags, for example a personal, family or work one. Trackers are independent of each other.</item>
+        <item>To create a tracker, tap “Add tracker” on the main screen and enter a name. The new tracker opens right away.</item>
+        <item>A tracker can be renamed or deleted with the ✎ and 🗑 buttons in its row on the main screen, or through the “⋮” menu on the tracker screen. Deleting a tracker deletes all of its records.</item>
+    </string-array>
+    <string name="faq_records_q">How do I add, edit or delete a record?</string>
+    <string-array name="faq_records_a">
+        <item>Open a tracker and tap “Add record”. Choose the record type (“Expense” or “Income”), set the date and the amount, select tags and add a description if needed, then tap “Save”.</item>
+        <item>Records are grouped by year and month; each group shows its number of records and its total. To edit a record, tap it in the list. A record can be deleted with the 🗑 button at the top of the record form.</item>
+    </string-array>
+    <string name="faq_parts_q">What are record parts and the receipt total?</string>
+    <string-array name="faq_parts_a">
+        <item>A record corresponds to a single event, such as one receipt, and may consist of several parts. Each part has its own amount and its own tags. The amount of a record always equals the sum of its parts.</item>
+        <item>To divide a record, tap “Split into parts” below the amount field. New parts are added with the “+ Part” button; unneeded ones are removed with the ✕ button.</item>
+        <item>If the total of the receipt is known, enter it in the “Receipt total” field and single out individual parts. The remainder is calculated automatically and becomes the last part. The parts singled out must add up to less than the receipt total.</item>
+        <item>Two parts of the same record cannot have the same set of tags.</item>
+    </string-array>
+    <string name="faq_tag_levels_q">How do global tags differ from regular tags?</string>
+    <string-array name="faq_tag_levels_a">
+        <item>Global tags describe a record as a whole: where or with whom it took place (for example, the name of a shop or of a trip). They are selected in the “Global tags” field of the record form.</item>
+        <item>Regular tags describe what the money was spent on or where it came from (for example, “groceries”). They are selected for each part of a record separately.</item>
+        <item>A tag’s level is chosen when the tag is created and cannot be changed later. A new tag is created with the “+” button in the corresponding field of the record form or on the tracker edit screen.</item>
+    </string-array>
+    <string name="faq_tag_manage_q">How do I rename or delete a tag?</string>
+    <string-array name="faq_tag_manage_a">
+        <item>Open a tracker, choose “Edit” in the “⋮” menu and use the ✎ and 🗑 buttons next to the tag. Each tag shows how many records use it.</item>
+        <item>A deleted tag is removed from all records; the records themselves are kept.</item>
+    </string-array>
+    <string name="faq_calculator_q">How do I use the calculator in the amount field?</string>
+    <string-array name="faq_calculator_a">
+        <item>The amount field accepts an expression with the operations +, −, × (*) and ÷ (/), for example 120+50/2. The result is shown below the field and saved as the amount.</item>
+        <item>The expression is evaluated strictly from left to right, without giving multiplication and division priority: 120+50/2 = 85. Both a dot and a comma are accepted as the decimal separator. The result is rounded to two decimal places and must be greater than zero.</item>
+    </string-array>
+    <string name="faq_stats_q">How do I use the statistics?</string>
+    <string-array name="faq_stats_a">
+        <item>Open a tracker and choose “Statistics” in the “⋮” menu. The “−”/“+” switch at the top of the screen selects expenses or income.</item>
+        <item>The summary shows the number of records, the total for the selected period and the tags of both levels that occur most often and account for the largest amounts. The selection field lets you choose a single tag to view statistics for it alone.</item>
+        <item>The chart shows amounts or numbers of records (the “Amount”/“Records” switch) by year, month or day. Tapping a bar opens the corresponding year or month; to return to a larger period, use the links in the top row.</item>
+    </string-array>
+    <string name="faq_export_q">How do I save data to a file?</string>
+    <string-array name="faq_export_a">
+        <item>To save all trackers, open the “⋮” menu on the main screen and choose “Save all to file” or “Share all”. To save a single tracker, use “Save to file” or “Share” in the “⋮” menu on the tracker screen.</item>
+        <item>The data is saved to a JSON file, which can be kept as a backup or used to move the data to another device.</item>
+    </string-array>
+    <string name="faq_import_q">How do I load data from a file?</string>
+    <string-array name="faq_import_a">
+        <item>Open the “⋮” menu on the main screen, choose “Import from file” and select a previously saved file. The trackers contained in the file are listed before the import.</item>
+        <item>If a tracker with the same name already exists, choose an action: “Copy” adds the tracker from the file under a new name, “Replace” deletes the existing tracker with all its records and loads the tracker from the file.</item>
+        <item>The file is checked in full before the import. If an error is found, no data is loaded, and the message states where the error is.</item>
+    </string-array>
 </resources>

@@ -1,0 +1,261 @@
+<resources>
+    <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
+    <string name="locale_language">fr</string>
+    <!-- French typography: « » quotes and a non-breaking space (U+00A0) before : ? ! and inside quotes. -->
+
+    <!-- Shared actions -->
+    <string name="action_cancel">Annuler</string>
+    <string name="action_create">Créer</string>
+    <string name="action_delete">Supprimer</string>
+
+    <!-- Tracker list -->
+    <string name="tracker_list_title">Trackers</string>
+    <string name="tracker_list_empty">Aucun tracker pour le moment</string>
+    <string name="tracker_list_add">Ajouter un tracker</string>
+    <string name="menu_import">Importer depuis un fichier</string>
+    <string name="menu_save_all">Tout enregistrer dans un fichier</string>
+    <string name="menu_share_all">Tout partager</string>
+    <string name="menu_help">Aide</string>
+    <string name="menu_faq">FAQ</string>
+    <string name="tracker_new_title">Nouveau tracker</string>
+    <string name="name_label">Nom</string>
+    <plurals name="imported_trackers">
+        <item quantity="one">%d tracker importé</item>
+        <item quantity="many">%d trackers importés</item>
+        <item quantity="other">%d trackers importés</item>
+    </plurals>
+
+    <!-- Delete tracker confirmation -->
+    <string name="delete_tracker_title">Supprimer « %1$s » ?</string>
+    <string name="delete_tracker_text">Toutes les opérations de ce tracker seront définitivement supprimées.</string>
+
+    <!-- Counts -->
+    <plurals name="records_count">
+        <item quantity="one">%d opération</item>
+        <item quantity="many">%d opérations</item>
+        <item quantity="other">%d opérations</item>
+    </plurals>
+
+    <!-- Tracker screen -->
+    <string name="menu_stats">Statistiques</string>
+    <string name="menu_save_to_file">Enregistrer dans un fichier</string>
+    <string name="menu_share">Partager</string>
+    <string name="menu_edit">Modifier</string>
+    <string name="record_add">Ajouter une opération</string>
+    <string name="tracker_no_records">Aucune opération pour le moment</string>
+    <string name="record_tags_label">Étiquettes :</string>
+    <string name="record_description_label">Description :</string>
+    <string name="record_no_description">sans description</string>
+    <string name="part_no_tags">sans étiquettes</string>
+    <plurals name="parts_count">
+        <item quantity="one">%d partie</item>
+        <item quantity="many">%d parties</item>
+        <item quantity="other">%d parties</item>
+    </plurals>
+
+    <!-- Export -->
+    <string name="export_saved">Fichier enregistré</string>
+    <string name="export_save_failed">Impossible d’enregistrer le fichier</string>
+    <string name="export_prepare_failed">Impossible de préparer le fichier</string>
+
+    <!-- Shared form pieces -->
+    <string name="action_save">Enregistrer</string>
+    <string name="action_ok">OK</string>
+    <string name="tags_global_title">Étiquettes globales</string>
+    <string name="tags_global_hint">où, avec qui</string>
+    <string name="tags_local_title">Étiquettes</string>
+    <string name="tags_local_hint">pour quoi</string>
+    <string name="tags_none">Aucune étiquette pour le moment</string>
+    <string name="tag_new">Nouvelle étiquette</string>
+    <string name="tag_new_global">Nouvelle étiquette globale</string>
+
+    <!-- Record form -->
+    <string name="record_new_title">Nouvelle opération</string>
+    <string name="record_edit_title">Modifier l’opération</string>
+    <string name="record_type_cost">Dépense</string>
+    <string name="record_type_income">Revenu</string>
+    <string name="record_date_label">Date</string>
+    <string name="amount_label">Montant</string>
+    <string name="record_split">Diviser en parties</string>
+    <string name="part_add">+ Partie</string>
+    <string name="part_number">Partie %1$d</string>
+    <string name="part_remainder">Reste</string>
+    <string name="record_total">Total : %1$s</string>
+    <string name="description_label">Description</string>
+    <string name="description_placeholder">Facultatif</string>
+    <string name="receipt_total_add">+ Total du ticket</string>
+    <string name="receipt_total_label">Total du ticket</string>
+    <string name="receipt_total_clear">Supprimer le total</string>
+    <string name="record_delete_title">Supprimer l’opération ?</string>
+    <string name="record_delete_text">Cette action est irréversible.</string>
+    <string name="error_amount">Saisissez un montant supérieur à zéro</string>
+    <string name="error_receipt_total">Saisissez le total du ticket</string>
+    <string name="error_parts_exceed_total">La somme des parties doit être inférieure au total du ticket</string>
+    <string name="error_duplicate_part_tags">Une autre partie a déjà les mêmes étiquettes</string>
+    <string name="error_name_empty">Saisissez un nom</string>
+    <string name="error_tracker_name_taken">Un tracker portant ce nom existe déjà</string>
+    <string name="error_tag_name_taken">Une étiquette portant ce nom existe déjà</string>
+
+    <!-- Tracker edit -->
+    <string name="tracker_edit_title">Modifier le tracker</string>
+    <string name="tracker_name_revert">Rétablir le nom</string>
+    <string name="tracker_name_save">Enregistrer le nom</string>
+    <string name="tag_rename_title">Renommer l’étiquette</string>
+    <string name="tag_delete_title">Supprimer l’étiquette « %1$s » ?</string>
+    <string name="tag_delete_text">L’étiquette sera retirée de toutes les opérations qui l’utilisent.</string>
+    <string name="tag_unused">non utilisée</string>
+    <plurals name="tag_usage">
+        <item quantity="one">dans %d opération</item>
+        <item quantity="many">dans %d opérations</item>
+        <item quantity="other">dans %d opérations</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="stats_title">Statistiques</string>
+    <string name="stats_all_time">Toute la période</string>
+    <string name="stats_overview">Vue d’ensemble</string>
+    <string name="stats_subject_overview">Vue d’ensemble (%1$s)</string>
+    <string name="stats_subject_tag">Étiquette « %1$s » (%2$s)</string>
+    <string name="stats_costs">Dépenses</string>
+    <string name="stats_incomes">Revenus</string>
+    <string name="stats_costs_inline">dépenses</string>
+    <string name="stats_incomes_inline">revenus</string>
+    <string name="stats_costs_amount">Dépenses : %1$s</string>
+    <string name="stats_incomes_amount">Revenus : %1$s</string>
+    <string name="stats_counts">%1$s (%2$s, %3$s)</string>
+    <plurals name="stats_costs_count">
+        <item quantity="one">%d dépense</item>
+        <item quantity="many">%d dépenses</item>
+        <item quantity="other">%d dépenses</item>
+    </plurals>
+    <plurals name="stats_incomes_count">
+        <item quantity="one">%d revenu</item>
+        <item quantity="many">%d revenus</item>
+        <item quantity="other">%d revenus</item>
+    </plurals>
+    <string name="stats_level_global">Où, avec qui</string>
+    <string name="stats_level_local">Pour quoi</string>
+    <string name="stats_most_often">Les plus fréquentes : %1$s</string>
+    <string name="stats_most_amount">Les plus gros montants : %1$s</string>
+    <plurals name="stats_tag_found_in">
+        <item quantity="one">Présente dans %d opération</item>
+        <item quantity="many">Présente dans %d opérations</item>
+        <item quantity="other">Présente dans %d opérations</item>
+    </plurals>
+    <string name="stats_metric_amount">Montant</string>
+    <string name="stats_metric_records">Opérations</string>
+
+    <!-- Import -->
+    <string name="import_title">Importation</string>
+    <string name="import_failed_title">Importation impossible</string>
+    <string name="import_confirm">Importer</string>
+    <plurals name="tags_count">
+        <item quantity="one">%d étiquette</item>
+        <item quantity="many">%d étiquettes</item>
+        <item quantity="other">%d étiquettes</item>
+    </plurals>
+    <string name="import_clash">Le tracker « %1$s » existe déjà</string>
+    <string name="import_copy">Copier</string>
+    <string name="import_replace">Remplacer</string>
+    <string name="import_copy_note">Sera ajouté sous le nom « %1$s »</string>
+    <string name="import_replace_note">« %1$s » et toutes ses opérations seront supprimés</string>
+    <string name="import_error_unreadable">Impossible de lire le fichier</string>
+    <string name="import_error_write">Impossible d’importer</string>
+    <string name="import_error_damaged">Le fichier est endommagé ou n’est pas un fichier SpendObserver</string>
+    <string name="import_error_not_spendobserver">Ce n’est pas un fichier SpendObserver</string>
+    <string name="import_error_newer_version">Le fichier a été créé par une version plus récente de l’application. Veuillez mettre l’application à jour</string>
+    <string name="import_error_no_trackers">Le fichier ne contient aucun tracker</string>
+    <string name="import_error_duplicate_tracker">Le tracker « %1$s » figure deux fois dans le fichier</string>
+    <string name="import_error_at">%1$s : %2$s</string>
+    <string name="import_where_tracker">Tracker « %1$s »</string>
+    <string name="import_where_tracker_number">Tracker nº %1$d</string>
+    <string name="import_where_record">%1$s, opération du %2$s</string>
+    <string name="import_where_part">%1$s, partie %2$d</string>
+    <string name="import_issue_empty_title">nom vide</string>
+    <string name="import_issue_bad_created_at">date de création non valide « %1$s »</string>
+    <string name="import_issue_empty_tag_name">une étiquette au nom vide</string>
+    <string name="import_issue_duplicate_tag">l’étiquette « %1$s » est déclarée deux fois</string>
+    <string name="import_issue_bad_record_date">date d’opération non valide « %1$s »</string>
+    <string name="import_issue_unknown_type">type inconnu « %1$s »</string>
+    <string name="import_issue_unknown_tag">étiquette inconnue « %1$s »</string>
+    <string name="import_issue_tag_not_global">l’étiquette « %1$s » n’est pas globale : elle doit figurer sur les parties de l’opération</string>
+    <string name="import_issue_tag_is_global">l’étiquette « %1$s » est globale : elle doit figurer sur l’opération, et non sur ses parties</string>
+    <string name="import_issue_no_parts">aucune partie</string>
+    <string name="import_issue_non_positive_amount">le montant doit être supérieur à zéro</string>
+    <string name="import_issue_duplicate_part_tags">deux parties ont les mêmes étiquettes</string>
+
+    <!-- Help -->
+    <string name="help_title">Aide</string>
+    <string name="help_about_title">À propos de l’application</string>
+    <string name="help_about_text">SpendObserver est une application de suivi des dépenses et des revenus. L’application fonctionne entièrement en local : elle ne nécessite ni connexion Internet, ni inscription, ni services cloud.</string>
+    <string name="help_version">Version : %1$s</string>
+    <string name="help_author">Auteur : %1$s</string>
+    <string name="help_email">E-mail : %1$s</string>
+    <string name="help_write">Écrire au développeur</string>
+    <string name="help_data_title">Données de l’utilisateur</string>
+    <string name="help_data_local">L’application ne transmet pas les données de l’utilisateur à des tiers et ne les envoie pas sur le réseau. Tous les trackers, opérations et étiquettes sont stockés dans la mémoire de l’appareil.</string>
+    <string name="help_data_backup">Si la sauvegarde sur un compte Google est activée dans les paramètres de l’appareil, le système d’exploitation Android peut enregistrer les données de l’application dans le stockage cloud de ce compte. Cette sauvegarde est effectuée par le système conformément aux paramètres de l’appareil ; l’application n’y prend aucune part.</string>
+    <string name="help_data_uninstall">Lorsque l’application est désinstallée, ses données sont supprimées de l’appareil. Pour conserver les données ou les transférer vers un autre appareil, il est recommandé de les exporter dans un fichier (menu « ⋮ » → « %1$s »), puis de les importer (menu « ⋮ » → « %2$s »).</string>
+    <string name="help_licenses_title">Licences</string>
+    <string name="help_licenses_intro">L’application utilise les bibliothèques open source suivantes :</string>
+    <string name="help_no_mail_title">Aucune application de messagerie</string>
+    <string name="help_no_mail_text">Aucune application d’envoi d’e-mails n’est installée sur cet appareil. Vous pouvez copier l’adresse et écrire depuis n’importe quel service de messagerie : %1$s</string>
+    <string name="help_copy_address">Copier l’adresse</string>
+    <string name="help_address_copied">Adresse copiée</string>
+    <string name="action_close">Fermer</string>
+    <string name="faq_title">Questions fréquentes</string>
+    <string name="feedback_subject">SpendObserver — commentaires</string>
+
+    <!-- FAQ -->
+    <string name="faq_trackers_q">Qu’est-ce qu’un tracker ?</string>
+    <string-array name="faq_trackers_a">
+        <item>Un tracker est un registre distinct, avec ses propres opérations et étiquettes, par exemple personnel, familial ou professionnel. Les trackers sont indépendants les uns des autres.</item>
+        <item>Pour créer un tracker, appuyez sur « Ajouter un tracker » sur l’écran principal et saisissez un nom. Le nouveau tracker s’ouvre immédiatement.</item>
+        <item>Un tracker peut être renommé ou supprimé à l’aide des boutons ✎ et 🗑 de sa ligne sur l’écran principal, ou via le menu « ⋮ » de l’écran du tracker. La suppression d’un tracker entraîne celle de toutes ses opérations.</item>
+    </string-array>
+    <string name="faq_records_q">Comment ajouter, modifier ou supprimer une opération ?</string>
+    <string-array name="faq_records_a">
+        <item>Ouvrez un tracker et appuyez sur « Ajouter une opération ». Choisissez le type d’opération (« Dépense » ou « Revenu »), indiquez la date et le montant, sélectionnez des étiquettes et ajoutez une description si nécessaire, puis appuyez sur « Enregistrer ».</item>
+        <item>Les opérations sont regroupées par année et par mois ; chaque groupe indique son nombre d’opérations et son total. Pour modifier une opération, appuyez dessus dans la liste. Une opération peut être supprimée à l’aide du bouton 🗑 en haut du formulaire.</item>
+    </string-array>
+    <string name="faq_parts_q">Que sont les parties d’une opération et le total du ticket ?</string>
+    <string-array name="faq_parts_a">
+        <item>Une opération correspond à un seul événement, par exemple un ticket de caisse, et peut se composer de plusieurs parties. Chaque partie a son propre montant et ses propres étiquettes. Le montant d’une opération est toujours égal à la somme de ses parties.</item>
+        <item>Pour diviser une opération, appuyez sur « Diviser en parties » sous le champ du montant. Les nouvelles parties s’ajoutent avec le bouton « + Partie » ; les parties inutiles se suppriment avec le bouton ✕.</item>
+        <item>Si le total du ticket est connu, saisissez-le dans le champ « Total du ticket » et isolez certaines parties. Le reste est calculé automatiquement et constitue la dernière partie. La somme des parties isolées doit être inférieure au total du ticket.</item>
+        <item>Deux parties d’une même opération ne peuvent pas avoir le même ensemble d’étiquettes.</item>
+    </string-array>
+    <string name="faq_tag_levels_q">Quelle est la différence entre les étiquettes globales et les étiquettes ordinaires ?</string>
+    <string-array name="faq_tag_levels_a">
+        <item>Les étiquettes globales décrivent l’opération dans son ensemble : où ou avec qui elle a eu lieu (par exemple, le nom d’un magasin ou d’un voyage). Elles se sélectionnent dans le champ « Étiquettes globales » du formulaire.</item>
+        <item>Les étiquettes ordinaires décrivent ce à quoi l’argent a été dépensé ou d’où il provient (par exemple, « courses »). Elles se sélectionnent séparément pour chaque partie de l’opération.</item>
+        <item>Le niveau d’une étiquette est choisi lors de sa création et ne peut plus être modifié ensuite. Une nouvelle étiquette se crée avec le bouton « + » dans le champ correspondant du formulaire ou sur l’écran de modification du tracker.</item>
+    </string-array>
+    <string name="faq_tag_manage_q">Comment renommer ou supprimer une étiquette ?</string>
+    <string-array name="faq_tag_manage_a">
+        <item>Ouvrez un tracker, choisissez « Modifier » dans le menu « ⋮ » et utilisez les boutons ✎ et 🗑 à côté de l’étiquette. Chaque étiquette indique le nombre d’opérations qui l’utilisent.</item>
+        <item>Une étiquette supprimée est retirée de toutes les opérations ; les opérations elles-mêmes sont conservées.</item>
+    </string-array>
+    <string name="faq_calculator_q">Comment utiliser la calculatrice du champ du montant ?</string>
+    <string-array name="faq_calculator_a">
+        <item>Le champ du montant accepte une expression avec les opérations +, −, × (*) et ÷ (/), par exemple 120+50/2. Le résultat s’affiche sous le champ et est enregistré comme montant.</item>
+        <item>L’expression est évaluée strictement de gauche à droite, sans priorité de la multiplication et de la division : 120+50/2 = 85. Le point comme la virgule sont acceptés comme séparateur décimal. Le résultat est arrondi à deux décimales et doit être supérieur à zéro.</item>
+    </string-array>
+    <string name="faq_stats_q">Comment utiliser les statistiques ?</string>
+    <string-array name="faq_stats_a">
+        <item>Ouvrez un tracker et choisissez « Statistiques » dans le menu « ⋮ ». Le sélecteur « − »/« + » en haut de l’écran permet de choisir les dépenses ou les revenus.</item>
+        <item>Le résumé indique le nombre d’opérations, le total de la période choisie, ainsi que les étiquettes des deux niveaux les plus fréquentes et celles qui représentent les montants les plus élevés. Le champ de sélection permet de choisir une seule étiquette pour afficher ses statistiques.</item>
+        <item>Le graphique présente les montants ou le nombre d’opérations (sélecteur « Montant »/« Opérations ») par année, par mois ou par jour. Un appui sur une barre ouvre l’année ou le mois correspondant ; pour revenir à une période plus longue, utilisez les liens de la ligne supérieure.</item>
+    </string-array>
+    <string name="faq_export_q">Comment enregistrer les données dans un fichier ?</string>
+    <string-array name="faq_export_a">
+        <item>Pour enregistrer tous les trackers, ouvrez le menu « ⋮ » de l’écran principal et choisissez « Tout enregistrer dans un fichier » ou « Tout partager ». Pour enregistrer un seul tracker, utilisez « Enregistrer dans un fichier » ou « Partager » dans le menu « ⋮ » de l’écran du tracker.</item>
+        <item>Les données sont enregistrées dans un fichier JSON, qui peut servir de sauvegarde ou permettre de transférer les données vers un autre appareil.</item>
+    </string-array>
+    <string name="faq_import_q">Comment charger des données depuis un fichier ?</string>
+    <string-array name="faq_import_a">
+        <item>Ouvrez le menu « ⋮ » de l’écran principal, choisissez « Importer depuis un fichier » et sélectionnez un fichier enregistré précédemment. Les trackers contenus dans le fichier sont listés avant l’importation.</item>
+        <item>Si un tracker du même nom existe déjà, choisissez une action : « Copier » ajoute le tracker du fichier sous un nouveau nom, « Remplacer » supprime le tracker existant avec toutes ses opérations et charge le tracker du fichier.</item>
+        <item>Le fichier est entièrement vérifié avant l’importation. Si une erreur est détectée, aucune donnée n’est chargée et le message indique l’emplacement de l’erreur.</item>
+    </string-array>
+</resources>

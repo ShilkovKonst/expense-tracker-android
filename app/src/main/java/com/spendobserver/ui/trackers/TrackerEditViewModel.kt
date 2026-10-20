@@ -6,6 +6,7 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.text.trimInvisible
+import com.spendobserver.ui.common.NameError
 import com.spendobserver.ui.common.tagNameError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,8 +45,8 @@ class TrackerEditViewModel(
     val tagUsage: StateFlow<Map<Long, Int>> = tagRepository.observeUsage(trackerId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), emptyMap())
 
-    private val _saveError = MutableStateFlow<String?>(null)
-    val saveError: StateFlow<String?> = _saveError.asStateFlow()
+    private val _saveError = MutableStateFlow<NameError?>(null)
+    val saveError: StateFlow<NameError?> = _saveError.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -81,13 +82,13 @@ class TrackerEditViewModel(
                 _title.value = title
                 onSaved()
             }
-                .onFailure { _saveError.value = TITLE_TAKEN_ERROR }
+                .onFailure { _saveError.value = NameError.TAKEN }
         }
     }
 
     /** Why the open create/rename tag dialog's name was refused; the dialog stays open meanwhile. */
-    private val _tagNameError = MutableStateFlow<String?>(null)
-    val tagNameError: StateFlow<String?> = _tagNameError.asStateFlow()
+    private val _tagNameError = MutableStateFlow<NameError?>(null)
+    val tagNameError: StateFlow<NameError?> = _tagNameError.asStateFlow()
 
     fun clearTagNameError() {
         _tagNameError.value = null

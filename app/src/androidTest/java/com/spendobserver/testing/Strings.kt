@@ -1,5 +1,6 @@
 package com.spendobserver.testing
 
+import androidx.annotation.ArrayRes
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,6 +20,8 @@ private val resources get() = InstrumentationRegistry.getInstrumentation().targe
 fun string(@StringRes id: Int, vararg args: Any): String = resources.getString(id, *args)
 
 fun plural(@PluralsRes id: Int, count: Int): String = resources.getQuantityString(id, count, count)
+
+fun stringArray(@ArrayRes id: Int): List<String> = resources.getStringArray(id).toList()
 
 /** The locale the app formats amounts and dates in on this device (see rememberFormatLocale). */
 private val formatLocale

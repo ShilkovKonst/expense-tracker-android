@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -25,6 +26,8 @@ import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.testing.amount
 import com.spendobserver.testing.month
+import com.spendobserver.testing.plural
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForText
 import com.spendobserver.testing.InMemoryDatabaseRule
@@ -76,11 +79,21 @@ class StatsScreenTest {
         )
     }
 
+    /** "N records (N expenses, N incomes)" as the summary card shows it. */
+    private fun counts(records: Int, costs: Int, incomes: Int) = string(
+        R.string.stats_counts,
+        plural(R.plurals.records_count, records),
+        plural(R.plurals.stats_costs_count, costs),
+        plural(R.plurals.stats_incomes_count, incomes),
+    )
+
+    private fun costs(cents: Long) = string(R.string.stats_costs_amount, amount(cents))
+
     /**
      * [loadedCosts] is the default view's summary line, shown once the data is in.
      * "Today" is pinned in 2026, the data's last year, so the all-time axis ends there.
      */
-    private fun setContent(loadedCosts: String = "Расходы: " + amount(1700)) {
+    private fun setContent(loadedCosts: String = costs(1700)) {
         composeRule.setContent {
             StatsScreen(
                 trackerId = trackerId,
@@ -113,18 +126,18 @@ class StatsScreenTest {
     fun overview_showsCountsCostTotalAndTopsPerLevel() {
         setContent()
 
-        composeRule.onNodeWithText("3 записи (2 расхода, 1 доход)").assertExists()
-        composeRule.onNodeWithText("Расходы: " + amount(1700)).assertExists()
-        composeRule.onNodeWithText("Чаще всего: Ашан (1)").assertExists()
-        composeRule.onNodeWithText("Чаще всего: продукты (2)").assertExists()
-        composeRule.onNodeWithText("Больше всего: продукты (" + amount(1200) + ")").assertExists()
+        composeRule.onNodeWithText(counts(3, 2, 1)).assertExists()
+        composeRule.onNodeWithText(costs(1700)).assertExists()
+        composeRule.onNodeWithText(string(R.string.stats_most_often, "Ашан (1)")).assertExists()
+        composeRule.onNodeWithText(string(R.string.stats_most_often, "продукты (2)")).assertExists()
+        composeRule.onNodeWithText(string(R.string.stats_most_amount, "продукты (" + amount(1200) + ")")).assertExists()
     }
 
     @Test
     fun overview_isTheDefaultSubject_titledWithTheType() {
         setContent()
 
-        composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Общая статистика (расходы)")
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_overview, string(R.string.stats_costs_inline)))
     }
 
     @Test
@@ -144,13 +157,13 @@ class StatsScreenTest {
         composeRule.onNodeWithTag("subjectField").performClick()
         composeRule.onNodeWithTag("tagRow-продукты").performClick()
         composeRule.onNodeWithTag("subjectList").assertDoesNotExist()
-        composeRule.waitForText("Расходы: " + amount(1200))
-        composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Тег «продукты» (расходы)")
-        composeRule.onNodeWithText("Встречается в 2 записях").assertExists()
+        composeRule.waitForText(costs(1200))
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_tag, "продукты", string(R.string.stats_costs_inline)))
+        composeRule.onNodeWithText(plural(R.plurals.stats_tag_found_in, 2)).assertExists()
 
         composeRule.onNodeWithTag("subjectField").performClick()
         composeRule.onNodeWithTag("overviewRow").performClick()
-        composeRule.waitForText("Расходы: " + amount(1700))
+        composeRule.waitForText(costs(1700))
     }
 
     @Test
@@ -158,10 +171,10 @@ class StatsScreenTest {
         setContent()
 
         composeRule.onNodeWithTag("subjectField").performClick()
-        composeRule.onNodeWithText("Отмена").performClick()
+        composeRule.onNodeWithText(string(R.string.action_cancel)).performClick()
 
         composeRule.onNodeWithTag("subjectList").assertDoesNotExist()
-        composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Общая статистика (расходы)")
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_overview, string(R.string.stats_costs_inline)))
     }
 
     @Test
@@ -170,9 +183,9 @@ class StatsScreenTest {
 
         composeRule.onNodeWithTag("incomeTypeButton").performClick()
 
-        composeRule.waitForText("Доходы: " + amount(9000))
-        composeRule.onNodeWithTag("subjectTitle").assertTextEquals("Общая статистика (доходы)")
-        composeRule.onNodeWithText("3 записи (2 расхода, 1 доход)").assertExists()
+        composeRule.waitForText(string(R.string.stats_incomes_amount, amount(9000)))
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_overview, string(R.string.stats_incomes_inline)))
+        composeRule.onNodeWithText(counts(3, 2, 1)).assertExists()
     }
 
     @Test
@@ -186,7 +199,7 @@ class StatsScreenTest {
             )
             id
         }
-        setContent(loadedCosts = "Расходы: " + amount(100))
+        setContent(loadedCosts = costs(100))
 
         composeRule.onNodeWithTag("incomeTypeButton").assertIsNotEnabled()
         composeRule.onNodeWithTag("costTypeButton").assertIsEnabled()
@@ -198,16 +211,16 @@ class StatsScreenTest {
 
         // All time → the last year (2026).
         tapLastBar(crumb = "2026")
-        composeRule.waitForText("2 записи (1 расход, 1 доход)")
-        composeRule.onNodeWithText("Расходы: " + amount(1500)).assertExists()
+        composeRule.waitForText(counts(2, 1, 1))
+        composeRule.onNodeWithText(costs(1500)).assertExists()
 
         // 2026 → its last month, December: nothing recorded there.
         tapLastBar(crumb = month(12))
-        composeRule.waitForText("0 записей (0 расходов, 0 доходов)")
+        composeRule.waitForText(counts(0, 0, 0))
 
         composeRule.onNodeWithText("2026").performClick()
-        composeRule.waitForText("2 записи (1 расход, 1 доход)")
-        composeRule.onNodeWithText("Всё время").performClick()
-        composeRule.waitForText("3 записи (2 расхода, 1 доход)")
+        composeRule.waitForText(counts(2, 1, 1))
+        composeRule.onNodeWithText(string(R.string.stats_all_time)).performClick()
+        composeRule.waitForText(counts(3, 2, 1))
     }
 }

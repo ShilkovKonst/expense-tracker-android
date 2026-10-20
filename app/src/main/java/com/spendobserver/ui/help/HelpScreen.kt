@@ -32,13 +32,15 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.spendobserver.R
 import kotlinx.coroutines.launch
 
 private const val AUTHOR_NAME = "Konstantin Shilkov"
 internal const val FEEDBACK_EMAIL = "blacktormentoro@gmail.com"
 
-/** A library shown under «Лицензии»; all of them come in through Gradle. */
+/** A library shown under "Licenses"; all of them come in through Gradle. Names stay untranslated. */
 private data class LibraryLicense(val name: String, val license: String)
 
 private val LIBRARIES = listOf(
@@ -65,13 +67,14 @@ fun HelpScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showNoMailApp by remember { mutableStateOf(false) }
+    val addressCopied = stringResource(R.string.help_address_copied)
 
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Справка") },
+                title = { Text(stringResource(R.string.help_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Text("←") }
                 },
@@ -88,45 +91,34 @@ fun HelpScreen(
                 .testTag("helpContent"),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            HelpSection("О приложении", tag = "helpAboutSection") {
-                Paragraph(
-                    "SpendObserver — приложение для учёта расходов и доходов. Приложение " +
-                        "работает полностью локально: для его работы не требуются подключение " +
-                        "к интернету, регистрация или облачные сервисы.",
-                )
-                Paragraph("Версия: $versionName", modifier = Modifier.testTag("helpVersion"))
-                Paragraph("Автор: $AUTHOR_NAME")
-                Paragraph("Электронная почта: $FEEDBACK_EMAIL")
+            HelpSection(stringResource(R.string.help_about_title), tag = "helpAboutSection") {
+                Paragraph(stringResource(R.string.help_about_text))
+                Paragraph(stringResource(R.string.help_version, versionName), modifier = Modifier.testTag("helpVersion"))
+                Paragraph(stringResource(R.string.help_author, AUTHOR_NAME))
+                Paragraph(stringResource(R.string.help_email, FEEDBACK_EMAIL))
                 OutlinedButton(
                     onClick = { if (!openFeedback(context)) showNoMailApp = true },
                     modifier = Modifier.testTag("feedbackButton"),
                 ) {
-                    Text("Написать разработчику")
+                    Text(stringResource(R.string.help_write))
                 }
             }
             HorizontalDivider()
-            HelpSection("Данные пользователя", tag = "helpDataSection") {
+            HelpSection(stringResource(R.string.help_data_title), tag = "helpDataSection") {
+                Paragraph(stringResource(R.string.help_data_local))
+                Paragraph(stringResource(R.string.help_data_backup))
+                // The menu items by their own resources, so the text always names them as the menu does.
                 Paragraph(
-                    "Приложение не передаёт данные пользователя третьим лицам и не отправляет " +
-                        "их по сети. Все трекеры, записи и теги хранятся в памяти устройства.",
-                )
-                Paragraph(
-                    "Если в настройках устройства включено резервное копирование в аккаунт " +
-                        "Google, операционная система Android может сохранять данные приложения " +
-                        "в облачное хранилище этого аккаунта. Такое копирование выполняется " +
-                        "системой в соответствии с настройками устройства; приложение в нём " +
-                        "не участвует.",
-                )
-                Paragraph(
-                    "При удалении приложения его данные удаляются с устройства. Для сохранения " +
-                        "данных или их переноса на другое устройство рекомендуется использовать " +
-                        "экспорт в файл (меню «⋮» → «Сохранить все в файл») и последующий " +
-                        "импорт (меню «⋮» → «Импорт из файла»).",
+                    stringResource(
+                        R.string.help_data_uninstall,
+                        stringResource(R.string.menu_save_all),
+                        stringResource(R.string.menu_import),
+                    ),
                 )
             }
             HorizontalDivider()
-            HelpSection("Лицензии", tag = "helpLicensesSection") {
-                Paragraph("В приложении используются следующие библиотеки с открытым исходным кодом:")
+            HelpSection(stringResource(R.string.help_licenses_title), tag = "helpLicensesSection") {
+                Paragraph(stringResource(R.string.help_licenses_intro))
                 LIBRARIES.forEach { library ->
                     Column {
                         Text(library.name, style = MaterialTheme.typography.bodyMedium)
@@ -144,13 +136,9 @@ fun HelpScreen(
     if (showNoMailApp) {
         AlertDialog(
             onDismissRequest = { showNoMailApp = false },
-            title = { Text("Почтовое приложение не найдено") },
+            title = { Text(stringResource(R.string.help_no_mail_title)) },
             text = {
-                Text(
-                    "На устройстве не установлено приложение для отправки электронной почты. " +
-                        "Вы можете скопировать адрес и написать на него из любого почтового сервиса: " +
-                        FEEDBACK_EMAIL,
-                )
+                Text(stringResource(R.string.help_no_mail_text, FEEDBACK_EMAIL))
             },
             confirmButton = {
                 TextButton(
@@ -158,16 +146,16 @@ fun HelpScreen(
                         showNoMailApp = false
                         scope.launch {
                             clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("email", FEEDBACK_EMAIL)))
-                            snackbarHostState.showSnackbar("Адрес скопирован")
+                            snackbarHostState.showSnackbar(addressCopied)
                         }
                     },
                     modifier = Modifier.testTag("copyEmailButton"),
                 ) {
-                    Text("Скопировать адрес")
+                    Text(stringResource(R.string.help_copy_address))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showNoMailApp = false }) { Text("Закрыть") }
+                TextButton(onClick = { showNoMailApp = false }) { Text(stringResource(R.string.action_close)) }
             },
         )
     }

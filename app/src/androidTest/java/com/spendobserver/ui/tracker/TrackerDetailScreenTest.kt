@@ -18,6 +18,7 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.testing.amount
 import com.spendobserver.testing.month
+import com.spendobserver.testing.plural
 import com.spendobserver.testing.signedAmount
 import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
@@ -69,6 +70,9 @@ class TrackerDetailScreenTest {
             listOf(PartDraft(amountCents, emptySet())),
         )
 
+    /** A record row's description line as shown: the label, then the text. */
+    private fun description(text: String) = string(R.string.record_description_label) + " " + text
+
     private fun setContent(recordChange: RecordChange? = null) {
         composeRule.setContent {
             TrackerDetailScreen(
@@ -87,7 +91,7 @@ class TrackerDetailScreenTest {
         setContent()
         composeRule.waitForText("Family")
 
-        composeRule.onNodeWithText("Записей пока нет").assertExists()
+        composeRule.onNodeWithText(string(R.string.tracker_no_records)).assertExists()
     }
 
     @Test
@@ -98,7 +102,7 @@ class TrackerDetailScreenTest {
 
         composeRule.onNodeWithText("2026").assertExists()
         composeRule.onNodeWithText(month(3)).assertDoesNotExist()
-        composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
+        composeRule.onNodeWithText(description("groceries")).assertDoesNotExist()
     }
 
     @Test
@@ -110,11 +114,11 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText(month(3)).assertExists()
-        composeRule.onNodeWithText("Описание: groceries").assertDoesNotExist()
+        composeRule.onNodeWithText(description("groceries")).assertDoesNotExist()
 
         composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Описание: groceries").assertExists()
+        composeRule.onNodeWithText(description("groceries")).assertExists()
     }
 
     @Test
@@ -145,16 +149,16 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 1000, "c")
         }
         setContent()
-        composeRule.waitForText("3 записи")
+        composeRule.waitForText(plural(R.plurals.records_count, 3))
 
         // Year header: 3 records total, always visible.
-        composeRule.onNodeWithText("3 записи").assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 3)).assertExists()
 
         composeRule.onNodeWithText("2026").performClick()
         composeRule.waitForIdle()
 
         // March header: only its own 2 records.
-        composeRule.onNodeWithText("2 записи").assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 2)).assertExists()
     }
 
     @Test
@@ -189,7 +193,7 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Описание: без описания").assertExists()
+        composeRule.onNodeWithText(description(string(R.string.record_no_description))).assertExists()
     }
 
     @Test
@@ -199,10 +203,10 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 2000, "this year")
         }
         setContent()
-        composeRule.waitForText("2 записи · " + signedAmount(3000))
+        composeRule.waitForText(plural(R.plurals.records_count, 2) + " · " + signedAmount(3000))
 
         // 2 records total, net across both years: 5000 - 2000 = 3000.
-        composeRule.onNodeWithText("2 записи · " + signedAmount(3000)).assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.records_count, 2) + " · " + signedAmount(3000)).assertExists()
     }
 
     @Test
@@ -214,10 +218,10 @@ class TrackerDetailScreenTest {
             insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 100, "target")
         }
         setContent(RecordChange(recordId = targetId, year = 2026, month = 3, deleted = false))
-        composeRule.waitForText("Описание: target")
+        composeRule.waitForText(description("target"))
         composeRule.waitForIdle() // let the scroll to it settle
 
-        composeRule.onNodeWithText("Описание: target").assertIsDisplayed()
+        composeRule.onNodeWithText(description("target")).assertIsDisplayed()
         // Only the change's own year was opened.
         composeRule.onNodeWithText(month(12)).assertDoesNotExist()
     }
@@ -227,11 +231,11 @@ class TrackerDetailScreenTest {
         runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "kept") }
         // The deleted record (id 999) is already gone from the database.
         setContent(RecordChange(recordId = 999, year = 2026, month = 3, deleted = true))
-        composeRule.waitForText("Описание: kept")
+        composeRule.waitForText(description("kept"))
         composeRule.waitForIdle() // let the scroll to it settle
 
         composeRule.onNodeWithText(month(3)).assertIsDisplayed()
-        composeRule.onNodeWithText("Описание: kept").assertIsDisplayed()
+        composeRule.onNodeWithText(description("kept")).assertIsDisplayed()
     }
 
     @Test
@@ -255,15 +259,15 @@ class TrackerDetailScreenTest {
                 recordChange = RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false),
             )
         }
-        composeRule.waitForText("▸ 2 части")
+        composeRule.waitForText("▸ " + plural(R.plurals.parts_count, 2))
 
-        composeRule.onNodeWithText("▸ 2 части").assertExists()
+        composeRule.onNodeWithText("▸ " + plural(R.plurals.parts_count, 2)).assertExists()
         composeRule.onNodeWithText(amount(80000)).assertDoesNotExist()
 
         composeRule.onNodeWithTag("partsToggle-$recordId").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("▾ 2 части").assertExists()
+        composeRule.onNodeWithText("▾ " + plural(R.plurals.parts_count, 2)).assertExists()
         composeRule.onNodeWithText(amount(80000)).assertIsDisplayed()
         composeRule.onNodeWithText(amount(235000)).assertIsDisplayed()
         assertEquals(0, openedCount)

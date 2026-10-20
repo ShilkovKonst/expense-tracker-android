@@ -5,13 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-
-internal const val FEEDBACK_SUBJECT = "SpendObserver — обратная связь"
+import com.spendobserver.R
 
 /**
  * The prefilled letter body: room for the message on top, then the details a
- * bug report needs. Plain parameters instead of reading [Build] here, so the
- * text can be checked in a JVM test.
+ * bug report needs. The detail labels stay English whatever the app's language,
+ * for the developer reading them. Plain parameters instead of reading [Build]
+ * here, so the text can be checked in a JVM test.
  */
 internal fun feedbackBody(
     appVersion: String,
@@ -22,9 +22,9 @@ internal fun feedbackBody(
     appendLine()
     appendLine()
     appendLine("---")
-    appendLine("Версия приложения: $appVersion")
+    appendLine("App version: $appVersion")
     appendLine("Android: $androidRelease (API $sdkInt)")
-    append("Устройство: $device")
+    append("Device: $device")
 }
 
 /**
@@ -34,7 +34,7 @@ internal fun feedbackBody(
 internal fun feedbackIntent(context: Context): Intent =
     Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(FEEDBACK_EMAIL))
-        putExtra(Intent.EXTRA_SUBJECT, FEEDBACK_SUBJECT)
+        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.feedback_subject))
         putExtra(
             Intent.EXTRA_TEXT,
             feedbackBody(

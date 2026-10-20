@@ -41,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
@@ -61,10 +64,6 @@ import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.domain.stats.StatsSubject
 import com.spendobserver.domain.stats.TagStats
 import com.spendobserver.domain.stats.TagTops
-import com.spendobserver.domain.summary.costsWord
-import com.spendobserver.domain.summary.incomesWord
-import com.spendobserver.domain.summary.recordsWord
-import com.spendobserver.domain.summary.russianPlural
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.rememberFormatLocale
 import kotlinx.datetime.LocalDate
@@ -95,7 +94,7 @@ fun StatsScreen(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Статистика") },
+                title = { Text(stringResource(R.string.stats_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Text("←") }
                 },
@@ -135,9 +134,11 @@ fun StatsScreen(
                         ) {
                             Text(
                                 text = when (val subject = current.subject) {
-                                    StatsSubject.Overview -> "Общая статистика"
-                                    is StatsSubject.OfTag -> "Тег «${subject.tag.name}»"
-                                } + " (${typeLabel(current.type).lowercase()})",
+                                    StatsSubject.Overview ->
+                                        stringResource(R.string.stats_subject_overview, inlineTypeLabel(current.type))
+                                    is StatsSubject.OfTag ->
+                                        stringResource(R.string.stats_subject_tag, subject.tag.name, inlineTypeLabel(current.type))
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f).testTag("subjectTitle"),
                             )
@@ -184,6 +185,8 @@ fun StatsScreen(
 private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (RecordType) -> Unit) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.height(32.dp)) {
         for ((index, option) in listOf(RecordType.COST, RecordType.INCOME).withIndex()) {
+            // Read here: the semantics block below isn't composable.
+            val description = typeLabel(option)
             SegmentedButton(
                 selected = type == option,
                 onClick = { onSelect(option) },
@@ -195,7 +198,7 @@ private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (
                 modifier = Modifier
                     .width(48.dp)
                     .testTag(if (option == RecordType.COST) "costTypeButton" else "incomeTypeButton")
-                    .semantics { contentDescription = typeLabel(option) },
+                    .semantics { contentDescription = description },
             ) {
                 Text(if (option == RecordType.COST) "−" else "+", fontWeight = FontWeight.SemiBold)
             }
@@ -207,8 +210,9 @@ private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (
 @Composable
 private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
     val locale = rememberFormatLocale()
+    val allTime = stringResource(R.string.stats_all_time)
     val crumbs = buildList {
-        add("Всё время" to StatsPeriod.AllTime)
+        add(allTime to StatsPeriod.AllTime)
         when (period) {
             StatsPeriod.AllTime -> Unit
             is StatsPeriod.Year -> add(period.year.toString() to period)
@@ -241,32 +245,54 @@ private fun SummaryCard(type: RecordType, subject: StatsSubject, stats: PeriodSt
                 StatsSubject.Overview -> {
                     val total = stats.costCount + stats.incomeCount
                     Text(
-                        "$total ${recordsWord(total)} " +
-                            "(${stats.costCount} ${costsWord(stats.costCount)}, " +
-                            "${stats.incomeCount} ${incomesWord(stats.incomeCount)})",
+                        stringResource(
+                            R.string.stats_counts,
+                            pluralStringResource(R.plurals.records_count, total, total),
+                            pluralStringResource(R.plurals.stats_costs_count, stats.costCount, stats.costCount),
+                            pluralStringResource(R.plurals.stats_incomes_count, stats.incomeCount, stats.incomeCount),
+                        ),
                     )
-                    Text(
-                        "${typeLabel(type)}: ${amountText(stats.amountCents)}",
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    TopsBlock("Где/с кем", stats.globalTops)
-                    TopsBlock("На что", stats.localTops)
+                    Text(typeAmount(type, stats.amountCents), fontWeight = FontWeight.SemiBold)
+                    TopsBlock(stringResource(R.string.stats_level_global), stats.globalTops)
+                    TopsBlock(stringResource(R.string.stats_level_local), stats.localTops)
                 }
                 is StatsSubject.OfTag -> {
                     val tagStats = stats.tags.first { it.tag.id == subject.tag.id }
                     val count = tagStats.recordCount
-                    Text("Встречается в $count ${russianPlural(count, "записи", "записях", "записях")}")
-                    Text("${typeLabel(type)}: ${amountText(tagStats.amountCents)}", fontWeight = FontWeight.SemiBold)
+                    Text(pluralStringResource(R.plurals.stats_tag_found_in, count, count))
+                    Text(typeAmount(type, tagStats.amountCents), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
 }
 
-private fun typeLabel(type: RecordType) = when (type) {
-    RecordType.COST -> "Расходы"
-    RecordType.INCOME -> "Доходы"
-}
+@Composable
+private fun typeLabel(type: RecordType) = stringResource(
+    when (type) {
+        RecordType.COST -> R.string.stats_costs
+        RecordType.INCOME -> R.string.stats_incomes
+    },
+)
+
+/** The type as it reads inside a title's parentheses: "(expenses)", "(расходы)". */
+@Composable
+private fun inlineTypeLabel(type: RecordType) = stringResource(
+    when (type) {
+        RecordType.COST -> R.string.stats_costs_inline
+        RecordType.INCOME -> R.string.stats_incomes_inline
+    },
+)
+
+/** "Expenses: 1,700.00" — a whole string per type, so each language places its own colon. */
+@Composable
+private fun typeAmount(type: RecordType, cents: Long) = stringResource(
+    when (type) {
+        RecordType.COST -> R.string.stats_costs_amount
+        RecordType.INCOME -> R.string.stats_incomes_amount
+    },
+    amountText(cents),
+)
 
 /** Nothing at all when the level has no used tags — an empty "Где/с кем" would only be noise. */
 @Composable
@@ -279,8 +305,13 @@ private fun TopsBlock(title: String, tops: TagTops) {
         modifier = Modifier.padding(top = 8.dp),
     )
     val locale = rememberFormatLocale()
-    Text("Чаще всего: " + tops.byCount.joinToString { "${it.tag.name} (${it.recordCount})" })
-    Text("Больше всего: " + tops.byAmount.joinToString { "${it.tag.name} (${formatAmount(it.amountCents, locale)})" })
+    Text(stringResource(R.string.stats_most_often, tops.byCount.joinToString { "${it.tag.name} (${it.recordCount})" }))
+    Text(
+        stringResource(
+            R.string.stats_most_amount,
+            tops.byAmount.joinToString { "${it.tag.name} (${formatAmount(it.amountCents, locale)})" },
+        ),
+    )
 }
 
 /** A compact pill showing the current choice; a tap opens the picker over the screen. */
@@ -293,7 +324,7 @@ private fun SubjectField(subject: StatsSubject, onClick: () -> Unit, modifier: M
     ) {
         Text(
             text = when (subject) {
-                StatsSubject.Overview -> "Общая"
+                StatsSubject.Overview -> stringResource(R.string.stats_overview)
                 is StatsSubject.OfTag -> subject.tag.name
             },
             maxLines = 1,
@@ -321,14 +352,19 @@ private fun SubjectPickerDialog(
         Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
             Column(modifier = Modifier.padding(vertical = 16.dp)) {
                 Text(
-                    "Статистика",
+                    stringResource(R.string.stats_title),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+                // Read here: the LazyColumn builder below isn't composable.
+                val levels = listOf(
+                    stringResource(R.string.stats_level_global) to true,
+                    stringResource(R.string.stats_level_local) to false,
                 )
                 LazyColumn(modifier = Modifier.weight(1f, fill = false).testTag("subjectList")) {
                     item(key = "overview") {
                         SelectableRow(
-                            title = "Общая",
+                            title = stringResource(R.string.stats_overview),
                             trailing = null,
                             selected = selectedId == null,
                             dimmed = false,
@@ -336,7 +372,7 @@ private fun SubjectPickerDialog(
                             modifier = Modifier.testTag("overviewRow"),
                         )
                     }
-                    for ((title, level) in listOf("Где/с кем" to true, "На что" to false)) {
+                    for ((title, level) in levels) {
                         val levelTags = tags.filter { it.tag.isGlobal == level }
                         if (levelTags.isEmpty()) continue
                         item(key = "header-$level") { SectionHeader(title) }
@@ -355,7 +391,7 @@ private fun SubjectPickerDialog(
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End).padding(end = 16.dp),
-                ) { Text("Отмена") }
+                ) { Text(stringResource(R.string.action_cancel)) }
             }
         }
     }
@@ -403,11 +439,11 @@ private fun MetricToggle(metric: ChartMetric, onSelect: (ChartMetric) -> Unit) {
             selected = metric == ChartMetric.AMOUNT,
             onClick = { onSelect(ChartMetric.AMOUNT) },
             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-        ) { Text("Сумма") }
+        ) { Text(stringResource(R.string.stats_metric_amount)) }
         SegmentedButton(
             selected = metric == ChartMetric.COUNT,
             onClick = { onSelect(ChartMetric.COUNT) },
             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-        ) { Text("Записи") }
+        ) { Text(stringResource(R.string.stats_metric_records)) }
     }
 }

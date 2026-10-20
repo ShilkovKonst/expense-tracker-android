@@ -1,0 +1,254 @@
+<resources>
+    <!-- The language of this folder's texts; amounts and dates are formatted to match it. -->
+    <string name="locale_language">de</string>
+    <!-- "Label" rather than "Tag": in German "Tag" also means "day", which the statistics use. -->
+
+    <!-- Shared actions -->
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_create">Erstellen</string>
+    <string name="action_delete">Löschen</string>
+
+    <!-- Tracker list -->
+    <string name="tracker_list_title">Tracker</string>
+    <string name="tracker_list_empty">Noch keine Tracker</string>
+    <string name="tracker_list_add">Tracker hinzufügen</string>
+    <string name="menu_import">Aus Datei importieren</string>
+    <string name="menu_save_all">Alles in Datei speichern</string>
+    <string name="menu_share_all">Alles teilen</string>
+    <string name="menu_help">Hilfe</string>
+    <string name="menu_faq">FAQ</string>
+    <string name="tracker_new_title">Neuer Tracker</string>
+    <string name="name_label">Name</string>
+    <plurals name="imported_trackers">
+        <item quantity="one">%d Tracker importiert</item>
+        <item quantity="other">%d Tracker importiert</item>
+    </plurals>
+
+    <!-- Delete tracker confirmation -->
+    <string name="delete_tracker_title">„%1$s“ löschen?</string>
+    <string name="delete_tracker_text">Alle Einträge dieses Trackers werden endgültig gelöscht.</string>
+
+    <!-- Counts -->
+    <plurals name="records_count">
+        <item quantity="one">%d Eintrag</item>
+        <item quantity="other">%d Einträge</item>
+    </plurals>
+
+    <!-- Tracker screen -->
+    <string name="menu_stats">Statistik</string>
+    <string name="menu_save_to_file">In Datei speichern</string>
+    <string name="menu_share">Teilen</string>
+    <string name="menu_edit">Bearbeiten</string>
+    <string name="record_add">Eintrag hinzufügen</string>
+    <string name="tracker_no_records">Noch keine Einträge</string>
+    <string name="record_tags_label">Labels:</string>
+    <string name="record_description_label">Beschreibung:</string>
+    <string name="record_no_description">keine Beschreibung</string>
+    <string name="part_no_tags">keine Labels</string>
+    <plurals name="parts_count">
+        <item quantity="one">%d Teil</item>
+        <item quantity="other">%d Teile</item>
+    </plurals>
+
+    <!-- Export -->
+    <string name="export_saved">Datei gespeichert</string>
+    <string name="export_save_failed">Die Datei konnte nicht gespeichert werden</string>
+    <string name="export_prepare_failed">Die Datei konnte nicht vorbereitet werden</string>
+
+    <!-- Shared form pieces -->
+    <string name="action_save">Speichern</string>
+    <string name="action_ok">OK</string>
+    <string name="tags_global_title">Globale Labels</string>
+    <string name="tags_global_hint">wo, mit wem</string>
+    <string name="tags_local_title">Labels</string>
+    <string name="tags_local_hint">wofür</string>
+    <string name="tags_none">Noch keine Labels</string>
+    <string name="tag_new">Neues Label</string>
+    <string name="tag_new_global">Neues globales Label</string>
+
+    <!-- Record form -->
+    <string name="record_new_title">Neuer Eintrag</string>
+    <string name="record_edit_title">Eintrag bearbeiten</string>
+    <string name="record_type_cost">Ausgabe</string>
+    <string name="record_type_income">Einnahme</string>
+    <string name="record_date_label">Datum</string>
+    <string name="amount_label">Betrag</string>
+    <string name="record_split">In Teile aufteilen</string>
+    <string name="part_add">+ Teil</string>
+    <string name="part_number">Teil %1$d</string>
+    <string name="part_remainder">Rest</string>
+    <string name="record_total">Summe: %1$s</string>
+    <string name="description_label">Beschreibung</string>
+    <string name="description_placeholder">Optional</string>
+    <string name="receipt_total_add">+ Bonsumme</string>
+    <string name="receipt_total_label">Bonsumme</string>
+    <string name="receipt_total_clear">Summe entfernen</string>
+    <string name="record_delete_title">Eintrag löschen?</string>
+    <string name="record_delete_text">Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="error_amount">Geben Sie einen Betrag größer als null ein</string>
+    <string name="error_receipt_total">Geben Sie die Bonsumme ein</string>
+    <string name="error_parts_exceed_total">Die Teile müssen zusammen weniger als die Bonsumme ergeben</string>
+    <string name="error_duplicate_part_tags">Ein anderer Teil hat bereits dieselben Labels</string>
+    <string name="error_name_empty">Geben Sie einen Namen ein</string>
+    <string name="error_tracker_name_taken">Ein Tracker mit diesem Namen existiert bereits</string>
+    <string name="error_tag_name_taken">Ein Label mit diesem Namen existiert bereits</string>
+
+    <!-- Tracker edit -->
+    <string name="tracker_edit_title">Tracker bearbeiten</string>
+    <string name="tracker_name_revert">Namen zurücksetzen</string>
+    <string name="tracker_name_save">Namen speichern</string>
+    <string name="tag_rename_title">Label umbenennen</string>
+    <string name="tag_delete_title">Label „%1$s“ löschen?</string>
+    <string name="tag_delete_text">Das Label wird aus allen Einträgen entfernt, die es verwenden.</string>
+    <string name="tag_unused">nicht verwendet</string>
+    <plurals name="tag_usage">
+        <item quantity="one">in %d Eintrag</item>
+        <item quantity="other">in %d Einträgen</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="stats_title">Statistik</string>
+    <string name="stats_all_time">Gesamter Zeitraum</string>
+    <string name="stats_overview">Übersicht</string>
+    <string name="stats_subject_overview">Übersicht (%1$s)</string>
+    <string name="stats_subject_tag">Label „%1$s“ (%2$s)</string>
+    <string name="stats_costs">Ausgaben</string>
+    <string name="stats_incomes">Einnahmen</string>
+    <!-- Nouns keep their capital in German. -->
+    <string name="stats_costs_inline">Ausgaben</string>
+    <string name="stats_incomes_inline">Einnahmen</string>
+    <string name="stats_costs_amount">Ausgaben: %1$s</string>
+    <string name="stats_incomes_amount">Einnahmen: %1$s</string>
+    <string name="stats_counts">%1$s (%2$s, %3$s)</string>
+    <plurals name="stats_costs_count">
+        <item quantity="one">%d Ausgabe</item>
+        <item quantity="other">%d Ausgaben</item>
+    </plurals>
+    <plurals name="stats_incomes_count">
+        <item quantity="one">%d Einnahme</item>
+        <item quantity="other">%d Einnahmen</item>
+    </plurals>
+    <string name="stats_level_global">Wo, mit wem</string>
+    <string name="stats_level_local">Wofür</string>
+    <string name="stats_most_often">Am häufigsten: %1$s</string>
+    <string name="stats_most_amount">Größter Betrag: %1$s</string>
+    <plurals name="stats_tag_found_in">
+        <item quantity="one">In %d Eintrag enthalten</item>
+        <item quantity="other">In %d Einträgen enthalten</item>
+    </plurals>
+    <string name="stats_metric_amount">Betrag</string>
+    <string name="stats_metric_records">Einträge</string>
+
+    <!-- Import -->
+    <string name="import_title">Import</string>
+    <string name="import_failed_title">Import nicht möglich</string>
+    <string name="import_confirm">Importieren</string>
+    <plurals name="tags_count">
+        <item quantity="one">%d Label</item>
+        <item quantity="other">%d Labels</item>
+    </plurals>
+    <string name="import_clash">Der Tracker „%1$s“ existiert bereits</string>
+    <string name="import_copy">Kopieren</string>
+    <string name="import_replace">Ersetzen</string>
+    <string name="import_copy_note">Wird als „%1$s“ hinzugefügt</string>
+    <string name="import_replace_note">„%1$s“ und alle seine Einträge werden gelöscht</string>
+    <string name="import_error_unreadable">Die Datei konnte nicht gelesen werden</string>
+    <string name="import_error_write">Der Import ist fehlgeschlagen</string>
+    <string name="import_error_damaged">Die Datei ist beschädigt oder keine SpendObserver-Datei</string>
+    <string name="import_error_not_spendobserver">Dies ist keine SpendObserver-Datei</string>
+    <string name="import_error_newer_version">Die Datei wurde mit einer neueren Version der App erstellt. Bitte aktualisieren Sie die App</string>
+    <string name="import_error_no_trackers">Die Datei enthält keine Tracker</string>
+    <string name="import_error_duplicate_tracker">Der Tracker „%1$s“ kommt in der Datei zweimal vor</string>
+    <string name="import_error_at">%1$s: %2$s</string>
+    <string name="import_where_tracker">Tracker „%1$s“</string>
+    <string name="import_where_tracker_number">Tracker Nr. %1$d</string>
+    <string name="import_where_record">%1$s, Eintrag vom %2$s</string>
+    <string name="import_where_part">%1$s, Teil %2$d</string>
+    <string name="import_issue_empty_title">leerer Name</string>
+    <string name="import_issue_bad_created_at">ungültiges Erstellungsdatum „%1$s“</string>
+    <string name="import_issue_empty_tag_name">ein Label mit leerem Namen</string>
+    <string name="import_issue_duplicate_tag">das Label „%1$s“ ist zweimal angegeben</string>
+    <string name="import_issue_bad_record_date">ungültiges Eintragsdatum „%1$s“</string>
+    <string name="import_issue_unknown_type">unbekannter Typ „%1$s“</string>
+    <string name="import_issue_unknown_tag">unbekanntes Label „%1$s“</string>
+    <string name="import_issue_tag_not_global">das Label „%1$s“ ist nicht global – es gehört zu den Teilen des Eintrags</string>
+    <string name="import_issue_tag_is_global">das Label „%1$s“ ist global – es gehört zum Eintrag, nicht zu seinen Teilen</string>
+    <string name="import_issue_no_parts">keine Teile</string>
+    <string name="import_issue_non_positive_amount">der Betrag muss größer als null sein</string>
+    <string name="import_issue_duplicate_part_tags">zwei Teile haben dieselben Labels</string>
+
+    <!-- Help -->
+    <string name="help_title">Hilfe</string>
+    <string name="help_about_title">Über die App</string>
+    <string name="help_about_text">SpendObserver ist eine App zur Erfassung von Ausgaben und Einnahmen. Die App arbeitet vollständig lokal: Sie benötigt weder eine Internetverbindung noch eine Registrierung oder Cloud-Dienste.</string>
+    <string name="help_version">Version: %1$s</string>
+    <string name="help_author">Autor: %1$s</string>
+    <string name="help_email">E-Mail: %1$s</string>
+    <string name="help_write">An den Entwickler schreiben</string>
+    <string name="help_data_title">Nutzerdaten</string>
+    <string name="help_data_local">Die App gibt keine Nutzerdaten an Dritte weiter und überträgt sie nicht über das Netzwerk. Alle Tracker, Einträge und Labels werden im Speicher des Geräts abgelegt.</string>
+    <string name="help_data_backup">Ist in den Geräteeinstellungen die Sicherung in einem Google-Konto aktiviert, kann das Betriebssystem Android die Daten der App im Cloud-Speicher dieses Kontos sichern. Diese Sicherung führt das System gemäß den Geräteeinstellungen durch; die App ist daran nicht beteiligt.</string>
+    <string name="help_data_uninstall">Beim Deinstallieren der App werden ihre Daten vom Gerät gelöscht. Um die Daten zu behalten oder auf ein anderes Gerät zu übertragen, empfiehlt es sich, sie in eine Datei zu exportieren (Menü „⋮“ → „%1$s“) und anschließend zu importieren (Menü „⋮“ → „%2$s“).</string>
+    <string name="help_licenses_title">Lizenzen</string>
+    <string name="help_licenses_intro">Die App verwendet die folgenden Open-Source-Bibliotheken:</string>
+    <string name="help_no_mail_title">Keine E-Mail-App gefunden</string>
+    <string name="help_no_mail_text">Auf diesem Gerät ist keine App zum Senden von E-Mails installiert. Sie können die Adresse kopieren und über einen beliebigen E-Mail-Dienst schreiben: %1$s</string>
+    <string name="help_copy_address">Adresse kopieren</string>
+    <string name="help_address_copied">Adresse kopiert</string>
+    <string name="action_close">Schließen</string>
+    <string name="faq_title">Häufig gestellte Fragen</string>
+    <string name="feedback_subject">SpendObserver – Feedback</string>
+
+    <!-- FAQ -->
+    <string name="faq_trackers_q">Was ist ein Tracker?</string>
+    <string-array name="faq_trackers_a">
+        <item>Ein Tracker ist ein eigenes Verzeichnis mit eigenen Einträgen und Labels, zum Beispiel ein persönliches, ein familiäres oder ein berufliches. Die Tracker sind voneinander unabhängig.</item>
+        <item>Um einen Tracker zu erstellen, tippen Sie auf dem Hauptbildschirm auf „Tracker hinzufügen“ und geben Sie einen Namen ein. Der neue Tracker wird sofort geöffnet.</item>
+        <item>Ein Tracker lässt sich über die Schaltflächen ✎ und 🗑 in seiner Zeile auf dem Hauptbildschirm oder über das Menü „⋮“ auf dem Bildschirm des Trackers umbenennen oder löschen. Beim Löschen eines Trackers werden alle seine Einträge gelöscht.</item>
+    </string-array>
+    <string name="faq_records_q">Wie füge ich einen Eintrag hinzu, bearbeite oder lösche ihn?</string>
+    <string-array name="faq_records_a">
+        <item>Öffnen Sie einen Tracker und tippen Sie auf „Eintrag hinzufügen“. Wählen Sie die Art des Eintrags („Ausgabe“ oder „Einnahme“), legen Sie Datum und Betrag fest, wählen Sie Labels aus, fügen Sie bei Bedarf eine Beschreibung hinzu und tippen Sie anschließend auf „Speichern“.</item>
+        <item>Die Einträge sind nach Jahr und Monat gruppiert; jede Gruppe zeigt die Anzahl ihrer Einträge und ihre Summe. Um einen Eintrag zu bearbeiten, tippen Sie in der Liste darauf. Ein Eintrag lässt sich über die Schaltfläche 🗑 oben im Formular löschen.</item>
+    </string-array>
+    <string name="faq_parts_q">Was sind Teile eines Eintrags und die Bonsumme?</string>
+    <string-array name="faq_parts_a">
+        <item>Ein Eintrag entspricht einem einzelnen Vorgang, zum Beispiel einem Kassenbon, und kann aus mehreren Teilen bestehen. Jeder Teil hat einen eigenen Betrag und eigene Labels. Der Betrag eines Eintrags entspricht stets der Summe seiner Teile.</item>
+        <item>Um einen Eintrag aufzuteilen, tippen Sie unter dem Betragsfeld auf „In Teile aufteilen“. Neue Teile werden mit der Schaltfläche „+ Teil“ hinzugefügt, nicht benötigte mit der Schaltfläche ✕ entfernt.</item>
+        <item>Ist die Summe des Kassenbons bekannt, geben Sie sie im Feld „Bonsumme“ ein und erfassen Sie einzelne Teile gesondert. Der Rest wird automatisch berechnet und bildet den letzten Teil. Die gesondert erfassten Teile müssen zusammen weniger als die Bonsumme ergeben.</item>
+        <item>Zwei Teile desselben Eintrags können nicht dieselbe Kombination von Labels haben.</item>
+    </string-array>
+    <string name="faq_tag_levels_q">Worin unterscheiden sich globale Labels von gewöhnlichen Labels?</string>
+    <string-array name="faq_tag_levels_a">
+        <item>Globale Labels beschreiben einen Eintrag als Ganzes: wo oder mit wem er stattfand (zum Beispiel den Namen eines Geschäfts oder einer Reise). Sie werden im Feld „Globale Labels“ des Formulars ausgewählt.</item>
+        <item>Gewöhnliche Labels beschreiben, wofür das Geld ausgegeben wurde oder woher es stammt (zum Beispiel „Lebensmittel“). Sie werden für jeden Teil eines Eintrags gesondert ausgewählt.</item>
+        <item>Die Ebene eines Labels wird beim Erstellen festgelegt und kann später nicht geändert werden. Ein neues Label wird mit der Schaltfläche „+“ im entsprechenden Feld des Formulars oder auf dem Bildschirm zum Bearbeiten des Trackers erstellt.</item>
+    </string-array>
+    <string name="faq_tag_manage_q">Wie benenne ich ein Label um oder lösche es?</string>
+    <string-array name="faq_tag_manage_a">
+        <item>Öffnen Sie einen Tracker, wählen Sie im Menü „⋮“ den Punkt „Bearbeiten“ und verwenden Sie die Schaltflächen ✎ und 🗑 neben dem Label. Bei jedem Label wird angezeigt, wie viele Einträge es verwenden.</item>
+        <item>Ein gelöschtes Label wird aus allen Einträgen entfernt; die Einträge selbst bleiben erhalten.</item>
+    </string-array>
+    <string name="faq_calculator_q">Wie verwende ich den Rechner im Betragsfeld?</string>
+    <string-array name="faq_calculator_a">
+        <item>Das Betragsfeld akzeptiert einen Ausdruck mit den Rechenarten +, −, × (*) und ÷ (/), zum Beispiel 120+50/2. Das Ergebnis wird unter dem Feld angezeigt und als Betrag gespeichert.</item>
+        <item>Der Ausdruck wird streng von links nach rechts berechnet, ohne Vorrang von Multiplikation und Division: 120+50/2 = 85. Als Dezimaltrennzeichen werden sowohl Punkt als auch Komma akzeptiert. Das Ergebnis wird auf zwei Nachkommastellen gerundet und muss größer als null sein.</item>
+    </string-array>
+    <string name="faq_stats_q">Wie verwende ich die Statistik?</string>
+    <string-array name="faq_stats_a">
+        <item>Öffnen Sie einen Tracker und wählen Sie im Menü „⋮“ den Punkt „Statistik“. Mit dem Schalter „−“/„+“ oben auf dem Bildschirm wählen Sie Ausgaben oder Einnahmen.</item>
+        <item>Die Zusammenfassung zeigt die Anzahl der Einträge, die Summe für den gewählten Zeitraum sowie die Labels beider Ebenen, die am häufigsten vorkommen und auf die die größten Beträge entfallen. Über das Auswahlfeld können Sie ein einzelnes Label wählen, um nur dessen Statistik anzuzeigen.</item>
+        <item>Das Diagramm zeigt Beträge oder die Anzahl der Einträge (Schalter „Betrag“/„Einträge“) nach Jahren, Monaten oder Tagen. Durch Tippen auf einen Balken öffnet sich das entsprechende Jahr oder der entsprechende Monat; um zu einem größeren Zeitraum zurückzukehren, verwenden Sie die Links in der oberen Zeile.</item>
+    </string-array>
+    <string name="faq_export_q">Wie speichere ich Daten in einer Datei?</string>
+    <string-array name="faq_export_a">
+        <item>Um alle Tracker zu speichern, öffnen Sie auf dem Hauptbildschirm das Menü „⋮“ und wählen Sie „Alles in Datei speichern“ oder „Alles teilen“. Um einen einzelnen Tracker zu speichern, verwenden Sie „In Datei speichern“ oder „Teilen“ im Menü „⋮“ auf dem Bildschirm des Trackers.</item>
+        <item>Die Daten werden in einer JSON-Datei gespeichert, die als Sicherung aufbewahrt oder zum Übertragen der Daten auf ein anderes Gerät verwendet werden kann.</item>
+    </string-array>
+    <string name="faq_import_q">Wie lade ich Daten aus einer Datei?</string>
+    <string-array name="faq_import_a">
+        <item>Öffnen Sie auf dem Hauptbildschirm das Menü „⋮“, wählen Sie „Aus Datei importieren“ und wählen Sie eine zuvor gespeicherte Datei aus. Die in der Datei enthaltenen Tracker werden vor dem Import aufgelistet.</item>
+        <item>Existiert bereits ein Tracker mit demselben Namen, wählen Sie eine Aktion: „Kopieren“ fügt den Tracker aus der Datei unter einem neuen Namen hinzu, „Ersetzen“ löscht den vorhandenen Tracker mit allen seinen Einträgen und lädt den Tracker aus der Datei.</item>
+        <item>Die Datei wird vor dem Import vollständig geprüft. Wird ein Fehler gefunden, werden keine Daten geladen, und die Meldung gibt an, wo sich der Fehler befindet.</item>
+    </string-array>
+</resources>

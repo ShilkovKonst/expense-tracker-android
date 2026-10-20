@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spendobserver.R
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
@@ -22,6 +23,7 @@ import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.testing.amount
+import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForText
@@ -80,7 +82,7 @@ class RecordFormScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("amountInput").performTextInput("12.50")
-        composeRule.onNodeWithText("Доход").performClick()
+        composeRule.onNodeWithText(string(R.string.record_type_income)).performClick()
         composeRule.onNodeWithTag("descriptionInput").performTextInput("salary")
         composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitFor { savedCount == 1 }
@@ -99,9 +101,9 @@ class RecordFormScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("saveButton").performClick()
-        composeRule.waitForText("Введите сумму больше нуля")
+        composeRule.waitForText(string(R.string.error_amount))
 
-        composeRule.onNodeWithText("Введите сумму больше нуля").assertExists()
+        composeRule.onNodeWithText(string(R.string.error_amount)).assertExists()
         assertEquals(0, savedCount)
     }
 
@@ -151,7 +153,7 @@ class RecordFormScreenTest {
 
         composeRule.onNodeWithTag("deleteRecordButton").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Удалить").performClick()
+        composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
         composeRule.waitFor { savedCount == 1 }
 
         assertEquals(1, savedCount)
@@ -166,7 +168,7 @@ class RecordFormScreenTest {
 
         composeRule.onNodeWithTag("newTagChip").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("groceries")
-        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.onNodeWithText(string(R.string.action_create)).performClick()
         composeRule.waitForNode(hasText("groceries") and isSelected())
 
         composeRule.onNodeWithText("groceries").assertIsSelected()
@@ -231,9 +233,9 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("splitButton").performClick()
         composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("150")
         composeRule.onNodeWithTag("saveButton").performClick()
-        composeRule.waitForText("Сумма частей должна быть меньше итога чека")
+        composeRule.waitForText(string(R.string.error_parts_exceed_total))
 
-        composeRule.onNodeWithText("Сумма частей должна быть меньше итога чека").assertExists()
+        composeRule.onNodeWithText(string(R.string.error_parts_exceed_total)).assertExists()
         assertEquals(0, savedCount)
     }
 
@@ -251,7 +253,7 @@ class RecordFormScreenTest {
 
         composeRule.onNodeWithTag("partAmountInput-0").assertTextContains("800.00")
         composeRule.onNodeWithTag("partAmountInput-1").performScrollTo().assertTextContains("2350.00")
-        composeRule.onNodeWithTag("recordTotal").performScrollTo().assertTextEquals("Итого: " + amount(315000))
+        composeRule.onNodeWithTag("recordTotal").performScrollTo().assertTextEquals(string(R.string.record_total, amount(315000)))
     }
 
     @Test
@@ -261,7 +263,7 @@ class RecordFormScreenTest {
 
         composeRule.onNodeWithTag("newGlobalTagChip").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
-        composeRule.onNodeWithText("Создать").performClick()
+        composeRule.onNodeWithText(string(R.string.action_create)).performClick()
         composeRule.waitForNode(hasText("Ашан") and isSelected())
         composeRule.onNodeWithTag("amountInput").performTextInput("100")
         composeRule.onNodeWithTag("saveButton").performClick()
@@ -283,9 +285,7 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("newTagChip").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput(" АШАН ")
         composeRule.onNodeWithTag("tagNameConfirmButton").performClick()
-        composeRule.waitForText("Тег с таким названием уже есть")
-
-        composeRule.onNodeWithText("Тег с таким названием уже есть").assertExists()
+        composeRule.waitForText(string(R.string.error_tag_name_taken))
         composeRule.onNodeWithTag("tagNameInput").assertExists()
         assertEquals(1, runBlocking { tagRepository.observeTags(trackerId).first() }.size)
     }
@@ -295,7 +295,7 @@ class RecordFormScreenTest {
         setContent()
         composeRule.waitForIdle()
 
-        assertEquals(2, composeRule.onAllNodesWithText("Тегов пока нет").fetchSemanticsNodes().size)
+        assertEquals(2, composeRule.onAllNodesWithText(string(R.string.tags_none)).fetchSemanticsNodes().size)
 
         composeRule.onNodeWithTag("newGlobalTagChip").performClick()
         composeRule.onNodeWithTag("tagNameInput").performTextInput("Ашан")
@@ -304,6 +304,6 @@ class RecordFormScreenTest {
         composeRule.waitForNode(hasText("Ашан") and isSelected())
 
         // Only the local level is still empty.
-        assertEquals(1, composeRule.onAllNodesWithText("Тегов пока нет").fetchSemanticsNodes().size)
+        assertEquals(1, composeRule.onAllNodesWithText(string(R.string.tags_none)).fetchSemanticsNodes().size)
     }
 }
