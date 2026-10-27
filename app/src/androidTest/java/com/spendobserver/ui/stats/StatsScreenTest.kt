@@ -227,6 +227,37 @@ class StatsScreenTest {
     }
 
     @Test
+    fun selectedTypeLosingItsLastRecord_fallsBackToTheOtherType() {
+        setContent()
+        composeRule.onNodeWithTag("incomeTypeButton").performClick()
+        composeRule.waitForText(string(R.string.stats_incomes_amount, amount(9000)))
+
+        runBlocking {
+            val income = recordRepository.getAll(trackerId).single { it.record.type == RecordType.INCOME }
+            recordRepository.deleteRecord(income.record.id)
+        }
+
+        composeRule.waitForText(costs(1700))
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_overview, string(R.string.stats_costs_inline)))
+        composeRule.onNodeWithTag("incomeTypeButton").assertIsNotEnabled()
+    }
+
+    @Test
+    fun selectedTagDeletedElsewhere_fallsBackToOverview() {
+        setContent()
+        composeRule.onNodeWithTag("subjectField").performClick()
+        composeRule.onNodeWithTag("tagRow-продукты").performClick()
+        composeRule.waitForText(costs(1200))
+
+        runBlocking {
+            tagRepository.deleteTag(db.tagDao().getForTracker(trackerId).single { it.name == "продукты" })
+        }
+
+        composeRule.waitForText(costs(1700))
+        composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_overview, string(R.string.stats_costs_inline)))
+    }
+
+    @Test
     fun tappingBars_drillsDown_andBreadcrumbsGoBack() {
         setContent()
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
 import com.spendobserver.data.local.entity.Record
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -137,6 +139,39 @@ class RecordFormScreenTest {
     }
 
     @Test
+    fun editingRecord_andSaving_updatesItInPlace() {
+        val shopId = runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "shop", isGlobal = true)) }
+        val rentId = runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "rent")) }
+        val recordId = runBlocking {
+            recordRepository.insertRecord(
+                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "monthly rent"),
+                setOf(shopId),
+                listOf(PartDraft(45000, setOf(rentId))),
+            )
+        }
+
+        setContent(recordId = recordId)
+        composeRule.waitForText("450.00")
+        composeRule.waitForNode(hasText("rent") and isSelected())
+
+        composeRule.onNodeWithTag("amountInput").performTextReplacement("300.00")
+        composeRule.onNodeWithText(string(R.string.record_type_income)).performClick()
+        composeRule.onNodeWithTag("descriptionInput").performTextReplacement("deposit")
+        composeRule.onNodeWithText("rent").performClick()
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitFor { savedCount == 1 }
+
+        assertEquals(RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false), lastChange)
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first() }.single()
+        assertEquals(recordId, saved.record.id)
+        assertEquals(30000L, saved.amountCents)
+        assertEquals(RecordType.INCOME, saved.record.type)
+        assertEquals("deposit", saved.record.description)
+        assertEquals(listOf(shopId), saved.tags.map { it.id })
+        assertTrue(saved.parts.single().tags.isEmpty())
+    }
+
+    @Test
     fun deletingRecord_removesItAndCallsOnSaved() {
         val recordId = runBlocking {
             recordRepository.insertRecord(
@@ -226,6 +261,34 @@ class RecordFormScreenTest {
             listOf(80000L to setOf(alcohol), 265000L to setOf(groceries)),
             saved.parts.map { p -> p.part.amountCents to p.tags.map { it.id }.toSet() },
         )
+    }
+
+    @Test
+    fun newTagFromAPart_inSplitMode_isLocalAndSelectedOnlyOnThatPart() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("100")
+        composeRule.onNodeWithTag("splitButton").performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("30")
+        composeRule.onNodeWithTag("newTagChip-0").performScrollTo().performClick()
+        composeRule.onNodeWithTag("tagNameInput").performTextInput("кино")
+        composeRule.onNodeWithText(string(R.string.action_create)).performClick()
+        composeRule.waitForNode(hasText("кино") and isSelected())
+
+        // Part 0's chips come first, the remainder's second.
+        composeRule.onAllNodesWithText("кино")[0].assertIsSelected()
+        composeRule.onAllNodesWithText("кино")[1].assertIsNotSelected()
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitFor { savedCount == 1 }
+
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }
+        assertTrue(saved.tags.isEmpty())
+        assertEquals(
+            listOf(3000L to listOf("кино"), 7000L to emptyList()),
+            saved.parts.map { p -> p.part.amountCents to p.tags.map { it.name } },
+        )
+        assertFalse(saved.parts[0].tags.single().isGlobal)
     }
 
     @Test
