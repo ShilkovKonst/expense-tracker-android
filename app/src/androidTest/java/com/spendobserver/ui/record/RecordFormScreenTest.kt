@@ -28,6 +28,7 @@ import com.spendobserver.testing.waitFor
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForText
 import com.spendobserver.testing.InMemoryDatabaseRule
+import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -53,6 +54,7 @@ class RecordFormScreenTest {
     private lateinit var tagRepository: TagRepository
     private var trackerId: Long = 0
     private var savedCount = 0
+    private var lastChange: RecordChange? = null
 
     @Before
     fun setUp() = runBlocking {
@@ -61,6 +63,7 @@ class RecordFormScreenTest {
 
         trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
         savedCount = 0
+        lastChange = null
     }
 
     private fun setContent(recordId: Long? = null) {
@@ -70,7 +73,7 @@ class RecordFormScreenTest {
                 recordId = recordId,
                 recordRepository = recordRepository,
                 tagRepository = tagRepository,
-                onSaved = { savedCount++ },
+                onSaved = { savedCount++; lastChange = it },
                 onBackClick = {},
             )
         }
@@ -149,7 +152,7 @@ class RecordFormScreenTest {
         }
 
         setContent(recordId = recordId)
-        composeRule.waitForIdle()
+        composeRule.waitForText("10.00") // delete is a no-op until the record has loaded
 
         composeRule.onNodeWithTag("deleteRecordButton").performClick()
         composeRule.waitForIdle()
@@ -157,6 +160,7 @@ class RecordFormScreenTest {
         composeRule.waitFor { savedCount == 1 }
 
         assertEquals(1, savedCount)
+        assertEquals(RecordChange(recordId = recordId, year = 2026, month = 3, deleted = true), lastChange)
         val remaining = runBlocking { recordRepository.getRecord(recordId) }
         assertNull(remaining)
     }

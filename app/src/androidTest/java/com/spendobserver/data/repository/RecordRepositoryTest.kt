@@ -110,7 +110,7 @@ class RecordRepositoryTest {
     fun deleteRecord_removesRecordAndCascadesToParts() = runBlocking {
         val id = repository.insertRecord(record(), setOf(shopId), listOf(PartDraft(1000, setOf(groceriesId))))
 
-        repository.deleteRecord(repository.getRecord(id)!!.record)
+        repository.deleteRecord(id)
 
         assertNull(repository.getRecord(id))
         assertEquals(emptyList<RecordPart>(), db.recordPartDao().getForRecord(id))

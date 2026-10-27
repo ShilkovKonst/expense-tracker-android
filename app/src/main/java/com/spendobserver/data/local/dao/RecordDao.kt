@@ -1,7 +1,6 @@
 package com.spendobserver.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -21,8 +20,9 @@ interface RecordDao {
     @Update
     suspend fun update(record: Record)
 
-    @Delete
-    suspend fun delete(record: Record)
+    /** Parts and all tag links go with it, via the foreign keys' CASCADE. */
+    @Query("DELETE FROM records WHERE id = :id")
+    suspend fun deleteById(id: Long)
 
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getById(id: Long): Record?

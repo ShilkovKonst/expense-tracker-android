@@ -63,11 +63,10 @@ class RecordDaoTest {
     }
 
     @Test
-    fun delete_removesRecordAndCascadesToItsParts() = runBlocking {
+    fun deleteById_removesRecordAndCascadesToItsParts() = runBlocking {
         val id = insertWithParts(record(LocalDate(2026, 3, 15)), 1000, 2000)
-        val inserted = recordDao.getById(id)!!
 
-        recordDao.delete(inserted)
+        recordDao.deleteById(id)
 
         assertNull(recordDao.getById(id))
         assertEquals(emptyList<RecordPart>(), recordPartDao.getForRecord(id))

@@ -63,7 +63,7 @@ class RecordRepository(
     }
 
     /** Parts and all tag links go with it, via the foreign keys' CASCADE. */
-    suspend fun deleteRecord(record: Record) = recordDao.delete(record)
+    suspend fun deleteRecord(id: Long) = recordDao.deleteById(id)
 
     private suspend fun insertTagsAndParts(recordId: Long, tagIds: Set<Long>, parts: List<PartDraft>) {
         tagIds.forEach { tagId -> recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId)) }

@@ -80,11 +80,15 @@ class RecordFormViewModel(
     private val _showErrors = MutableStateFlow(false)
     val showErrors: StateFlow<Boolean> = _showErrors.asStateFlow()
 
+    /** The record as loaded, before any edits — [delete] reports where it *was* in the accordion. */
+    private var loadedRecord: Record? = null
+
     init {
         if (recordId != null) {
             viewModelScope.launch {
                 val details = recordRepository.getRecord(recordId) ?: return@launch
                 val record = details.record
+                loadedRecord = record
                 _type.value = record.type
                 _date.value = record.date
                 _description.value = record.description.orEmpty()
@@ -180,12 +184,12 @@ class RecordFormViewModel(
         }
     }
 
+    /** Does nothing until the record has loaded — the form is empty until then anyway. */
     fun delete(onDeleted: (RecordChange) -> Unit) {
-        val id = recordId ?: return
+        val record = loadedRecord ?: return
         viewModelScope.launch {
-            val record = recordRepository.getRecord(id)?.record ?: return@launch
-            recordRepository.deleteRecord(record)
-            onDeleted(record.change(id, deleted = true))
+            recordRepository.deleteRecord(record.id)
+            onDeleted(record.change(record.id, deleted = true))
         }
     }
 }
