@@ -2,6 +2,7 @@ package com.spendobserver.domain.record
 
 import com.spendobserver.domain.calculator.CalculatorMode
 import com.spendobserver.domain.calculator.amountCentsFrom
+import com.spendobserver.domain.calculator.filterAmountInput
 import com.spendobserver.domain.summary.formatCents
 
 /** One part of a record as it's saved: an amount and its local tags. */
@@ -77,8 +78,11 @@ data class PartsInput(
         return copy(parts = parts.filterNot { it.id == id })
     }
 
-    fun setPartAmount(id: Int, expression: String): PartsInput =
-        copy(parts = parts.map { if (it.id == id) it.copy(amountExpression = expression) else it })
+    /** [expression] is stored [filterAmountInput]-ed: a field only ever shows what the calculator accepts. */
+    fun setPartAmount(id: Int, expression: String): PartsInput {
+        val filtered = filterAmountInput(expression)
+        return copy(parts = parts.map { if (it.id == id) it.copy(amountExpression = filtered) else it })
+    }
 
     fun togglePartTag(id: Int, tagId: Long): PartsInput = copy(
         parts = parts.map { part ->
@@ -86,14 +90,15 @@ data class PartsInput(
         },
     )
 
-    fun setReceiptTotal(expression: String): PartsInput = copy(receiptTotalExpression = expression)
+    /** Filtered like [setPartAmount]. */
+    fun setReceiptTotal(expression: String): PartsInput = copy(receiptTotalExpression = filterAmountInput(expression))
 
     /**
      * Drops the receipt total; the remainder part keeps the amount it was
      * showing (as a typed value now), so nothing visibly jumps. With a
      * single part left this turns the record back into a simple one.
      */
-    fun clearReceiptTotal(mode: CalculatorMode = CalculatorMode.LEFT_TO_RIGHT): PartsInput {
+    fun clearReceiptTotal(mode: CalculatorMode = CalculatorMode.ALGEBRAIC): PartsInput {
         val remainderId = remainderPartId ?: return this
         val remainder = evaluate(mode).partCents[remainderId]
         return PartsInput(
@@ -102,7 +107,7 @@ data class PartsInput(
         )
     }
 
-    fun evaluate(mode: CalculatorMode = CalculatorMode.LEFT_TO_RIGHT): PartsEvaluation {
+    fun evaluate(mode: CalculatorMode = CalculatorMode.ALGEBRAIC): PartsEvaluation {
         val errors = mutableListOf<PartsError>()
         val typedCents = parts
             .filter { it.id != remainderPartId }
@@ -133,7 +138,7 @@ data class PartsInput(
     }
 
     /** The parts to save, or `null` while [evaluate] reports any error. */
-    fun toDrafts(mode: CalculatorMode = CalculatorMode.LEFT_TO_RIGHT): List<PartDraft>? {
+    fun toDrafts(mode: CalculatorMode = CalculatorMode.ALGEBRAIC): List<PartDraft>? {
         val evaluation = evaluate(mode)
         if (evaluation.errors.isNotEmpty()) return null
         return parts.map { PartDraft(amountCents = evaluation.partCents.getValue(it.id)!!, tagIds = it.tagIds) }

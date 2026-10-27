@@ -39,8 +39,9 @@ import kotlinx.datetime.todayIn
  * produces, so all the arithmetic and validation stays in pure, JVM-tested
  * domain code.
  *
- * The calculator mode is hardcoded to [CalculatorMode.LEFT_TO_RIGHT] (the
- * web app's default) until a settings screen exists to choose it.
+ * The calculator mode is hardcoded to [CalculatorMode.ALGEBRAIC] — the
+ * precedence everyone knows from school and other calculators — until a
+ * settings screen exists to choose it.
  */
 class RecordFormViewModel(
     private val trackerId: Long,
@@ -50,7 +51,7 @@ class RecordFormViewModel(
 ) : ViewModel() {
 
     /** How amount expressions are evaluated; the form's "= …" previews use it too. */
-    val calculatorMode = CalculatorMode.LEFT_TO_RIGHT
+    val calculatorMode = CalculatorMode.ALGEBRAIC
 
     val isEditing: Boolean get() = recordId != null
 

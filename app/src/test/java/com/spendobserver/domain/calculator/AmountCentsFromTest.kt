@@ -39,6 +39,23 @@ class AmountCentsFromTest {
     }
 
     @Test
+    fun algebraicByDefault_withParentheses() {
+        assertEquals(14500L, amountCentsFrom("120+50/2"))
+        assertEquals(34000L, amountCentsFrom("(120+50)*2"))
+    }
+
+    @Test
+    fun malformedExpression_returnsNull() {
+        assertNull(amountCentsFrom("5+*3"))
+        assertNull(amountCentsFrom("1.2.3"))
+    }
+
+    @Test
+    fun divisionByZero_returnsNull() {
+        assertNull(amountCentsFrom("5/0"))
+    }
+
+    @Test
     fun respectsSelectedCalculatorMode() {
         // (5+10)/2 = 7.5 left-to-right, vs 5+(10/2) = 10 with algebraic precedence.
         assertEquals(750L, amountCentsFrom("5+10/2", CalculatorMode.LEFT_TO_RIGHT))

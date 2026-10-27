@@ -101,6 +101,24 @@ class RecordFormScreenTest {
     }
 
     @Test
+    fun amountField_evaluatesAlgebraically_andFiltersWhatIsTyped() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("120+50/2")
+        composeRule.waitForText("= " + amount(14500))
+
+        composeRule.onNodeWithTag("amountInput").performTextReplacement("(2++*3) €")
+        composeRule.onNodeWithTag("amountInput").assertTextContains("(2*3)")
+        composeRule.waitForText("= " + amount(600))
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitFor { savedCount == 1 }
+
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first() }.single()
+        assertEquals(600L, saved.amountCents)
+    }
+
+    @Test
     fun invalidAmount_showsErrorAndDoesNotSave() {
         setContent()
         composeRule.waitForIdle()

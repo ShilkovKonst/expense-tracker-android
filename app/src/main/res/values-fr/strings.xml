@@ -238,8 +238,8 @@
     </string-array>
     <string name="faq_calculator_q">Comment utiliser la calculatrice du champ du montant ?</string>
     <string-array name="faq_calculator_a">
-        <item>Le champ du montant accepte une expression avec les opérations +, −, × (*) et ÷ (/), par exemple 120+50/2. Le résultat s’affiche sous le champ et est enregistré comme montant.</item>
-        <item>L’expression est évaluée strictement de gauche à droite, sans priorité de la multiplication et de la division : 120+50/2 = 85. Le point comme la virgule sont acceptés comme séparateur décimal. Le résultat est arrondi à deux décimales et doit être supérieur à zéro.</item>
+        <item>Le champ du montant accepte une expression avec les opérations +, −, × (*) et ÷ (/) et des parenthèses, par exemple 120+50/2. Le résultat s’affiche sous le champ et est enregistré comme montant.</item>
+        <item>La multiplication et la division passent avant l’addition et la soustraction, comme sur toute calculatrice : 120+50/2 = 145. Pour changer l’ordre, utilisez des parenthèses : (120+50)/2 = 85. Le point comme la virgule sont acceptés comme séparateur décimal. Le champ n’accepte que des chiffres, des signes d’opération et des parenthèses, et deux signes ne peuvent pas se suivre : un nouveau signe remplace le précédent. Le résultat est arrondi à deux décimales et doit être supérieur à zéro.</item>
     </string-array>
     <string name="faq_stats_q">Comment utiliser les statistiques ?</string>
     <string-array name="faq_stats_a">

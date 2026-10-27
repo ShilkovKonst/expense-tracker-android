@@ -233,8 +233,8 @@
     </string-array>
     <string name="faq_calculator_q">How do I use the calculator in the amount field?</string>
     <string-array name="faq_calculator_a">
-        <item>The amount field accepts an expression with the operations +, −, × (*) and ÷ (/), for example 120+50/2. The result is shown below the field and saved as the amount.</item>
-        <item>The expression is evaluated strictly from left to right, without giving multiplication and division priority: 120+50/2 = 85. Both a dot and a comma are accepted as the decimal separator. The result is rounded to two decimal places and must be greater than zero.</item>
+        <item>The amount field accepts an expression with the operations +, −, × (*) and ÷ (/) and parentheses, for example 120+50/2. The result is shown below the field and saved as the amount.</item>
+        <item>Multiplication and division come before addition and subtraction, as on any calculator: 120+50/2 = 145. Use parentheses to change the order: (120+50)/2 = 85. Both a dot and a comma are accepted as the decimal separator. The field only takes digits, operation signs and parentheses, and two signs in a row are not possible: a new sign replaces the previous one. The result is rounded to two decimal places and must be greater than zero.</item>
     </string-array>
     <string name="faq_stats_q">How do I use the statistics?</string>
     <string-array name="faq_stats_a">

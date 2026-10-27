@@ -41,6 +41,21 @@ class RecordPartsTest {
     }
 
     @Test
+    fun amounts_areEvaluatedAlgebraically_byDefault() {
+        val input = PartsInput().setPartAmount(0, "120+50/2")
+
+        assertEquals(14500L, input.evaluate().totalCents)
+    }
+
+    @Test
+    fun amountAndReceiptTotalFields_storeOnlyFilteredText() {
+        val input = PartsInput().setPartAmount(0, "1 000+*5 €").split().setReceiptTotal("2×(3+4)%")
+
+        assertEquals("2*(3+4)", input.receiptTotalExpression)
+        assertEquals("1000*5", input.setPartAmount(input.parts.first().id, "1000+*5").parts.first().amountExpression)
+    }
+
+    @Test
     fun simpleRecord_invalidAmount_hasErrorAndNoDrafts() {
         val input = PartsInput().setPartAmount(0, "")
 

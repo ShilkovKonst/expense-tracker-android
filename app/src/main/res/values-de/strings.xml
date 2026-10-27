@@ -231,8 +231,8 @@
     </string-array>
     <string name="faq_calculator_q">Wie verwende ich den Rechner im Betragsfeld?</string>
     <string-array name="faq_calculator_a">
-        <item>Das Betragsfeld akzeptiert einen Ausdruck mit den Rechenarten +, −, × (*) und ÷ (/), zum Beispiel 120+50/2. Das Ergebnis wird unter dem Feld angezeigt und als Betrag gespeichert.</item>
-        <item>Der Ausdruck wird streng von links nach rechts berechnet, ohne Vorrang von Multiplikation und Division: 120+50/2 = 85. Als Dezimaltrennzeichen werden sowohl Punkt als auch Komma akzeptiert. Das Ergebnis wird auf zwei Nachkommastellen gerundet und muss größer als null sein.</item>
+        <item>Das Betragsfeld akzeptiert einen Ausdruck mit den Rechenarten +, −, × (*) und ÷ (/) sowie Klammern, zum Beispiel 120+50/2. Das Ergebnis wird unter dem Feld angezeigt und als Betrag gespeichert.</item>
+        <item>Punktrechnung geht vor Strichrechnung, wie bei jedem Taschenrechner: 120+50/2 = 145. Mit Klammern lässt sich die Reihenfolge ändern: (120+50)/2 = 85. Als Dezimaltrennzeichen werden sowohl Punkt als auch Komma akzeptiert. Das Feld nimmt nur Ziffern, Rechenzeichen und Klammern an, und zwei Zeichen hintereinander sind nicht möglich: Ein neues Zeichen ersetzt das vorherige. Das Ergebnis wird auf zwei Nachkommastellen gerundet und muss größer als null sein.</item>
     </string-array>
     <string name="faq_stats_q">Wie verwende ich die Statistik?</string>
     <string-array name="faq_stats_a">
