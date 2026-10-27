@@ -3,8 +3,8 @@ package com.spendobserver.ui.help
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.core.net.toUri
 import com.spendobserver.R
 
 /**
@@ -32,7 +32,7 @@ internal fun feedbackBody(
  * lists only mail apps (not messengers, as ACTION_SEND would).
  */
 internal fun feedbackIntent(context: Context): Intent =
-    Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+    Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(FEEDBACK_EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.feedback_subject))
         putExtra(

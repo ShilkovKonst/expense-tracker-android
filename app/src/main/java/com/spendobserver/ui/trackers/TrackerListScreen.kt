@@ -69,12 +69,12 @@ fun TrackerListScreen(
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
     backupRepository: BackupRepository,
+    modifier: Modifier = Modifier,
     onTrackerClick: (Tracker) -> Unit = {},
     onEditTrackerClick: (Tracker) -> Unit = {},
     onTrackerCreated: (trackerId: Long) -> Unit = {},
     onHelpClick: () -> Unit = {},
     onFaqClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerListViewModel = viewModel(
         factory = remember(trackerRepository, recordRepository) {

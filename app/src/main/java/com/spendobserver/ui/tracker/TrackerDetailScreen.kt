@@ -92,6 +92,7 @@ fun TrackerDetailScreen(
     recordRepository: RecordRepository,
     backupRepository: BackupRepository,
     onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
     onEditTrackerClick: () -> Unit = {},
@@ -99,7 +100,6 @@ fun TrackerDetailScreen(
     onTrackerDeleted: () -> Unit = {},
     recordChange: RecordChange? = null,
     onRecordChangeConsumed: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val viewModel: TrackerDetailViewModel = viewModel(
         factory = remember(trackerId, trackerRepository, recordRepository) {
