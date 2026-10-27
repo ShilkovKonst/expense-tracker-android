@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.percentOffset
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -129,7 +130,7 @@ class StatsScreenTest {
     }
 
     private fun tapChartUntil(crumb: String, nextX: () -> Float) {
-        composeRule.onNodeWithTag("statsList").performScrollToNode(hasTestTag("statsChart"))
+        composeRule.onNodeWithTag("statsChart").performScrollTo()
         composeRule.waitFor {
             val x = nextX()
             composeRule.onNodeWithTag("statsChart").performTouchInput { click(percentOffset(x, 0.5f)) }

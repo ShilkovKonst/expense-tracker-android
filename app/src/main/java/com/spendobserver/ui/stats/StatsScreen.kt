@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -126,46 +128,45 @@ fun StatsScreen(
                 TypeToggle(current.type, current.availableTypes, onSelect = viewModel::setType)
             }
             HorizontalDivider()
-            LazyColumn(
-                modifier = Modifier.weight(1f).testTag("statsList"),
+            // A plain scrolling Column: it's one block of content, nothing for a lazy list to skip.
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .testTag("statsList"),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Text(
-                                text = when (val subject = current.subject) {
-                                    StatsSubject.Overview ->
-                                        stringResource(R.string.stats_subject_overview, inlineTypeLabel(current.type))
-                                    is StatsSubject.OfTag ->
-                                        stringResource(R.string.stats_subject_tag, subject.tag.name, inlineTypeLabel(current.type))
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f).testTag("subjectTitle"),
-                            )
-                            SubjectField(
-                                current.subject,
-                                onClick = { showSubjectPicker = true },
-                                modifier = Modifier.widthIn(max = 168.dp),
-                            )
-                        }
-                        SummaryCard(current.type, current.subject, current.stats)
-                        MetricToggle(metric, onSelect = viewModel::setMetric)
-                        StatsChart(
-                            period = current.period,
-                            buckets = current.buckets,
-                            metric = metric,
-                            type = current.type,
-                            onDrillDown = viewModel::setPeriod,
-                            modifier = Modifier.fillMaxWidth().testTag("statsChart"),
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = when (val subject = current.subject) {
+                            StatsSubject.Overview ->
+                                stringResource(R.string.stats_subject_overview, inlineTypeLabel(current.type))
+                            is StatsSubject.OfTag ->
+                                stringResource(R.string.stats_subject_tag, subject.tag.name, inlineTypeLabel(current.type))
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f).testTag("subjectTitle"),
+                    )
+                    SubjectField(
+                        current.subject,
+                        onClick = { showSubjectPicker = true },
+                        modifier = Modifier.widthIn(max = 168.dp),
+                    )
                 }
+                SummaryCard(current.type, current.subject, current.stats)
+                MetricToggle(metric, onSelect = viewModel::setMetric)
+                StatsChart(
+                    period = current.period,
+                    buckets = current.buckets,
+                    metric = metric,
+                    type = current.type,
+                    onDrillDown = viewModel::setPeriod,
+                    modifier = Modifier.fillMaxWidth().testTag("statsChart"),
+                )
             }
         }
         if (showSubjectPicker) {
