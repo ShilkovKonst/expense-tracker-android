@@ -109,7 +109,7 @@ fun TrackerDetailScreen(
         },
     )
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
-    val yearGroups by viewModel.yearGroups.collectAsStateWithLifecycle()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -146,9 +146,6 @@ fun TrackerDetailScreen(
         }
     }
 
-    val recordCount = yearGroups.sumOf { yg -> yg.months.sumOf { it.records.size } }
-    val totalNet = yearGroups.sumOf { it.totals.netCents }
-
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -157,8 +154,8 @@ fun TrackerDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(trackerTitle ?: "")
                         Text(
-                            text = pluralStringResource(R.plurals.records_count, recordCount, recordCount) +
-                                " · " + signedAmountText(totalNet),
+                            text = pluralStringResource(R.plurals.records_count, summary.recordCount, summary.recordCount) +
+                                " · " + signedAmountText(summary.totals.netCents),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -208,7 +205,7 @@ fun TrackerDetailScreen(
             )
         },
     ) { innerPadding ->
-        if (yearGroups.isEmpty()) {
+        if (summary.recordCount == 0) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center,

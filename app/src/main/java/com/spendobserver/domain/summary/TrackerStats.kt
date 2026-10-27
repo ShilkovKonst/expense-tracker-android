@@ -6,3 +6,9 @@ data class TrackerStats(val recordCount: Int, val totals: AmountTotals) {
         val EMPTY = TrackerStats(recordCount = 0, totals = AmountTotals(incomeCents = 0, costCents = 0))
     }
 }
+
+/** The whole tracker's stats, added up from totals the groups already carry. */
+fun List<YearGroup>.trackerStats() = TrackerStats(
+    recordCount = sumOf { year -> year.months.sumOf { it.records.size } },
+    totals = AmountTotals(incomeCents = sumOf { it.totals.incomeCents }, costCents = sumOf { it.totals.costCents }),
+)

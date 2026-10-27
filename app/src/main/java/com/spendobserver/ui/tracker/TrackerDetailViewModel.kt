@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.domain.summary.groupByYearMonth
+import com.spendobserver.domain.summary.trackerStats
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +50,15 @@ class TrackerDetailViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = emptyList(),
+        )
+
+    /** The header line: record count and net total. */
+    val summary: StateFlow<TrackerStats> = yearGroups
+        .map { it.trackerStats() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = TrackerStats.EMPTY,
         )
 
     private val expandedYears = MutableStateFlow(emptySet<Int>())

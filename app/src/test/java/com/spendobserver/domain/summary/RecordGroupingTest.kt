@@ -94,4 +94,18 @@ class RecordGroupingTest {
         assertEquals(3000L, month.totals.netCents)
         assertEquals(3000L, groups[0].totals.netCents)
     }
+
+    @Test
+    fun trackerStats_addsUpAcrossYearsAndMonths() {
+        val records = listOf(
+            record(LocalDate(2025, 12, 1), RecordType.COST, 1000),
+            record(LocalDate(2026, 1, 1), RecordType.INCOME, 5000),
+            record(LocalDate(2026, 3, 1), RecordType.COST, 2000),
+        )
+
+        val stats = records.groupByYearMonth().trackerStats()
+
+        assertEquals(TrackerStats(recordCount = 3, totals = AmountTotals(incomeCents = 5000, costCents = 3000)), stats)
+        assertEquals(TrackerStats.EMPTY, emptyList<YearGroup>().trackerStats())
+    }
 }
