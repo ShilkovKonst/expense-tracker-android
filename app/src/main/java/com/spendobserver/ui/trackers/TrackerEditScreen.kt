@@ -64,6 +64,8 @@ fun TrackerEditScreen(
     )
     val title by viewModel.title.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    // Kept across recompositions (every keystroke in the name field): fresh lists would redraw both sections.
+    val (globalTags, localTags) = remember(tags) { tags.partition { it.isGlobal } }
     val tagUsage by viewModel.tagUsage.collectAsStateWithLifecycle()
     val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
     val saveError by viewModel.saveError.collectAsStateWithLifecycle()
@@ -133,7 +135,7 @@ fun TrackerEditScreen(
             TagSection(
                 title = stringResource(R.string.tags_global_title),
                 hint = stringResource(R.string.tags_global_hint),
-                tags = tags.filter { it.isGlobal },
+                tags = globalTags,
                 tagUsage = tagUsage,
                 onNewTag = { newTagIsGlobal = true },
                 onRename = { tagToRename = it },
@@ -144,7 +146,7 @@ fun TrackerEditScreen(
             TagSection(
                 title = stringResource(R.string.tags_local_title),
                 hint = stringResource(R.string.tags_local_hint),
-                tags = tags.filterNot { it.isGlobal },
+                tags = localTags,
                 tagUsage = tagUsage,
                 onNewTag = { newTagIsGlobal = false },
                 onRename = { tagToRename = it },

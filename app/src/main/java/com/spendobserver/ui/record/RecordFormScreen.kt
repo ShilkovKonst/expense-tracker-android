@@ -104,8 +104,8 @@ fun RecordFormScreen(
     val globalTagIds by viewModel.globalTagIds.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
-    val globalTags = tags.filter { it.isGlobal }
-    val localTags = tags.filterNot { it.isGlobal }
+    // Kept across recompositions (every keystroke here): fresh lists would redraw every tag row.
+    val (globalTags, localTags) = remember(tags) { tags.partition { it.isGlobal } }
     val errors = if (showErrors) evaluation.errors else emptyList()
 
     var showDatePicker by remember { mutableStateOf(false) }
