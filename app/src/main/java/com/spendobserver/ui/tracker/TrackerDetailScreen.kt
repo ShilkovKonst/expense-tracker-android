@@ -220,7 +220,8 @@ fun TrackerDetailScreen(
                 contentPadding = PaddingValues(bottom = 88.dp),
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             ) {
-                items(items, key = { it.key }) { item ->
+                // contentType: a scrolled-off record row is reused only for another record, not rebuilt as a header.
+                items(items, key = { it.key }, contentType = { it::class }) { item ->
                     when (item) {
                         is AccordionItem.Year -> YearHeader(
                             yearGroup = item.group,
