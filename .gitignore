@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /.idea/
+/app/.idea/
 /local.properties
 .DS_Store
 /build
@@ -11,3 +12,7 @@ local.properties
 
 # Personal emulator test-data snapshot and its backup/restore scripts
 /devdata/
+
+# Release signing secrets (passwords + keystore path)
+/keystore.properties
+*.jks
