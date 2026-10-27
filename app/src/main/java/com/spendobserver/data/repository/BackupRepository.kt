@@ -12,7 +12,6 @@ import com.spendobserver.domain.backup.copyTitle
 import com.spendobserver.domain.backup.toEpochMillis
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.domain.text.isSameNameAs
-import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 
 /**
@@ -30,25 +29,23 @@ class BackupRepository(
     private val tagDao = db.tagDao()
 
     /** Null if the tracker is gone (e.g. deleted while the export dialog was open). */
-    suspend fun snapshot(trackerId: Long): TrackerSnapshot? {
-        val tracker = trackerDao.getById(trackerId) ?: return null
-        return TrackerSnapshot(
-            tracker = tracker,
-            tags = tagDao.getForTracker(trackerId),
-            records = recordRepository.observeAll(trackerId).first(),
-        )
+    suspend fun snapshot(trackerId: Long): TrackerSnapshot? = db.withTransaction {
+        trackerDao.getById(trackerId)?.let { snapshotOf(it) }
     }
 
-    suspend fun snapshotAll(): List<TrackerSnapshot> =
-        trackerDao.getAll().sortedBy { it.title.lowercase() }.mapNotNull { snapshot(it.id) }
+    /** One transaction, so a write landing mid-export can't leave the file half old, half new. */
+    suspend fun snapshotAll(): List<TrackerSnapshot> = db.withTransaction {
+        trackerDao.getAll().sortedBy { it.title.lowercase() }.map { snapshotOf(it) }
+    }
+
+    private suspend fun snapshotOf(tracker: Tracker) = TrackerSnapshot(
+        tracker = tracker,
+        tags = tagDao.getForTracker(tracker.id),
+        records = recordRepository.getAll(tracker.id),
+    )
 
     /** Called once a file with these trackers has actually been saved or shared. */
-    suspend fun markBackedUp(trackerIds: Collection<Long>) {
-        val at = now()
-        db.withTransaction {
-            trackerIds.forEach { id -> trackerDao.getById(id)?.let { trackerDao.update(it.copy(backupAt = at)) } }
-        }
-    }
+    suspend fun markBackedUp(trackerIds: Collection<Long>) = trackerDao.setBackupAt(trackerIds, now())
 
     /**
      * Imports [items] in one transaction — any failure leaves the database

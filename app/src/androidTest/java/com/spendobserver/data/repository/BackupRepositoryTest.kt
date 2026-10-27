@@ -164,12 +164,26 @@ class BackupRepositoryTest {
     }
 
     @Test
-    fun markBackedUp_setsBackupAt() = runBlocking {
+    fun markBackedUp_setsBackupAt_onlyOnTheGivenTrackers() = runBlocking {
         val id = repository.import(listOf(ImportItem(homeFile))).single()
+        val otherId = db.trackerDao().insert(Tracker(title = "Работа", createdAt = 0, updatedAt = 0))
 
-        repository.markBackedUp(listOf(id))
+        repository.markBackedUp(listOf(id, 42)) // 42 doesn't exist: skipped, no error
 
         assertEquals(now, db.trackerDao().getById(id)!!.backupAt)
+        assertNull(db.trackerDao().getById(otherId)!!.backupAt)
+    }
+
+    @Test
+    fun snapshotAll_coversEveryTracker_sortedByTitleIgnoringCase() = runBlocking {
+        repository.import(listOf(ImportItem(homeFile)))
+        db.trackerDao().insert(Tracker(title = "авто", createdAt = 0, updatedAt = 0))
+
+        val snapshots = repository.snapshotAll()
+
+        assertEquals(listOf("авто", "Дом"), snapshots.map { it.tracker.title })
+        assertEquals(listOf(0, 2), snapshots.map { it.records.size })
+        assertEquals(3, snapshots[1].tags.size)
     }
 
     @Test

@@ -35,6 +35,11 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
     fun observeAll(trackerId: Long): Flow<List<RecordWithParts>>
 
+    /** One-shot read of [observeAll] — usable inside a `withTransaction` block, unlike a Flow. */
+    @Transaction
+    @Query("SELECT * FROM records WHERE trackerId = :trackerId ORDER BY date ASC")
+    suspend fun getAll(trackerId: Long): List<RecordWithParts>
+
     /**
      * Record count + income/cost totals per tracker, across all dates — for
      * the tracker list and detail header. A tracker with zero records has no

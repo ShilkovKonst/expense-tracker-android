@@ -23,6 +23,10 @@ interface TrackerDao {
     @Query("SELECT * FROM trackers WHERE id = :id")
     suspend fun getById(id: Long): Tracker?
 
+    /** Ids that no longer exist are simply skipped. */
+    @Query("UPDATE trackers SET backupAt = :at WHERE id IN (:ids)")
+    suspend fun setBackupAt(ids: Collection<Long>, at: Long)
+
     /** Emits `null` once the tracker is deleted. */
     @Query("SELECT * FROM trackers WHERE id = :id")
     fun observeById(id: Long): Flow<Tracker?>

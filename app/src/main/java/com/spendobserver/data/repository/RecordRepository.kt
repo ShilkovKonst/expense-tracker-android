@@ -26,6 +26,9 @@ class RecordRepository(
     fun observeAll(trackerId: Long): Flow<List<RecordWithParts>> =
         recordDao.observeAll(trackerId).map { list -> list.map { it.withSortedParts() } }
 
+    suspend fun getAll(trackerId: Long): List<RecordWithParts> =
+        recordDao.getAll(trackerId).map { it.withSortedParts() }
+
     /** Record count + net totals per tracker, across all dates — trackers with no records are simply absent from the map. */
     fun observeStatsByTracker(): Flow<Map<Long, TrackerStats>> =
         recordDao.observeStatsByTracker().map { rows ->
