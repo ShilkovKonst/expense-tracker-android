@@ -14,7 +14,7 @@
     <string name="menu_import">Import from file</string>
     <string name="menu_save_all">Save all to file</string>
     <string name="menu_share_all">Share all</string>
-    <string name="menu_help">Help</string>
+    <string name="menu_help">About the app</string>
     <string name="menu_faq">FAQ</string>
     <string name="tracker_new_title">New tracker</string>
     <string name="name_label">Name</string>
@@ -183,8 +183,7 @@
     <string name="import_issue_several_global_tags">more than one global tag</string>
 
     <!-- Help -->
-    <string name="help_title">Help</string>
-    <string name="help_about_title">About the app</string>
+    <string name="help_title">About the app</string>
     <string name="help_about_text">SpendObserver is an app for keeping track of expenses and income. The app works entirely locally: it requires no internet connection, registration or cloud services.</string>
     <string name="help_version">Version: %1$s</string>
     <string name="help_author">Author: %1$s</string>

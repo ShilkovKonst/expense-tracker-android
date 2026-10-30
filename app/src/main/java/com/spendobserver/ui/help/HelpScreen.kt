@@ -92,7 +92,7 @@ fun HelpScreen(
                 .testTag("helpContent"),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            HelpSection(stringResource(R.string.help_about_title), tag = "helpAboutSection") {
+            HelpSection(title = null, tag = "helpAboutSection") {
                 Paragraph(stringResource(R.string.help_about_text))
                 Paragraph(stringResource(R.string.help_version, versionName), modifier = Modifier.testTag("helpVersion"))
                 Paragraph(stringResource(R.string.help_author, AUTHOR_NAME))
@@ -162,10 +162,10 @@ fun HelpScreen(
     }
 }
 
-/** A titled block of the help screen; [content] is laid out as a column. */
+/** A block of the help screen, titled unless the app bar already names it; [content] is laid out as a column. */
 @Composable
 private fun HelpSection(
-    title: String,
+    title: String?,
     tag: String,
     content: @Composable () -> Unit,
 ) {
@@ -173,7 +173,7 @@ private fun HelpSection(
         modifier = Modifier.testTag(tag),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        if (title != null) Text(title, style = MaterialTheme.typography.titleMedium)
         content()
     }
 }

@@ -12,7 +12,7 @@
     <string name="menu_import">Импорт из файла</string>
     <string name="menu_save_all">Сохранить все в файл</string>
     <string name="menu_share_all">Поделиться всеми</string>
-    <string name="menu_help">Справка</string>
+    <string name="menu_help">О приложении</string>
     <string name="menu_faq">Вопросы и ответы</string>
     <string name="tracker_new_title">Новый трекер</string>
     <string name="name_label">Название</string>
@@ -195,8 +195,7 @@
     <string name="import_issue_several_global_tags">больше одного общего тега</string>
 
     <!-- Help -->
-    <string name="help_title">Справка</string>
-    <string name="help_about_title">О приложении</string>
+    <string name="help_title">О приложении</string>
     <string name="help_about_text">SpendObserver — приложение для учёта расходов и доходов. Приложение работает полностью локально: для его работы не требуются подключение к интернету, регистрация или облачные сервисы.</string>
     <string name="help_version">Версия: %1$s</string>
     <string name="help_author">Автор: %1$s</string>
