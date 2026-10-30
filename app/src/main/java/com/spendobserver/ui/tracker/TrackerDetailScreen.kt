@@ -45,7 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.ExpandChevron
-import com.spendobserver.ui.theme.IncomeColor
+import com.spendobserver.ui.theme.incomeColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -357,7 +357,7 @@ private fun RecordRow(
             DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
         }
         val (signedCents, color) = when (record.type) {
-            RecordType.INCOME -> details.amountCents to IncomeColor
+            RecordType.INCOME -> details.amountCents to incomeColor
             RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
         }
         Text(
@@ -481,7 +481,7 @@ private fun TagChips(chips: List<TagChip>, modifier: Modifier = Modifier) {
 private fun NetAmountText(totals: AmountTotals) {
     val net = totals.netCents
     val color = when {
-        net > 0 -> IncomeColor
+        net > 0 -> incomeColor
         net < 0 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }

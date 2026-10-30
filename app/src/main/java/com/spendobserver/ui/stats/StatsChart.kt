@@ -44,7 +44,7 @@ import com.spendobserver.domain.format.shortMonthName
 import com.spendobserver.domain.stats.ChartBucket
 import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.ui.common.rememberFormatLocale
-import com.spendobserver.ui.theme.IncomeColor
+import com.spendobserver.ui.theme.incomeColor
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -151,7 +151,7 @@ private fun PeriodChart(
     val barColor = when {
         metric == ChartMetric.COUNT -> MaterialTheme.colorScheme.primary
         type == RecordType.COST -> MaterialTheme.colorScheme.error
-        else -> IncomeColor
+        else -> incomeColor
     }
     val markerLabel = rememberTextComponent(
         style = TextStyle(color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp),
