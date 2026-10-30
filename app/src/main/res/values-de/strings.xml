@@ -60,7 +60,7 @@
     <string name="action_back">Zurück</string>
     <string name="action_more">Weitere Optionen</string>
     <string name="tags_global_title">Globale Labels</string>
-    <string name="tags_global_hint">wo, mit wem</string>
+    <string name="tags_global_hint">wo oder mit wem</string>
     <string name="tags_local_title">Labels</string>
     <string name="tags_local_hint">wofür</string>
     <string name="tags_none">Noch keine Labels</string>
@@ -177,6 +177,7 @@
     <string name="import_issue_no_parts">keine Teile</string>
     <string name="import_issue_non_positive_amount">der Betrag muss größer als null sein</string>
     <string name="import_issue_duplicate_part_tags">zwei Teile haben dieselben Labels</string>
+    <string name="import_issue_several_global_tags">mehr als ein globales Label</string>
 
     <!-- Help -->
     <string name="help_title">Hilfe</string>
@@ -221,7 +222,7 @@
     </string-array>
     <string name="faq_tag_levels_q">Worin unterscheiden sich globale Labels von gewöhnlichen Labels?</string>
     <string-array name="faq_tag_levels_a">
-        <item>Globale Labels beschreiben einen Eintrag als Ganzes: wo oder mit wem er stattfand (zum Beispiel den Namen eines Geschäfts oder einer Reise). Sie werden im Feld „Globale Labels“ des Formulars ausgewählt.</item>
+        <item>Globale Labels beschreiben einen Eintrag als Ganzes: wo oder mit wem er stattfand (zum Beispiel den Namen eines Geschäfts oder einer Reise). Im Feld „Globale Labels“ des Formulars lässt sich ein Label oder keines auswählen; ein Tippen auf ein anderes Label ersetzt das ausgewählte.</item>
         <item>Gewöhnliche Labels beschreiben, wofür das Geld ausgegeben wurde oder woher es stammt (zum Beispiel „Lebensmittel“). Sie werden für jeden Teil eines Eintrags gesondert ausgewählt.</item>
         <item>Die Ebene eines Labels wird beim Erstellen festgelegt und kann später nicht geändert werden. Ein neues Label wird mit der Schaltfläche „+“ im entsprechenden Feld des Formulars oder auf dem Bildschirm zum Bearbeiten des Trackers erstellt.</item>
     </string-array>

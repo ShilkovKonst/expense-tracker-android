@@ -127,7 +127,8 @@ class RecordFormViewModel(
 
     fun clearReceiptTotal() = _parts.update { it.clearReceiptTotal(calculatorMode) }
 
-    fun toggleGlobalTag(tagId: Long) = _globalTagIds.update { if (tagId in it) it - tagId else it + tagId }
+    /** A record has at most one global tag: another one replaces it, the selected one clears it. */
+    fun toggleGlobalTag(tagId: Long) = _globalTagIds.update { if (tagId in it) emptySet() else setOf(tagId) }
 
     /** Why the open create/rename tag dialog's name was refused; the dialog stays open meanwhile. */
     private val _tagNameError = MutableStateFlow<NameError?>(null)
@@ -154,7 +155,7 @@ class RecordFormViewModel(
             _tagNameError.value = null
             onCreated()
             if (isGlobal) {
-                _globalTagIds.update { it + id }
+                _globalTagIds.value = setOf(id)
             } else if (forPartId != null) {
                 _parts.update { it.togglePartTag(forPartId, id) }
             }

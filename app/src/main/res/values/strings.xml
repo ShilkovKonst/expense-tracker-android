@@ -60,7 +60,7 @@
     <string name="action_back">Back</string>
     <string name="action_more">More options</string>
     <string name="tags_global_title">Global tags</string>
-    <string name="tags_global_hint">where, with whom</string>
+    <string name="tags_global_hint">where or with whom</string>
     <string name="tags_local_title">Tags</string>
     <string name="tags_local_hint">what for</string>
     <string name="tags_none">No tags yet</string>
@@ -179,6 +179,7 @@
     <string name="import_issue_no_parts">no parts</string>
     <string name="import_issue_non_positive_amount">the amount must be greater than zero</string>
     <string name="import_issue_duplicate_part_tags">two parts have the same tags</string>
+    <string name="import_issue_several_global_tags">more than one global tag</string>
 
     <!-- Help -->
     <string name="help_title">Help</string>
@@ -223,7 +224,7 @@
     </string-array>
     <string name="faq_tag_levels_q">How do global tags differ from regular tags?</string>
     <string-array name="faq_tag_levels_a">
-        <item>Global tags describe a record as a whole: where or with whom it took place (for example, the name of a shop or of a trip). They are selected in the “Global tags” field of the record form.</item>
+        <item>Global tags describe a record as a whole: where or with whom it took place (for example, the name of a shop or of a trip). One tag or none can be selected in the “Global tags” field of the record form; tapping another tag replaces the selected one.</item>
         <item>Regular tags describe what the money was spent on or where it came from (for example, “groceries”). They are selected for each part of a record separately.</item>
         <item>A tag’s level is chosen when the tag is created and cannot be changed later. A new tag is created with the “+” button in the corresponding field of the record form or on the tracker edit screen.</item>
     </string-array>

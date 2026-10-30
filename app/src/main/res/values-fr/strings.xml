@@ -63,7 +63,7 @@
     <string name="action_back">Retour</string>
     <string name="action_more">Plus d’options</string>
     <string name="tags_global_title">Étiquettes globales</string>
-    <string name="tags_global_hint">où, avec qui</string>
+    <string name="tags_global_hint">où ou avec qui</string>
     <string name="tags_local_title">Étiquettes</string>
     <string name="tags_local_hint">pour quoi</string>
     <string name="tags_none">Aucune étiquette pour le moment</string>
@@ -184,6 +184,7 @@
     <string name="import_issue_no_parts">aucune partie</string>
     <string name="import_issue_non_positive_amount">le montant doit être supérieur à zéro</string>
     <string name="import_issue_duplicate_part_tags">deux parties ont les mêmes étiquettes</string>
+    <string name="import_issue_several_global_tags">plus d’une étiquette globale</string>
 
     <!-- Help -->
     <string name="help_title">Aide</string>
@@ -228,7 +229,7 @@
     </string-array>
     <string name="faq_tag_levels_q">Quelle est la différence entre les étiquettes globales et les étiquettes ordinaires ?</string>
     <string-array name="faq_tag_levels_a">
-        <item>Les étiquettes globales décrivent l’opération dans son ensemble : où ou avec qui elle a eu lieu (par exemple, le nom d’un magasin ou d’un voyage). Elles se sélectionnent dans le champ « Étiquettes globales » du formulaire.</item>
+        <item>Les étiquettes globales décrivent l’opération dans son ensemble : où ou avec qui elle a eu lieu (par exemple, le nom d’un magasin ou d’un voyage). Le champ « Étiquettes globales » du formulaire permet d’en sélectionner une ou aucune ; appuyer sur une autre étiquette remplace celle qui est sélectionnée.</item>
         <item>Les étiquettes ordinaires décrivent ce à quoi l’argent a été dépensé ou d’où il provient (par exemple, « courses »). Elles se sélectionnent séparément pour chaque partie de l’opération.</item>
         <item>Le niveau d’une étiquette est choisi lors de sa création et ne peut plus être modifié ensuite. Une nouvelle étiquette se crée avec le bouton « + » dans le champ correspondant du formulaire ou sur l’écran de modification du tracker.</item>
     </string-array>

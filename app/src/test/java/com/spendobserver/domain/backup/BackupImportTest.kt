@@ -126,6 +126,18 @@ class BackupImportTest {
     }
 
     @Test
+    fun aRecordHasAtMostOneGlobalTag() {
+        val error = failure(
+            file(
+                records = """{"date": "2025-10-02", "type": "cost", "tags": ["g20", "aldi"], "parts": [{"amount": 1}]}""",
+                tags = """{"name": "g20", "global": true}, {"name": "aldi", "global": true}""",
+            ),
+        )
+
+        assertEquals(BackupError.Invalid(inRecord, BackupIssue.SeveralGlobalTags), error)
+    }
+
+    @Test
     fun partsRules() {
         assertEquals(
             BackupError.Invalid(inRecord, BackupIssue.NoParts),

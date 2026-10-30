@@ -250,6 +250,28 @@ class RecordFormScreenTest {
     }
 
     @Test
+    fun selectingAnotherGlobalTag_replacesTheSelectedOne() {
+        runBlocking {
+            tagRepository.insertTag(Tag(trackerId = trackerId, name = "aldi", isGlobal = true))
+            tagRepository.insertTag(Tag(trackerId = trackerId, name = "g20", isGlobal = true))
+        }
+
+        setContent()
+        composeRule.waitForText("aldi")
+
+        composeRule.onNodeWithText("aldi").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("g20").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("aldi").assertIsNotSelected()
+        composeRule.onNodeWithText("g20").assertIsSelected()
+
+        composeRule.onNodeWithText("g20").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("g20").assertIsNotSelected()
+    }
+
+    @Test
     fun splitReceipt_savesOneRecordWithTypedPartsAndComputedRemainder() {
         val (shop, groceries, alcohol) = runBlocking {
             Triple(

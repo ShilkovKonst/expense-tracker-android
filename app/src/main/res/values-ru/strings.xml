@@ -64,7 +64,7 @@
     <string name="action_back">Назад</string>
     <string name="action_more">Ещё</string>
     <string name="tags_global_title">Общие теги</string>
-    <string name="tags_global_hint">где, с кем</string>
+    <string name="tags_global_hint">где или с кем</string>
     <string name="tags_local_title">Теги</string>
     <string name="tags_local_hint">на что</string>
     <string name="tags_none">Тегов пока нет</string>
@@ -191,6 +191,7 @@
     <string name="import_issue_no_parts">нет ни одной части</string>
     <string name="import_issue_non_positive_amount">сумма должна быть больше нуля</string>
     <string name="import_issue_duplicate_part_tags">две части с одинаковыми тегами</string>
+    <string name="import_issue_several_global_tags">больше одного общего тега</string>
 
     <!-- Help -->
     <string name="help_title">Справка</string>
@@ -235,7 +236,7 @@
     </string-array>
     <string name="faq_tag_levels_q">Чем общие теги отличаются от обычных?</string>
     <string-array name="faq_tag_levels_a">
-        <item>Общие теги описывают запись целиком: где или с кем она совершена (например, название магазина или поездки). Они отмечаются в поле «Общие теги» формы записи.</item>
+        <item>Общие теги описывают запись целиком: где или с кем она совершена (например, название магазина или поездки). В поле «Общие теги» формы записи можно отметить один тег или ни одного; нажатие на другой тег заменяет выбранный.</item>
         <item>Обычные теги описывают, на что потрачены или откуда получены средства (например, «продукты»). Они отмечаются у каждой части записи отдельно.</item>
         <item>Уровень тега выбирается при создании и в дальнейшем не меняется. Новый тег создаётся кнопкой «+» в соответствующем поле формы записи или на экране редактирования трекера.</item>
     </string-array>

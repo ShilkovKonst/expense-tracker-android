@@ -59,6 +59,7 @@ private fun BackupIssue.text(): String = when (this) {
     is BackupIssue.UnknownTag -> stringResource(R.string.import_issue_unknown_tag, name)
     is BackupIssue.TagNotGlobal -> stringResource(R.string.import_issue_tag_not_global, name)
     is BackupIssue.TagIsGlobal -> stringResource(R.string.import_issue_tag_is_global, name)
+    BackupIssue.SeveralGlobalTags -> stringResource(R.string.import_issue_several_global_tags)
     BackupIssue.NoParts -> stringResource(R.string.import_issue_no_parts)
     BackupIssue.NonPositiveAmount -> stringResource(R.string.import_issue_non_positive_amount)
     BackupIssue.DuplicatePartTags -> stringResource(R.string.import_issue_duplicate_part_tags)
