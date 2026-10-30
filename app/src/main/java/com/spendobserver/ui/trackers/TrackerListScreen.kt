@@ -16,6 +16,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -116,11 +118,11 @@ fun TrackerListScreen(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.tracker_list_title)) },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.testTag("trackerListMenuButton")) {
-                            Text("⋮")
+                            Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
@@ -174,7 +176,8 @@ fun TrackerListScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showCreateDialog = true },
-                icon = { Text("+") },
+                modifier = Modifier.testTag("addTrackerButton"),
+                icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
                 text = { Text(stringResource(R.string.tracker_list_add)) },
             )
         },
@@ -269,11 +272,11 @@ private fun TrackerRow(
                 IconButton(
                     onClick = onEditClick,
                     modifier = Modifier.testTag("editTrackerButton-${tracker.title}"),
-                ) { Text("✎") }
+                ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
                 IconButton(
                     onClick = onDeleteClick,
                     modifier = Modifier.testTag("deleteTrackerButton-${tracker.title}"),
-                ) { Text("🗑") }
+                ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
             }
         },
     )

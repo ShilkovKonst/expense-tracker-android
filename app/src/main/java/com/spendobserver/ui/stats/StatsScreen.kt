@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -23,7 +24,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -72,6 +74,7 @@ import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.domain.stats.StatsSubject
 import com.spendobserver.domain.stats.TagStats
 import com.spendobserver.domain.stats.TagTops
+import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.rememberFormatLocale
 import kotlinx.datetime.LocalDate
@@ -104,7 +107,7 @@ fun StatsScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.stats_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { Text("←") }
+                    BackButton(onClick = onBackClick)
                 },
             )
         },
@@ -375,7 +378,12 @@ private fun SubjectField(subject: StatsSubject, onClick: () -> Unit, modifier: M
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
         )
-        Text(" ▾", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            painterResource(R.drawable.ic_expand_more),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 

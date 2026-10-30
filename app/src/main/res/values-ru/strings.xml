@@ -7,7 +7,6 @@
     <string name="action_delete">Удалить</string>
 
     <!-- Tracker list -->
-    <string name="tracker_list_title">Список трекеров</string>
     <string name="tracker_list_empty">Пока нет трекеров</string>
     <string name="tracker_list_add">Добавить трекер</string>
     <string name="menu_import">Импорт из файла</string>
@@ -62,6 +61,8 @@
     <!-- Shared form pieces -->
     <string name="action_save">Сохранить</string>
     <string name="action_ok">ОК</string>
+    <string name="action_back">Назад</string>
+    <string name="action_more">Ещё</string>
     <string name="tags_global_title">Общие теги</string>
     <string name="tags_global_hint">где, с кем</string>
     <string name="tags_local_title">Теги</string>

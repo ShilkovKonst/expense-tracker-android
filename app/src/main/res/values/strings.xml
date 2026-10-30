@@ -9,7 +9,6 @@
     <string name="action_delete">Delete</string>
 
     <!-- Tracker list -->
-    <string name="tracker_list_title">Trackers</string>
     <string name="tracker_list_empty">No trackers yet</string>
     <string name="tracker_list_add">Add tracker</string>
     <string name="menu_import">Import from file</string>
@@ -58,6 +57,8 @@
     <!-- Shared form pieces -->
     <string name="action_save">Save</string>
     <string name="action_ok">OK</string>
+    <string name="action_back">Back</string>
+    <string name="action_more">More options</string>
     <string name="tags_global_title">Global tags</string>
     <string name="tags_global_hint">where, with whom</string>
     <string name="tags_local_title">Tags</string>

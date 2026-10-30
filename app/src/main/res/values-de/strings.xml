@@ -9,7 +9,6 @@
     <string name="action_delete">Löschen</string>
 
     <!-- Tracker list -->
-    <string name="tracker_list_title">Tracker</string>
     <string name="tracker_list_empty">Noch keine Tracker</string>
     <string name="tracker_list_add">Tracker hinzufügen</string>
     <string name="menu_import">Aus Datei importieren</string>
@@ -58,6 +57,8 @@
     <!-- Shared form pieces -->
     <string name="action_save">Speichern</string>
     <string name="action_ok">OK</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_more">Weitere Optionen</string>
     <string name="tags_global_title">Globale Labels</string>
     <string name="tags_global_hint">wo, mit wem</string>
     <string name="tags_local_title">Labels</string>

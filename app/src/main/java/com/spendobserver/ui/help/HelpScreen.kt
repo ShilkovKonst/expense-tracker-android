@@ -12,7 +12,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -35,18 +34,20 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.spendobserver.R
+import com.spendobserver.ui.common.BackButton
 import kotlinx.coroutines.launch
 
 private const val AUTHOR_NAME = "Konstantin Shilkov"
 internal const val FEEDBACK_EMAIL = "blacktormentoro@gmail.com"
 
-/** A library shown under "Licenses"; all of them come in through Gradle. Names stay untranslated. */
+/** A library shown under "Licenses". Names stay untranslated. */
 private data class LibraryLicense(val name: String, val license: String)
 
 private val LIBRARIES = listOf(
     LibraryLicense("AndroidX (Compose, Room, Navigation, Lifecycle, Core)", "Apache License 2.0"),
     LibraryLicense("Kotlin, kotlinx.coroutines, kotlinx.serialization, kotlinx-datetime", "Apache License 2.0"),
     LibraryLicense("Vico", "Apache License 2.0"),
+    LibraryLicense("Material Symbols", "Apache License 2.0"),
 )
 
 /**
@@ -76,7 +77,7 @@ fun HelpScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.help_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { Text("←") }
+                    BackButton(onClick = onBackClick)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )

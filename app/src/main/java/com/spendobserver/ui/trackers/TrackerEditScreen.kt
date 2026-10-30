@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,11 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,6 +43,7 @@ import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.common.AddChip
+import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.tagNameText
@@ -82,7 +84,7 @@ fun TrackerEditScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.tracker_edit_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { Text("←") }
+                    BackButton(onClick = onBackClick)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
@@ -117,7 +119,7 @@ fun TrackerEditScreen(
                         modifier = Modifier
                             .testTag("revertTitleButton")
                             .semantics { contentDescription = revertDescription },
-                    ) { Text("✕") }
+                    ) { Icon(painterResource(R.drawable.ic_close), contentDescription = null) }
                     IconButton(
                         onClick = { viewModel.saveTitle() },
                         enabled = isTitleChanged,
@@ -125,7 +127,7 @@ fun TrackerEditScreen(
                         modifier = Modifier
                             .testTag("saveTrackerButton")
                             .semantics { contentDescription = saveDescription },
-                    ) { Text("✓", fontWeight = FontWeight.Bold) }
+                    ) { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
                 }
                 if (saveError != null) {
                     Text(saveError!!.trackerNameText(), color = MaterialTheme.colorScheme.error)
@@ -255,11 +257,11 @@ private fun TagSection(
                 IconButton(
                     onClick = { onRename(tag) },
                     modifier = Modifier.testTag("renameTagButton-${tag.name}"),
-                ) { Text("✎") }
+                ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
                 IconButton(
                     onClick = { onDelete(tag) },
                     modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
-                ) { Text("🗑") }
+                ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
             }
         }
     }

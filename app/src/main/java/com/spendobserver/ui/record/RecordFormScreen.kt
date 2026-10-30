@@ -21,6 +21,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +64,7 @@ import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.AlwaysLabeledTextField
+import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.FormActionButtons
 import com.spendobserver.ui.common.FormActionsBottomPadding
 import com.spendobserver.ui.common.LabeledOutlinedBox
@@ -118,14 +121,14 @@ fun RecordFormScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(if (viewModel.isEditing) R.string.record_edit_title else R.string.record_new_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { Text("←") }
+                    BackButton(onClick = onBackClick)
                 },
                 actions = {
                     if (viewModel.isEditing) {
                         IconButton(
                             onClick = { showDeleteRecordDialog = true },
                             modifier = Modifier.testTag("deleteRecordButton"),
-                        ) { Text("🗑") }
+                        ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
@@ -450,7 +453,7 @@ private fun PartCard(
                         IconButton(
                             onClick = onRemove,
                             modifier = Modifier.padding(top = 4.dp).testTag("removePartButton-$index"),
-                        ) { Text("✕") }
+                        ) { Icon(painterResource(R.drawable.ic_close), stringResource(R.string.action_delete)) }
                     }
                 }
             }

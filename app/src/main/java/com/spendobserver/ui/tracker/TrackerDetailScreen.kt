@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -41,8 +43,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.spendobserver.ui.common.BackButton
+import com.spendobserver.ui.common.ExpandChevron
 import com.spendobserver.ui.theme.IncomeColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -162,16 +167,14 @@ fun TrackerDetailScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Text("←")
-                    }
+                    BackButton(onClick = onBackClick)
                 },
                 // One overflow menu, like the tracker list's, instead of a row of icons
                 // squeezing the title.
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.testTag("trackerMenuButton")) {
-                            Text("⋮")
+                            Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             /** A menu entry that closes the menu before acting. */
@@ -200,7 +203,7 @@ fun TrackerDetailScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddRecordClick,
-                icon = { Text("+") },
+                icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
                 text = { Text(stringResource(R.string.record_add)) },
             )
         },
@@ -262,7 +265,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
     val count = yearGroup.months.sumOf { it.records.size }
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { Text(if (expanded) "▾" else "▸") },
+        leadingContent = { ExpandChevron(expanded) },
         headlineContent = {
             Text(yearGroup.year.toString(), fontWeight = RecordTextWeight, fontSize = YearTextSize)
         },
@@ -275,7 +278,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
 private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -> Unit) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
-        leadingContent = { Text(if (expanded) "▾" else "▸") },
+        leadingContent = { ExpandChevron(expanded) },
         headlineContent = {
             Text(monthText(monthGroup.month), fontWeight = RecordTextWeight, fontSize = MonthTextSize)
         },
@@ -369,12 +372,17 @@ private fun RecordRow(
 
 @Composable
 private fun PartsToggle(count: Int, expanded: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Text(
-        text = "${if (expanded) "▾" else "▸"} " + pluralStringResource(R.plurals.parts_count, count, count),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.primary,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.clickable(onClick = onClick).padding(vertical = 2.dp),
-    )
+    ) {
+        ExpandChevron(expanded, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Text(
+            text = pluralStringResource(R.plurals.parts_count, count, count),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
 }
 
 private data class TagChip(val name: String, val global: Boolean = false)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +29,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.spendobserver.ui.common.BackButton
+import com.spendobserver.ui.common.ExpandChevron
 import com.spendobserver.R
 
 /** One question of the FAQ and its answer, one paragraph per array item. */
@@ -63,7 +64,7 @@ fun FaqScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.faq_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { Text("←") }
+                    BackButton(onClick = onBackClick)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
@@ -102,9 +103,9 @@ private fun FaqItem(entry: FaqEntry, tag: String) {
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                if (expanded) "▾" else "▸",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            ExpandChevron(
+                expanded = expanded,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 12.dp),
             )
         }

@@ -69,7 +69,7 @@ class TrackerListScreenTest {
     }
 
     private fun createTracker(title: String) {
-        composeRule.onNodeWithText("+").performClick()
+        composeRule.onNodeWithTag("addTrackerButton").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput(title)
         composeRule.onNodeWithText(string(R.string.action_create)).performClick()
         composeRule.waitForTag("editTrackerButton-$title")
@@ -94,7 +94,7 @@ class TrackerListScreenTest {
     @Test
     fun createButton_disabledForBlankTitle() {
         setContent()
-        composeRule.onNodeWithText("+").performClick()
+        composeRule.onNodeWithTag("addTrackerButton").performClick()
 
         composeRule.onNodeWithText(string(R.string.action_create)).assertIsNotEnabled()
     }
@@ -189,7 +189,7 @@ class TrackerListScreenTest {
         createTracker("Family")
 
         // Same name with stray spaces: still a duplicate once trimmed.
-        composeRule.onNodeWithText("+").performClick()
+        composeRule.onNodeWithTag("addTrackerButton").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput("  Family ")
         composeRule.onNodeWithText(string(R.string.action_create)).performClick()
 

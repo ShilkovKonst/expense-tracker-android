@@ -259,15 +259,13 @@ class TrackerDetailScreenTest {
                 recordChange = RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false),
             )
         }
-        composeRule.waitForText("▸ " + plural(R.plurals.parts_count, 2))
+        composeRule.waitForText(plural(R.plurals.parts_count, 2))
 
-        composeRule.onNodeWithText("▸ " + plural(R.plurals.parts_count, 2)).assertExists()
         composeRule.onNodeWithText(amount(80000)).assertDoesNotExist()
 
         composeRule.onNodeWithTag("partsToggle-$recordId").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("▾ " + plural(R.plurals.parts_count, 2)).assertExists()
         composeRule.onNodeWithText(amount(80000)).assertIsDisplayed()
         composeRule.onNodeWithText(amount(235000)).assertIsDisplayed()
         assertEquals(0, openedCount)
