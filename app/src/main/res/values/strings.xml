@@ -38,6 +38,7 @@
     <string name="menu_save_to_file">Save to file</string>
     <string name="menu_share">Share</string>
     <string name="menu_edit">Edit</string>
+    <string name="menu_settings">Settings</string>
     <string name="record_add">Add record</string>
     <string name="tracker_no_records">No records yet</string>
     <string name="record_tags_label">Tags:</string>
@@ -95,7 +96,7 @@
     <string name="error_tag_name_taken">A tag with this name already exists</string>
 
     <!-- Tracker edit -->
-    <string name="tracker_edit_title">Edit tracker</string>
+    <string name="tracker_edit_title">Tracker settings</string>
     <string name="tracker_name_revert">Revert name</string>
     <string name="tracker_name_save">Save name</string>
     <string name="tag_rename_title">Rename tag</string>
@@ -230,7 +231,7 @@
     </string-array>
     <string name="faq_tag_manage_q">How do I rename or delete a tag?</string>
     <string-array name="faq_tag_manage_a">
-        <item>Open a tracker, choose “Edit” in the “⋮” menu and use the ✎ and 🗑 buttons next to the tag. Each tag shows how many records use it.</item>
+        <item>Open a tracker, choose “Settings” in the “⋮” menu and use the ✎ and 🗑 buttons next to the tag. Each tag shows how many records use it.</item>
         <item>A deleted tag is removed from all records; the records themselves are kept.</item>
     </string-array>
     <string name="faq_calculator_q">How do I use the calculator in the amount field?</string>

@@ -188,10 +188,11 @@ fun TrackerDetailScreen(
                                 modifier = Modifier.testTag(tag),
                             )
                             item(stringResource(R.string.menu_stats), "statsItem", onStatsClick)
+                            item(stringResource(R.string.menu_settings), "editTrackerItem", onEditTrackerClick)
+                            HorizontalDivider()
                             item(stringResource(R.string.menu_save_to_file), "exportSaveItem") { exportActions.save(exportScope) }
                             item(stringResource(R.string.menu_share), "exportShareItem") { exportActions.share(exportScope) }
                             HorizontalDivider()
-                            item(stringResource(R.string.menu_edit), "editTrackerItem", onEditTrackerClick)
                             item(stringResource(R.string.action_delete), "deleteTrackerItem") { showDeleteTrackerDialog = true }
                         }
                     }

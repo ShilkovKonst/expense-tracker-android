@@ -40,6 +40,7 @@
     <string name="menu_save_to_file">Сохранить в файл</string>
     <string name="menu_share">Поделиться</string>
     <string name="menu_edit">Редактировать</string>
+    <string name="menu_settings">Параметры</string>
     <string name="record_add">Добавить запись</string>
     <string name="tracker_no_records">Записей пока нет</string>
     <string name="record_tags_label">Теги:</string>
@@ -99,7 +100,7 @@
     <string name="error_tag_name_taken">Тег с таким названием уже есть</string>
 
     <!-- Tracker edit -->
-    <string name="tracker_edit_title">Редактировать трекер</string>
+    <string name="tracker_edit_title">Параметры трекера</string>
     <string name="tracker_name_revert">Вернуть название</string>
     <string name="tracker_name_save">Сохранить название</string>
     <string name="tag_rename_title">Переименовать тег</string>
@@ -242,7 +243,7 @@
     </string-array>
     <string name="faq_tag_manage_q">Как переименовать или удалить тег?</string>
     <string-array name="faq_tag_manage_a">
-        <item>Откройте трекер, в меню «⋮» выберите «Редактировать» и воспользуйтесь кнопками ✎ и 🗑 рядом с нужным тегом. Для каждого тега указано, в скольких записях он используется.</item>
+        <item>Откройте трекер, в меню «⋮» выберите «Параметры» и воспользуйтесь кнопками ✎ и 🗑 рядом с нужным тегом. Для каждого тега указано, в скольких записях он используется.</item>
         <item>При удалении тег снимается со всех записей; сами записи при этом сохраняются.</item>
     </string-array>
     <string name="faq_calculator_q">Как пользоваться калькулятором в поле суммы?</string>

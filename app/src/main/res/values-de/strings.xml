@@ -38,6 +38,7 @@
     <string name="menu_save_to_file">In Datei speichern</string>
     <string name="menu_share">Teilen</string>
     <string name="menu_edit">Bearbeiten</string>
+    <string name="menu_settings">Einstellungen</string>
     <string name="record_add">Eintrag hinzufügen</string>
     <string name="tracker_no_records">Noch keine Einträge</string>
     <string name="record_tags_label">Labels:</string>
@@ -95,7 +96,7 @@
     <string name="error_tag_name_taken">Ein Label mit diesem Namen existiert bereits</string>
 
     <!-- Tracker edit -->
-    <string name="tracker_edit_title">Tracker bearbeiten</string>
+    <string name="tracker_edit_title">Tracker-Einstellungen</string>
     <string name="tracker_name_revert">Namen zurücksetzen</string>
     <string name="tracker_name_save">Namen speichern</string>
     <string name="tag_rename_title">Label umbenennen</string>
@@ -228,7 +229,7 @@
     </string-array>
     <string name="faq_tag_manage_q">Wie benenne ich ein Label um oder lösche es?</string>
     <string-array name="faq_tag_manage_a">
-        <item>Öffnen Sie einen Tracker, wählen Sie im Menü „⋮“ den Punkt „Bearbeiten“ und verwenden Sie die Schaltflächen ✎ und 🗑 neben dem Label. Bei jedem Label wird angezeigt, wie viele Einträge es verwenden.</item>
+        <item>Öffnen Sie einen Tracker, wählen Sie im Menü „⋮“ den Punkt „Einstellungen“ und verwenden Sie die Schaltflächen ✎ und 🗑 neben dem Label. Bei jedem Label wird angezeigt, wie viele Einträge es verwenden.</item>
         <item>Ein gelöschtes Label wird aus allen Einträgen entfernt; die Einträge selbst bleiben erhalten.</item>
     </string-array>
     <string name="faq_calculator_q">Wie verwende ich den Rechner im Betragsfeld?</string>

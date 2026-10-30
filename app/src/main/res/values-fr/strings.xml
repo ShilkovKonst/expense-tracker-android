@@ -40,6 +40,7 @@
     <string name="menu_save_to_file">Enregistrer dans un fichier</string>
     <string name="menu_share">Partager</string>
     <string name="menu_edit">Modifier</string>
+    <string name="menu_settings">Paramètres</string>
     <string name="record_add">Ajouter une opération</string>
     <string name="tracker_no_records">Aucune opération pour le moment</string>
     <string name="record_tags_label">Étiquettes :</string>
@@ -98,7 +99,7 @@
     <string name="error_tag_name_taken">Une étiquette portant ce nom existe déjà</string>
 
     <!-- Tracker edit -->
-    <string name="tracker_edit_title">Modifier le tracker</string>
+    <string name="tracker_edit_title">Paramètres du tracker</string>
     <string name="tracker_name_revert">Rétablir le nom</string>
     <string name="tracker_name_save">Enregistrer le nom</string>
     <string name="tag_rename_title">Renommer l’étiquette</string>
@@ -235,7 +236,7 @@
     </string-array>
     <string name="faq_tag_manage_q">Comment renommer ou supprimer une étiquette ?</string>
     <string-array name="faq_tag_manage_a">
-        <item>Ouvrez un tracker, choisissez « Modifier » dans le menu « ⋮ » et utilisez les boutons ✎ et 🗑 à côté de l’étiquette. Chaque étiquette indique le nombre d’opérations qui l’utilisent.</item>
+        <item>Ouvrez un tracker, choisissez « Paramètres » dans le menu « ⋮ » et utilisez les boutons ✎ et 🗑 à côté de l’étiquette. Chaque étiquette indique le nombre d’opérations qui l’utilisent.</item>
         <item>Une étiquette supprimée est retirée de toutes les opérations ; les opérations elles-mêmes sont conservées.</item>
     </string-array>
     <string name="faq_calculator_q">Comment utiliser la calculatrice du champ du montant ?</string>
