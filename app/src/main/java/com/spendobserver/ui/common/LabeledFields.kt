@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -80,6 +81,8 @@ fun LabeledOutlinedBox(
     label: String,
     modifier: Modifier = Modifier,
     background: Color = MaterialTheme.colorScheme.background,
+    /** Stretches the border to the height given, for a box whose [content] scrolls inside it. */
+    fillHeight: Boolean = false,
     action: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -90,6 +93,7 @@ fun LabeledOutlinedBox(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (fillHeight) Modifier.fillMaxHeight() else Modifier)
                 .border(1.dp, MaterialTheme.colorScheme.outline, OutlinedTextFieldDefaults.shape)
                 // 16dp start, like an OutlinedTextField's text, so content lines up with the fields above.
                 // With an action, more top room so its touch target's lower half stays off the content.

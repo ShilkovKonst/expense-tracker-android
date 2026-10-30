@@ -1,6 +1,7 @@
 package com.spendobserver.ui.trackers
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,9 @@ import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.tagNameText
 import com.spendobserver.ui.common.trackerNameText
 
+/** Below this, two tag sections plus the name field leave too few rows per section to be worth splitting. */
+private val MinHeightForSplitTagSections = 480.dp
+
 /** Renaming a tracker and managing its tags (create/rename/delete) — one screen, reached via the ✎ button on a tracker row. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,71 +94,92 @@ fun TrackerEditScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column {
-                // Only the name needs saving (tags are stored as they change), so its
-                // revert/save sit right beside it, live only while there's a change.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = viewModel::setTitle,
-                        label = { Text(stringResource(R.string.name_label)) },
-                        singleLine = true,
-                        isError = saveError != null,
-                        modifier = Modifier.weight(1f).testTag("trackerNameInput"),
-                    )
-                    // Read here: the semantics blocks below aren't composable.
-                    val revertDescription = stringResource(R.string.tracker_name_revert)
-                    val saveDescription = stringResource(R.string.tracker_name_save)
-                    IconButton(
-                        onClick = viewModel::revertTitle,
-                        enabled = isTitleChanged,
-                        modifier = Modifier
-                            .testTag("revertTitleButton")
-                            .semantics { contentDescription = revertDescription },
-                    ) { Icon(painterResource(R.drawable.ic_close), contentDescription = null) }
-                    IconButton(
-                        onClick = { viewModel.saveTitle() },
-                        enabled = isTitleChanged,
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                        modifier = Modifier
-                            .testTag("saveTrackerButton")
-                            .semantics { contentDescription = saveDescription },
-                    ) { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // Too short to split usefully (landscape, a small window): the whole screen scrolls instead.
+            val splitTagSections = maxHeight >= MinHeightForSplitTagSections
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (splitTagSections) Modifier else Modifier.verticalScroll(rememberScrollState()))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Column {
+                    // Only the name needs saving (tags are stored as they change), so its
+                    // revert/save sit right beside it, live only while there's a change.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = viewModel::setTitle,
+                            label = { Text(stringResource(R.string.name_label)) },
+                            singleLine = true,
+                            isError = saveError != null,
+                            modifier = Modifier.weight(1f).testTag("trackerNameInput"),
+                        )
+                        // Read here: the semantics blocks below aren't composable.
+                        val revertDescription = stringResource(R.string.tracker_name_revert)
+                        val saveDescription = stringResource(R.string.tracker_name_save)
+                        IconButton(
+                            onClick = viewModel::revertTitle,
+                            enabled = isTitleChanged,
+                            modifier = Modifier
+                                .testTag("revertTitleButton")
+                                .semantics { contentDescription = revertDescription },
+                        ) { Icon(painterResource(R.drawable.ic_close), contentDescription = null) }
+                        IconButton(
+                            onClick = { viewModel.saveTitle() },
+                            enabled = isTitleChanged,
+                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier
+                                .testTag("saveTrackerButton")
+                                .semantics { contentDescription = saveDescription },
+                        ) { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
+                    }
+                    if (saveError != null) {
+                        Text(saveError!!.trackerNameText(), color = MaterialTheme.colorScheme.error)
+                    }
                 }
-                if (saveError != null) {
-                    Text(saveError!!.trackerNameText(), color = MaterialTheme.colorScheme.error)
+
+                val globalSection = @Composable {
+                    TagSection(
+                        title = stringResource(R.string.tags_global_title),
+                        hint = stringResource(R.string.tags_global_hint),
+                        tags = globalTags,
+                        tagUsage = tagUsage,
+                        scrollable = splitTagSections,
+                        onNewTag = { newTagIsGlobal = true },
+                        onRename = { tagToRename = it },
+                        onDelete = { tagToDelete = it },
+                        newTagButtonTestTag = "newGlobalTagButton",
+                        modifier = Modifier.testTag("globalTagsSection"),
+                    )
+                }
+                val localSection = @Composable {
+                    TagSection(
+                        title = stringResource(R.string.tags_local_title),
+                        hint = stringResource(R.string.tags_local_hint),
+                        tags = localTags,
+                        tagUsage = tagUsage,
+                        scrollable = splitTagSections,
+                        onNewTag = { newTagIsGlobal = false },
+                        onRename = { tagToRename = it },
+                        onDelete = { tagToDelete = it },
+                        newTagButtonTestTag = "newTagButton",
+                        modifier = Modifier.testTag("localTagsSection"),
+                    )
+                }
+                if (splitTagSections) {
+                    SplitByContentColumn(
+                        first = globalSection,
+                        second = localSection,
+                        spacing = 16.dp,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    globalSection()
+                    localSection()
                 }
             }
-
-            TagSection(
-                title = stringResource(R.string.tags_global_title),
-                hint = stringResource(R.string.tags_global_hint),
-                tags = globalTags,
-                tagUsage = tagUsage,
-                onNewTag = { newTagIsGlobal = true },
-                onRename = { tagToRename = it },
-                onDelete = { tagToDelete = it },
-                newTagButtonTestTag = "newGlobalTagButton",
-            )
-
-            TagSection(
-                title = stringResource(R.string.tags_local_title),
-                hint = stringResource(R.string.tags_local_hint),
-                tags = localTags,
-                tagUsage = tagUsage,
-                onNewTag = { newTagIsGlobal = false },
-                onRename = { tagToRename = it },
-                onDelete = { tagToDelete = it },
-                newTagButtonTestTag = "newTagButton",
-            )
         }
     }
 
@@ -207,9 +232,8 @@ fun TrackerEditScreen(
 }
 
 /**
- * One level's tags. ⇄ moves a tag to the other level, enabled only while
- * no record uses it — otherwise existing records would hold it on the
- * wrong level (see [Tag.isGlobal]).
+ * One level's tags. With [scrollable], fills the height it's given and
+ * scrolls its rows inside the border, so the "+" on the border stays in view.
  */
 @Composable
 private fun TagSection(
@@ -217,51 +241,57 @@ private fun TagSection(
     hint: String,
     tags: List<Tag>,
     tagUsage: Map<Long, Int>,
+    scrollable: Boolean,
     onNewTag: () -> Unit,
     onRename: (Tag) -> Unit,
     onDelete: (Tag) -> Unit,
     newTagButtonTestTag: String,
+    modifier: Modifier = Modifier,
 ) {
     // Same border-cut label and "+" as the record form's tag boxes.
     LabeledOutlinedBox(
         label = "$title — $hint",
+        fillHeight = scrollable,
+        modifier = modifier,
         action = {
             AddChip(onClick = onNewTag, description = stringResource(R.string.tag_new), modifier = Modifier.testTag(newTagButtonTestTag))
         },
     ) {
-        if (tags.isEmpty()) {
-            Text(
-                text = stringResource(R.string.tags_none),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
-        }
-        for (tag in tags) {
-            val usage = tagUsage[tag.id] ?: 0
-            // A plain Row rather than ListItem: ListItem's own 16dp inset on top
-            // of the box's would push names twice as far from the border.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
-                    Text(tag.name, style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        text = if (usage == 0) {
-                            stringResource(R.string.tag_unused)
-                        } else {
-                            pluralStringResource(R.plurals.tag_usage, usage, usage)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+        Column(modifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier) {
+            if (tags.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.tags_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            }
+            for (tag in tags) {
+                val usage = tagUsage[tag.id] ?: 0
+                // A plain Row rather than ListItem: ListItem's own 16dp inset on top
+                // of the box's would push names twice as far from the border.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
+                        Text(tag.name, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (usage == 0) {
+                                stringResource(R.string.tag_unused)
+                            } else {
+                                pluralStringResource(R.plurals.tag_usage, usage, usage)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(
+                        onClick = { onRename(tag) },
+                        modifier = Modifier.testTag("renameTagButton-${tag.name}"),
+                    ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
+                    IconButton(
+                        onClick = { onDelete(tag) },
+                        modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
+                    ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
                 }
-                IconButton(
-                    onClick = { onRename(tag) },
-                    modifier = Modifier.testTag("renameTagButton-${tag.name}"),
-                ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
-                IconButton(
-                    onClick = { onDelete(tag) },
-                    modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
-                ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
             }
         }
     }

@@ -1,7 +1,10 @@
 package com.spendobserver.ui.trackers
 
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isNotEnabled
@@ -9,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -69,6 +73,40 @@ class TrackerEditScreenTest {
                 onBackClick = {},
             )
         }
+    }
+
+    private fun insertTags(prefix: String, count: Int, isGlobal: Boolean) = runBlocking {
+        repeat(count) { tagRepository.insertTag(Tag(trackerId = trackerId, name = "$prefix$it", isGlobal = isGlobal)) }
+    }
+
+    private fun sectionHeight(tag: String) = composeRule.onNodeWithTag(tag).getUnclippedBoundsInRoot().let { it.bottom - it.top }
+
+    @Test
+    fun fewTagsOnBothLevels_shareTheHeightEqually() {
+        insertTags("place", 2, isGlobal = true)
+        insertTags("what", 1, isGlobal = false)
+
+        setContent()
+        composeRule.waitForText("what0")
+
+        assertEquals(sectionHeight("globalTagsSection").value, sectionHeight("localTagsSection").value, 1f)
+    }
+
+    @Test
+    fun manyGlobalAndFewLocal_globalTakesTheRoom_andScrollsInside() {
+        insertTags("place", 30, isGlobal = true)
+        insertTags("what", 2, isGlobal = false)
+
+        setContent()
+        composeRule.waitForText("what1")
+
+        assertTrue(sectionHeight("globalTagsSection") > sectionHeight("localTagsSection"))
+        composeRule.onNodeWithText("what1").assertIsDisplayed()
+        composeRule.onNodeWithText("place29").assertIsNotDisplayed()
+
+        composeRule.onNodeWithText("place29").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("newGlobalTagButton").assertIsDisplayed()
+        composeRule.onNodeWithTag("trackerNameInput").assertIsDisplayed()
     }
 
     @Test
