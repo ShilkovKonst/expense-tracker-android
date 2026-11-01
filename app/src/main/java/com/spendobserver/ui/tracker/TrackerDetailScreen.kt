@@ -1,6 +1,7 @@
 package com.spendobserver.ui.tracker
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -27,6 +28,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -54,6 +56,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,6 +77,7 @@ import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.alternatingRowColor
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.monthText
 import com.spendobserver.ui.common.signedAmountText
@@ -116,6 +121,10 @@ fun TrackerDetailScreen(
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
+    // Each year's place among the years, whatever months and records lie open between them.
+    val yearPositions = remember(items) {
+        items.filterIsInstance<AccordionItem.Year>().withIndex().associate { (position, year) -> year.group.year to position }
+    }
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     var showDeleteTrackerDialog by remember { mutableStateOf(false) }
@@ -225,24 +234,30 @@ fun TrackerDetailScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             ) {
                 // contentType: a scrolled-off record row is reused only for another record, not rebuilt as a header.
-                items(items, key = { it.key }, contentType = { it::class }) { item ->
-                    when (item) {
-                        is AccordionItem.Year -> YearHeader(
-                            yearGroup = item.group,
-                            expanded = item.expanded,
-                            onClick = { viewModel.toggleYear(item.group.year) },
-                        )
-                        is AccordionItem.Month -> MonthHeader(
-                            monthGroup = item.group,
-                            expanded = item.expanded,
-                            onClick = { viewModel.toggleMonth(item.group.year, item.group.month) },
-                        )
-                        is AccordionItem.RecordEntry -> RecordRow(
-                            details = item.record,
-                            partsExpanded = item.partsExpanded,
-                            onTogglePartsClick = { viewModel.toggleRecordParts(item.record.record.id) },
-                            onClick = { onRecordClick(item.record.record) },
-                        )
+                itemsIndexed(items, key = { _, item -> item.key }, contentType = { _, item -> item::class }) { index, item ->
+                    // A year's shade covers everything open under it, down to its last record.
+                    val yearColor = alternatingRowColor(yearPositions.getValue(item.year))
+                    Box(modifier = Modifier.fillMaxWidth().background(yearColor)) {
+                        when (item) {
+                            is AccordionItem.Year -> YearHeader(
+                                yearGroup = item.group,
+                                expanded = item.expanded,
+                                onClick = { viewModel.toggleYear(item.group.year) },
+                            )
+                            is AccordionItem.Month -> MonthHeader(
+                                monthGroup = item.group,
+                                expanded = item.expanded,
+                                onClick = { viewModel.toggleMonth(item.group.year, item.group.month) },
+                            )
+                            is AccordionItem.RecordEntry -> RecordRow(
+                                details = item.record,
+                                partsExpanded = item.partsExpanded,
+                                onTogglePartsClick = { viewModel.toggleRecordParts(item.record.record.id) },
+                                onClick = { onRecordClick(item.record.record) },
+                                // The month or year header after a month's last record is separator enough.
+                                showDivider = items.getOrNull(index + 1) is AccordionItem.RecordEntry,
+                            )
+                        }
                     }
                 }
             }
@@ -261,33 +276,55 @@ fun TrackerDetailScreen(
     }
 }
 
+private val AccordionItem.year: Int
+    get() = when (this) {
+        is AccordionItem.Year -> group.year
+        is AccordionItem.Month -> group.year
+        is AccordionItem.RecordEntry -> record.record.date.year
+    }
+
 @Composable
 private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> Unit) {
     val count = yearGroup.months.sumOf { it.records.size }
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { ExpandChevron(expanded) },
-        headlineContent = {
-            Text(yearGroup.year.toString(), fontWeight = RecordTextWeight, fontSize = YearTextSize)
-        },
-        supportingContent = { Text(pluralStringResource(R.plurals.records_count, count, count)) },
-        trailingContent = { NetAmountText(yearGroup.totals) },
-    )
+    Column {
+        ListItem(
+            modifier = Modifier.clickable(onClick = onClick),
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            leadingContent = { ExpandChevron(expanded) },
+            headlineContent = {
+                Text(yearGroup.year.toString(), fontWeight = RecordTextWeight, fontSize = YearTextSize)
+            },
+            supportingContent = { Text(pluralStringResource(R.plurals.records_count, count, count)) },
+            trailingContent = { NetAmountText(yearGroup.totals) },
+        )
+        // Across the whole width and thicker than a month's, while its months are open below it.
+        if (expanded) {
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
 
 @Composable
 private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
-        leadingContent = { ExpandChevron(expanded) },
-        headlineContent = {
-            Text(monthText(monthGroup.month), fontWeight = RecordTextWeight, fontSize = MonthTextSize)
-        },
-        supportingContent = {
-            Text(pluralStringResource(R.plurals.records_count, monthGroup.records.size, monthGroup.records.size))
-        },
-        trailingContent = { NetAmountText(monthGroup.totals) },
-    )
+    Column {
+        ListItem(
+            modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            leadingContent = { ExpandChevron(expanded) },
+            headlineContent = {
+                Text(monthText(monthGroup.month), fontWeight = RecordTextWeight, fontSize = MonthTextSize)
+            },
+            supportingContent = {
+                Text(pluralStringResource(R.plurals.records_count, monthGroup.records.size, monthGroup.records.size))
+            },
+            trailingContent = { NetAmountText(monthGroup.totals) },
+        )
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
 }
 
 /**
@@ -295,7 +332,7 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
  * so text never runs into a neighbor:
  *
  * 1. the day of month, fixed width;
- * 2. the data — tags, the parts with their subtotals, the description —
+ * 2. the data — tags, the description, the parts with their subtotals —
  *    taking whatever width is left (`weight(1f)`), so anything long wraps
  *    *inside* this column;
  * 3. the record's signed total.
@@ -306,8 +343,8 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
  * baseline-aligned: the middle [Column] reports its first line's baseline.
  *
  * A one-part record shows a single tags line (global tags highlighted).
- * A split record shows its global tags, then a collapsed "▸ N частей"
- * toggle; expanded, one line per part with its local tags and subtotal.
+ * A split record shows its global tags and description, then a collapsed
+ * "▸ N частей" toggle; expanded, one line per part with its local tags and subtotal.
  * The toggle has its own click handler, so tapping it expands the parts
  * instead of opening the record.
  */
@@ -317,71 +354,91 @@ private fun RecordRow(
     partsExpanded: Boolean,
     onTogglePartsClick: () -> Unit,
     onClick: () -> Unit,
+    showDivider: Boolean,
 ) {
     val record = details.record
     val isSplit = details.parts.size > 1
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-    ) {
-        Text(
-            text = record.date.day.toString().padStart(2, '0'),
-            fontWeight = RecordTextWeight,
-            fontSize = RecordTextSize,
-            modifier = Modifier.width(32.dp).alignByBaseline(),
-        )
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+    Column {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp, end = 12.dp)
-                .alignByBaseline(),
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         ) {
-            val globalChips = details.tags.map { TagChip(it.name, global = true) }
-            val headerChips = if (isSplit) globalChips else globalChips + details.parts.single().tags.map { TagChip(it.name) }
-            LabeledTagsField(stringResource(R.string.record_tags_label), headerChips)
-            if (isSplit) {
-                PartsToggle(
-                    count = details.parts.size,
-                    expanded = partsExpanded,
-                    onClick = onTogglePartsClick,
-                    modifier = Modifier.testTag("partsToggle-${record.id}"),
-                )
-                if (partsExpanded) {
-                    for (part in details.parts) {
-                        PartLine(tagNames = part.tags.map { it.name }, amountCents = part.part.amountCents)
+            Text(
+                text = record.date.day.toString().padStart(2, '0'),
+                fontWeight = RecordTextWeight,
+                fontSize = RecordTextSize,
+                modifier = Modifier.width(32.dp).alignByBaseline(),
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp, end = 12.dp)
+                    .alignByBaseline(),
+            ) {
+                val globalChips = details.tags.map { TagChip(it.name, global = true) }
+                val headerChips = if (isSplit) globalChips else globalChips + details.parts.single().tags.map { TagChip(it.name) }
+                LabeledTagsField(stringResource(R.string.record_tags_label), headerChips)
+                DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
+                if (isSplit) {
+                    PartsToggle(
+                        count = details.parts.size,
+                        expanded = partsExpanded,
+                        onClick = onTogglePartsClick,
+                        modifier = Modifier.testTag("partsToggle-${record.id}"),
+                    )
+                    if (partsExpanded) {
+                        for (part in details.parts) {
+                            PartLine(tagNames = part.tags.map { it.name }, amountCents = part.part.amountCents)
+                        }
                     }
                 }
             }
-            DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
+            val (signedCents, color) = when (record.type) {
+                RecordType.INCOME -> details.amountCents to incomeColor
+                RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
+            }
+            Text(
+                text = signedAmountText(signedCents),
+                color = color,
+                fontWeight = RecordTextWeight,
+                fontSize = RecordTextSize,
+                modifier = Modifier.alignByBaseline(),
+            )
         }
-        val (signedCents, color) = when (record.type) {
-            RecordType.INCOME -> details.amountCents to incomeColor
-            RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
+        if (showDivider) {
+            // Starts at the data column (32dp inset + 32dp day + 8dp), leaving the days a clean column.
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 72.dp, end = 16.dp),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
         }
-        Text(
-            text = signedAmountText(signedCents),
-            color = color,
-            fontWeight = RecordTextWeight,
-            fontSize = RecordTextSize,
-            modifier = Modifier.alignByBaseline(),
-        )
     }
 }
 
 @Composable
 private fun PartsToggle(count: Int, expanded: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    // Same height and label style as the tags and description lines; only the arrow is marked as the control.
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.clickable(onClick = onClick).padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.clickable(onClick = onClick),
     ) {
-        ExpandChevron(expanded, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer),
+        ) {
+            ExpandChevron(expanded, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+        }
         Text(
             text = pluralStringResource(R.plurals.parts_count, count, count),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
+            fontWeight = RecordTextWeight,
+            fontSize = RecordTextSize,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -19,6 +19,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -62,6 +63,7 @@ import com.spendobserver.ui.backup.ImportViewModel
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.backup.rememberImportLauncher
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.alternatingRowColor
 import com.spendobserver.ui.common.signedAmountText
 import com.spendobserver.ui.common.trackerNameText
 import kotlinx.coroutines.launch
@@ -208,9 +210,10 @@ fun TrackerListScreen(
                 contentPadding = PaddingValues(bottom = 88.dp),
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             ) {
-                items(trackers, key = { it.id }) { tracker ->
+                itemsIndexed(trackers, key = { _, tracker -> tracker.id }) { index, tracker ->
                     TrackerRow(
                         tracker = tracker,
+                        position = index,
                         stats = statsByTracker[tracker.id] ?: TrackerStats.EMPTY,
                         onClick = { onTrackerClick(tracker) },
                         onEditClick = { onEditTrackerClick(tracker) },
@@ -275,6 +278,7 @@ fun TrackerListScreen(
 @Composable
 private fun TrackerRow(
     tracker: Tracker,
+    position: Int,
     stats: TrackerStats,
     onClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -282,6 +286,7 @@ private fun TrackerRow(
 ) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
+        colors = ListItemDefaults.colors(containerColor = alternatingRowColor(position)),
         headlineContent = { Text(tracker.title) },
         supportingContent = {
             Text(
