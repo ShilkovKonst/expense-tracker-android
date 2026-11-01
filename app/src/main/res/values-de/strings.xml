@@ -94,7 +94,7 @@
     <string name="receipt_total_clear">Summe entfernen</string>
     <string name="record_delete_title">Eintrag löschen?</string>
     <string name="record_delete_text">Dies kann nicht rückgängig gemacht werden.</string>
-    <string name="error_amount">Geben Sie einen Betrag größer als null ein</string>
+    <string name="error_amount">Geben Sie einen Betrag von mindestens null ein</string>
     <string name="error_receipt_total">Geben Sie die Bonsumme ein</string>
     <string name="error_parts_exceed_total">Die Teile müssen zusammen weniger als die Bonsumme ergeben</string>
     <string name="error_duplicate_part_tags">Ein anderer Teil hat bereits dieselben Labels</string>
@@ -183,7 +183,7 @@
     <string name="import_issue_tag_not_global">das Label „%1$s“ ist nicht global – es gehört zu den Teilen des Eintrags</string>
     <string name="import_issue_tag_is_global">das Label „%1$s“ ist global – es gehört zum Eintrag, nicht zu seinen Teilen</string>
     <string name="import_issue_no_parts">keine Teile</string>
-    <string name="import_issue_non_positive_amount">der Betrag muss größer als null sein</string>
+    <string name="import_issue_negative_amount">der Betrag darf nicht negativ sein</string>
     <string name="import_issue_duplicate_part_tags">zwei Teile haben dieselben Labels</string>
     <string name="import_issue_several_global_tags">mehr als ein globales Label</string>
 

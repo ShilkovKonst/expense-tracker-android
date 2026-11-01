@@ -125,10 +125,20 @@ class RecordRepositoryTest {
     }
 
     @Test
-    fun insertRecord_rejectsNonPositivePart() {
+    fun insertRecord_rejectsNegativePart() {
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { repository.insertRecord(record(), emptySet(), listOf(PartDraft(1000, emptySet()), PartDraft(0, emptySet()))) }
+            runBlocking { repository.insertRecord(record(), emptySet(), listOf(PartDraft(1000, emptySet()), PartDraft(-1, emptySet()))) }
         }
+    }
+
+    @Test
+    fun insertRecord_acceptsZeroAmount() = runBlocking {
+        repository.insertRecord(record(), emptySet(), listOf(PartDraft(0, emptySet())))
+
+        val stats = repository.observeStatsByTracker().first().getValue(trackerId)
+
+        assertEquals(1, stats.recordCount)
+        assertEquals(0L, stats.totals.costCents)
     }
 
     @Test

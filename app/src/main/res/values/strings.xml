@@ -94,7 +94,7 @@
     <string name="receipt_total_clear">Remove total</string>
     <string name="record_delete_title">Delete record?</string>
     <string name="record_delete_text">This can’t be undone.</string>
-    <string name="error_amount">Enter an amount greater than zero</string>
+    <string name="error_amount">Enter an amount of zero or more</string>
     <string name="error_receipt_total">Enter the receipt total</string>
     <string name="error_parts_exceed_total">The parts must add up to less than the receipt total</string>
     <string name="error_duplicate_part_tags">Another part already has the same tags</string>
@@ -185,7 +185,7 @@
     <string name="import_issue_tag_not_global">tag “%1$s” isn’t global — it belongs on the record’s parts</string>
     <string name="import_issue_tag_is_global">tag “%1$s” is global — it belongs on the record, not on its parts</string>
     <string name="import_issue_no_parts">no parts</string>
-    <string name="import_issue_non_positive_amount">the amount must be greater than zero</string>
+    <string name="import_issue_negative_amount">the amount can\'t be negative</string>
     <string name="import_issue_duplicate_part_tags">two parts have the same tags</string>
     <string name="import_issue_several_global_tags">more than one global tag</string>
 

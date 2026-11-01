@@ -28,8 +28,12 @@ class AmountCentsFromTest {
     }
 
     @Test
-    fun zeroOrNegativeResult_returnsNull() {
-        assertNull(amountCentsFrom("0"))
+    fun zero_isAnAmount() {
+        assertEquals(0L, amountCentsFrom("0"))
+    }
+
+    @Test
+    fun negativeResult_returnsNull() {
         assertNull(amountCentsFrom("5-10"))
     }
 

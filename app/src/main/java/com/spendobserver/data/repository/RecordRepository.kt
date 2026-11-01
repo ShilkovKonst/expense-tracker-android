@@ -77,7 +77,7 @@ class RecordRepository(
 
     private fun requireValidParts(parts: List<PartDraft>) {
         require(parts.isNotEmpty()) { "A record needs at least one part" }
-        require(parts.all { it.amountCents > 0 }) { "Every part's amount must be positive" }
+        require(parts.all { it.amountCents >= 0 }) { "A part's amount can't be negative" }
     }
 }
 

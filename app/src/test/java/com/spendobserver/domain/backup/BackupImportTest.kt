@@ -138,14 +138,22 @@ class BackupImportTest {
     }
 
     @Test
+    fun zeroAmount_isAccepted() {
+        val result = parseBackup(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 0}]}"""))
+
+        val tracker = (result as BackupParseResult.Success).trackers.single()
+        assertEquals(0L, tracker.records.single().parts.single().amountCents)
+    }
+
+    @Test
     fun partsRules() {
         assertEquals(
             BackupError.Invalid(inRecord, BackupIssue.NoParts),
             failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": []}""")),
         )
         assertEquals(
-            BackupError.Invalid(inRecord.copy(partNumber = 2), BackupIssue.NonPositiveAmount),
-            failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 5}, {"amount": 0, "tags": ["алко"]}]}""")),
+            BackupError.Invalid(inRecord.copy(partNumber = 2), BackupIssue.NegativeAmount),
+            failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 5}, {"amount": -1, "tags": ["алко"]}]}""")),
         )
         assertEquals(
             BackupError.Invalid(inRecord, BackupIssue.DuplicatePartTags),

@@ -73,7 +73,7 @@ sealed interface BackupIssue {
     data class TagIsGlobal(val name: String) : BackupIssue
     data object SeveralGlobalTags : BackupIssue
     data object NoParts : BackupIssue
-    data object NonPositiveAmount : BackupIssue
+    data object NegativeAmount : BackupIssue
     data object DuplicatePartTags : BackupIssue
 }
 
@@ -100,7 +100,7 @@ private fun fail(where: BackupLocation, issue: BackupIssue): Nothing = fail(Back
  * so an import can't store what the app could never have produced:
  * names non-blank and unique ignoring case, global tags only on records and
  * local ones only on parts, at most one global tag and at least one part per
- * record, positive amounts,
+ * record, no negative amounts,
  * no two parts of one record with the same tags.
  */
 fun validateBackup(file: BackupFile): BackupParseResult = try {
@@ -166,7 +166,7 @@ private fun validateRecord(record: BackupRecord, trackerWhere: BackupLocation, t
     if (record.parts.isEmpty()) fail(where, BackupIssue.NoParts)
     val parts = record.parts.mapIndexed { i, part ->
         val partWhere = where.copy(partNumber = i + 1)
-        if (part.amount <= 0) fail(partWhere, BackupIssue.NonPositiveAmount)
+        if (part.amount < 0) fail(partWhere, BackupIssue.NegativeAmount)
         ImportedPart(part.amount, resolve(part.tags, global = false, owner = partWhere))
     }
     parts.forEachIndexed { i, part ->

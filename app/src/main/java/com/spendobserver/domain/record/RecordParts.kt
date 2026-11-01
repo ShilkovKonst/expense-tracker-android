@@ -187,7 +187,7 @@ data class PartsEvaluation(
 )
 
 sealed interface PartsError {
-    /** A typed part amount is empty, malformed, or not positive. */
+    /** A typed part amount is empty, malformed, or negative. */
     data class InvalidAmount(val partId: Int) : PartsError
 
     data object InvalidReceiptTotal : PartsError

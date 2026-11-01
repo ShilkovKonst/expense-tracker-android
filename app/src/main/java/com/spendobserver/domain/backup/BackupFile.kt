@@ -53,7 +53,7 @@ data class BackupRecord(
 
 @Serializable
 data class BackupPart(
-    /** Cents, always positive. */
+    /** Cents, zero or more. */
     val amount: Long,
     /** Names of local tags. */
     val tags: List<String> = emptyList(),
