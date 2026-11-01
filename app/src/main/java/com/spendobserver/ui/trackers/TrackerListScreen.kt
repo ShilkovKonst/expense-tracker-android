@@ -296,7 +296,7 @@ private fun TrackerRow(
                 IconButton(
                     onClick = onEditClick,
                     modifier = Modifier.testTag("editTrackerButton-${tracker.title}"),
-                ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
+                ) { Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.menu_settings)) }
                 IconButton(
                     onClick = onDeleteClick,
                     modifier = Modifier.testTag("deleteTrackerButton-${tracker.title}"),

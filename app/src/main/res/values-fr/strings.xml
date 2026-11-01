@@ -217,7 +217,7 @@
     <string-array name="faq_trackers_a">
         <item>Un tracker est un registre distinct, avec ses propres opérations et étiquettes, par exemple personnel, familial ou professionnel. Les trackers sont indépendants les uns des autres.</item>
         <item>Pour créer un tracker, appuyez sur « Ajouter un tracker » sur l’écran principal et saisissez un nom. Le nouveau tracker s’ouvre immédiatement.</item>
-        <item>Un tracker peut être renommé ou supprimé à l’aide des boutons ✎ et 🗑 de sa ligne sur l’écran principal, ou via le menu « ⋮ » de l’écran du tracker. La suppression d’un tracker entraîne celle de toutes ses opérations.</item>
+        <item>Un tracker peut être renommé ou supprimé à l’aide des boutons ⚙ et 🗑 de sa ligne sur l’écran principal, ou via le menu « ⋮ » de l’écran du tracker. La suppression d’un tracker entraîne celle de toutes ses opérations.</item>
     </string-array>
     <string name="faq_records_q">Comment ajouter, modifier ou supprimer une opération ?</string>
     <string-array name="faq_records_a">

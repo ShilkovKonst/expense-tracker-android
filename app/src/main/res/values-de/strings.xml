@@ -210,7 +210,7 @@
     <string-array name="faq_trackers_a">
         <item>Ein Tracker ist ein eigenes Verzeichnis mit eigenen Einträgen und Labels, zum Beispiel ein persönliches, ein familiäres oder ein berufliches. Die Tracker sind voneinander unabhängig.</item>
         <item>Um einen Tracker zu erstellen, tippen Sie auf dem Hauptbildschirm auf „Tracker hinzufügen“ und geben Sie einen Namen ein. Der neue Tracker wird sofort geöffnet.</item>
-        <item>Ein Tracker lässt sich über die Schaltflächen ✎ und 🗑 in seiner Zeile auf dem Hauptbildschirm oder über das Menü „⋮“ auf dem Bildschirm des Trackers umbenennen oder löschen. Beim Löschen eines Trackers werden alle seine Einträge gelöscht.</item>
+        <item>Ein Tracker lässt sich über die Schaltflächen ⚙ und 🗑 in seiner Zeile auf dem Hauptbildschirm oder über das Menü „⋮“ auf dem Bildschirm des Trackers umbenennen oder löschen. Beim Löschen eines Trackers werden alle seine Einträge gelöscht.</item>
     </string-array>
     <string name="faq_records_q">Wie füge ich einen Eintrag hinzu, bearbeite oder lösche ihn?</string>
     <string-array name="faq_records_a">
