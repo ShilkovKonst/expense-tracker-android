@@ -178,6 +178,40 @@ class RecordPartsTest {
     }
 
     @Test
+    fun unsplit_withEmptyParts_undoesSplitExactly() {
+        val simple = PartsInput().setPartAmount(0, "500").togglePartTag(0, groceries)
+
+        val input = simple.split()
+
+        assertFalse(input.hasPartData)
+        assertEquals(simple, input.unsplit())
+    }
+
+    @Test
+    fun unsplit_withPartData_keepsOnlyTheReceiptTotal() {
+        val receipt = ashanReceipt()
+
+        assertTrue(receipt.hasPartData)
+        val simple = receipt.unsplit()
+
+        assertFalse(simple.isSplit)
+        assertEquals("3450", simple.parts.single().amountExpression)
+        assertEquals(emptySet<Long>(), simple.parts.single().tagIds)
+    }
+
+    @Test
+    fun unsplit_withoutReceiptTotal_leavesAnEmptyAmount() {
+        val saved = PartsInput.fromSaved(listOf(PartDraft(80000, setOf(alcohol)), PartDraft(235000, setOf(groceries))))
+
+        assertTrue(saved.hasPartData)
+        val simple = saved.unsplit()
+
+        assertFalse(simple.isSplit)
+        assertEquals("", simple.parts.single().amountExpression)
+        assertEquals(emptySet<Long>(), simple.parts.single().tagIds)
+    }
+
+    @Test
     fun fromSaved_restoresEveryPartAsTyped() {
         val input = PartsInput.fromSaved(listOf(PartDraft(80000, setOf(alcohol)), PartDraft(235000, setOf(groceries))))
 

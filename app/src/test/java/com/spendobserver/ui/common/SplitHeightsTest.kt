@@ -1,4 +1,4 @@
-package com.spendobserver.ui.trackers
+package com.spendobserver.ui.common
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

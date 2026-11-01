@@ -46,6 +46,7 @@ import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.LabeledOutlinedBox
+import com.spendobserver.ui.common.SplitByContentColumn
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.tagNameText
 import com.spendobserver.ui.common.trackerNameText

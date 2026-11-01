@@ -83,6 +83,9 @@
     <string name="record_date_label">Date</string>
     <string name="amount_label">Montant</string>
     <string name="record_split">Diviser en parties</string>
+    <string name="record_unsplit">Sans parties</string>
+    <string name="record_unsplit_title">Supprimer les parties ?</string>
+    <string name="record_unsplit_text">Les parties, avec leurs montants et leurs étiquettes, seront réinitialisées. Le total du ticket, s’il est indiqué, deviendra le montant de l’opération.</string>
     <string name="part_add">+ Partie</string>
     <string name="part_number">Partie %1$d</string>
     <string name="part_remainder">Reste</string>
@@ -227,7 +230,7 @@
     <string name="faq_parts_q">Que sont les parties d’une opération et le total du ticket ?</string>
     <string-array name="faq_parts_a">
         <item>Une opération correspond à un seul événement, par exemple un ticket de caisse, et peut se composer de plusieurs parties. Chaque partie a son propre montant et ses propres étiquettes. Le montant d’une opération est toujours égal à la somme de ses parties.</item>
-        <item>Pour diviser une opération, appuyez sur « Diviser en parties » sous le champ du montant. Les nouvelles parties s’ajoutent avec le bouton « + Partie » ; les parties inutiles se suppriment avec le bouton ✕.</item>
+        <item>Pour diviser une opération, appuyez sur « Diviser en parties » sous le champ du montant. Les nouvelles parties s’ajoutent avec le bouton « + Partie » ; les parties inutiles se suppriment avec le bouton ✕. Pour revenir à une opération simple, appuyez sur « Sans parties » : les parties seront réinitialisées.</item>
         <item>Si le total du ticket est connu, saisissez-le dans le champ « Total du ticket » et isolez certaines parties. Le reste est calculé automatiquement et constitue la dernière partie. La somme des parties isolées doit être inférieure au total du ticket.</item>
         <item>Deux parties d’une même opération ne peuvent pas avoir le même ensemble d’étiquettes.</item>
     </string-array>

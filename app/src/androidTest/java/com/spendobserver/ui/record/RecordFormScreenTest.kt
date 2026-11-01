@@ -289,7 +289,9 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("800")
         // Part 0's chips come first, the remainder's second.
         composeRule.onAllNodesWithText("алко")[0].performScrollTo().performClick()
-        composeRule.onAllNodesWithText("продукты")[1].performScrollTo().performClick()
+        // Scrolled past it first: a chip only just in view sits under the floating Cancel/Save.
+        composeRule.onNodeWithTag("descriptionInput").performScrollTo()
+        composeRule.onAllNodesWithText("продукты")[1].performClick()
         composeRule.onNodeWithTag("remainderAmount").performScrollTo().assertTextEquals(amount(265000))
         composeRule.onNodeWithTag("saveButton").performClick()
         composeRule.waitFor { savedCount == 1 }
@@ -301,6 +303,43 @@ class RecordFormScreenTest {
             listOf(80000L to setOf(alcohol), 265000L to setOf(groceries)),
             saved.parts.map { p -> p.part.amountCents to p.tags.map { it.id }.toSet() },
         )
+    }
+
+    @Test
+    fun unsplit_withEmptyParts_returnsAtOnceWithTheAmount() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("100")
+        composeRule.onNodeWithTag("splitButton").performClick()
+        composeRule.onNodeWithTag("unsplitButton").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("confirmUnsplitButton").assertDoesNotExist()
+        composeRule.onNodeWithTag("amountInput").assertTextContains("100")
+    }
+
+    @Test
+    fun unsplit_withPartData_warnsThenResetsToTheReceiptTotal() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("100")
+        composeRule.onNodeWithTag("splitButton").performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("30")
+        composeRule.onNodeWithTag("unsplitButton").performScrollTo().performClick()
+
+        // Cancel keeps the parts.
+        composeRule.onNodeWithTag("cancelUnsplitButton").performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").assertExists()
+
+        composeRule.onNodeWithTag("unsplitButton").performScrollTo().performClick()
+        composeRule.onNodeWithTag("confirmUnsplitButton").performClick()
+        composeRule.onNodeWithTag("partAmountInput-0").assertDoesNotExist()
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitFor { savedCount == 1 }
+
+        val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }
+        assertEquals(listOf(10000L), saved.parts.map { it.part.amountCents })
     }
 
     @Test

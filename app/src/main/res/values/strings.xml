@@ -80,6 +80,9 @@
     <string name="record_date_label">Date</string>
     <string name="amount_label">Amount</string>
     <string name="record_split">Split into parts</string>
+    <string name="record_unsplit">Without parts</string>
+    <string name="record_unsplit_title">Remove the parts?</string>
+    <string name="record_unsplit_text">The parts, with their amounts and tags, will be reset. The receipt total, if there is one, becomes the record’s amount.</string>
     <string name="part_add">+ Part</string>
     <string name="part_number">Part %1$d</string>
     <string name="part_remainder">Remainder</string>
@@ -222,7 +225,7 @@
     <string name="faq_parts_q">What are record parts and the receipt total?</string>
     <string-array name="faq_parts_a">
         <item>A record corresponds to a single event, such as one receipt, and may consist of several parts. Each part has its own amount and its own tags. The amount of a record always equals the sum of its parts.</item>
-        <item>To divide a record, tap “Split into parts” below the amount field. New parts are added with the “+ Part” button; unneeded ones are removed with the ✕ button.</item>
+        <item>To divide a record, tap “Split into parts” below the amount field. New parts are added with the “+ Part” button; unneeded ones are removed with the ✕ button. To return to a simple record, tap “Without parts”: the parts are reset.</item>
         <item>If the total of the receipt is known, enter it in the “Receipt total” field and single out individual parts. The remainder is calculated automatically and becomes the last part. The parts singled out must add up to less than the receipt total.</item>
         <item>Two parts of the same record cannot have the same set of tags.</item>
     </string-array>

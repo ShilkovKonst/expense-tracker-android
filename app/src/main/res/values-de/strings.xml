@@ -80,6 +80,9 @@
     <string name="record_date_label">Datum</string>
     <string name="amount_label">Betrag</string>
     <string name="record_split">In Teile aufteilen</string>
+    <string name="record_unsplit">Ohne Teile</string>
+    <string name="record_unsplit_title">Teile entfernen?</string>
+    <string name="record_unsplit_text">Die Teile mit ihren Beträgen und Labels werden zurückgesetzt. Die Bonsumme wird, falls angegeben, zum Betrag des Eintrags.</string>
     <string name="part_add">+ Teil</string>
     <string name="part_number">Teil %1$d</string>
     <string name="part_remainder">Rest</string>
@@ -220,7 +223,7 @@
     <string name="faq_parts_q">Was sind Teile eines Eintrags und die Bonsumme?</string>
     <string-array name="faq_parts_a">
         <item>Ein Eintrag entspricht einem einzelnen Vorgang, zum Beispiel einem Kassenbon, und kann aus mehreren Teilen bestehen. Jeder Teil hat einen eigenen Betrag und eigene Labels. Der Betrag eines Eintrags entspricht stets der Summe seiner Teile.</item>
-        <item>Um einen Eintrag aufzuteilen, tippen Sie unter dem Betragsfeld auf „In Teile aufteilen“. Neue Teile werden mit der Schaltfläche „+ Teil“ hinzugefügt, nicht benötigte mit der Schaltfläche ✕ entfernt.</item>
+        <item>Um einen Eintrag aufzuteilen, tippen Sie unter dem Betragsfeld auf „In Teile aufteilen“. Neue Teile werden mit der Schaltfläche „+ Teil“ hinzugefügt, nicht benötigte mit der Schaltfläche ✕ entfernt. Um zu einem einfachen Eintrag zurückzukehren, tippen Sie auf „Ohne Teile“; die Teile werden dabei zurückgesetzt.</item>
         <item>Ist die Summe des Kassenbons bekannt, geben Sie sie im Feld „Bonsumme“ ein und erfassen Sie einzelne Teile gesondert. Der Rest wird automatisch berechnet und bildet den letzten Teil. Die gesondert erfassten Teile müssen zusammen weniger als die Bonsumme ergeben.</item>
         <item>Zwei Teile desselben Eintrags können nicht dieselbe Kombination von Labels haben.</item>
     </string-array>

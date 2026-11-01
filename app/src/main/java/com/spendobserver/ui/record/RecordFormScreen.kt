@@ -3,15 +3,17 @@ package com.spendobserver.ui.record
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -35,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +50,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,16 +73,25 @@ import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.FormActionButtons
 import com.spendobserver.ui.common.FormActionsBottomPadding
 import com.spendobserver.ui.common.LabeledOutlinedBox
+import com.spendobserver.ui.common.SplitByContentColumn
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.dateText
+import com.spendobserver.ui.common.fadingBottomEdge
 import com.spendobserver.ui.navigation.RecordChange
 import com.spendobserver.ui.common.tagNameText
+import com.spendobserver.ui.common.verticalScrollbar
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
 /** Where a tag created from the "+" chip goes: the record (global) or one part (local). */
 private data class NewTagTarget(val isGlobal: Boolean, val partId: Int? = null)
+
+/** Below this, the fixed fields leave the two tag sections too little height to be worth splitting. */
+private val MinHeightForOneScreenForm = 680.dp
+
+/** A tag section's limit where the whole form scrolls: a long tag list mustn't push the fields below far away. */
+private val MaxTagSectionHeight = 200.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,6 +128,7 @@ fun RecordFormScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var newTagTarget by remember { mutableStateOf<NewTagTarget?>(null) }
     var showDeleteRecordDialog by remember { mutableStateOf(false) }
+    var showUnsplitDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -142,149 +157,175 @@ fun RecordFormScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        // imePadding: the open keyboard takes height away, so the form falls back
+        // to scrolling and the field being typed in can move above the keyboard.
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FormActionsBottomPadding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .consumeWindowInsets(innerPadding)
+                .imePadding(),
         ) {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = type == RecordType.COST,
-                    onClick = { viewModel.setType(RecordType.COST) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text(stringResource(R.string.record_type_cost)) }
-                SegmentedButton(
-                    selected = type == RecordType.INCOME,
-                    onClick = { viewModel.setType(RecordType.INCOME) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text(stringResource(R.string.record_type_income)) }
-            }
-
-            OutlinedTextField(
-                value = dateText(date),
-                onValueChange = {},
-                // enabled = false, not readOnly = true: a read-only field
-                // still runs its own tap-to-focus/cursor gesture handling,
-                // which wins over a plain Modifier.clickable wrapped around
-                // it — so the dialog below never opened and the date stayed
-                // stuck on today. Disabling the field entirely stops it
-                // from touching input at all, leaving our clickable as the
-                // only handler; the disabled-state colors are overridden
-                // below so it still looks like a normal field, not greyed
-                // out.
-                enabled = false,
-                label = { Text(stringResource(R.string.record_date_label)) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+            // A split record grows past the screen anyway; so does a form too short to split usefully.
+            val fitOnOneScreen = !parts.isSplit && maxHeight >= MinHeightForOneScreenForm
+            val formScrollState = rememberScrollState()
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true }
-                    .testTag("dateInput"),
-            )
+                    .fillMaxSize()
+                    .then(if (fitOnOneScreen) Modifier else Modifier.verticalScroll(formScrollState))
+                    .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FormActionsBottomPadding),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = type == RecordType.COST,
+                        onClick = { viewModel.setType(RecordType.COST) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    ) { Text(stringResource(R.string.record_type_cost)) }
+                    SegmentedButton(
+                        selected = type == RecordType.INCOME,
+                        onClick = { viewModel.setType(RecordType.INCOME) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    ) { Text(stringResource(R.string.record_type_income)) }
+                }
 
-            // One row per tag level: global first, then — for a simple record —
-            // local. A split record's local tags belong to each part, inside
-            // its card, so then only the global row is here.
-            TagChipsSection(
-                title = stringResource(R.string.tags_global_title),
-                hint = stringResource(R.string.tags_global_hint),
-                tags = globalTags,
-                selectedIds = globalTagIds,
-                onToggle = viewModel::toggleGlobalTag,
-                onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
-                newTagChipTestTag = "newGlobalTagChip",
-            )
-            if (!parts.isSplit) {
-                val only = parts.parts.single()
-                TagChipsSection(
-                    title = stringResource(R.string.tags_local_title),
-                    hint = stringResource(R.string.tags_local_hint),
-                    tags = localTags,
-                    selectedIds = only.tagIds,
-                    onToggle = { viewModel.togglePartTag(only.id, it) },
-                    onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
-                    newTagChipTestTag = "newTagChip",
+                OutlinedTextField(
+                    value = dateText(date),
+                    onValueChange = {},
+                    // enabled = false, not readOnly = true: a read-only field
+                    // still runs its own tap-to-focus/cursor gesture handling,
+                    // which wins over a plain Modifier.clickable wrapped around
+                    // it — so the dialog below never opened and the date stayed
+                    // stuck on today. Disabling the field entirely stops it
+                    // from touching input at all, leaving our clickable as the
+                    // only handler; the disabled-state colors are overridden
+                    // below so it still looks like a normal field, not greyed
+                    // out.
+                    enabled = false,
+                    label = { Text(stringResource(R.string.record_date_label)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
+                        .testTag("dateInput"),
                 )
-            }
 
-            if (!parts.isSplit) {
-                // Simple record: one amount field, exactly like before parts existed.
-                val only = parts.parts.single()
-                Column {
-                    AmountField(
-                        value = only.amountExpression,
-                        onValueChange = { viewModel.setPartAmount(only.id, it) },
-                        label = stringResource(R.string.amount_label),
-                        error = errors.amountErrorFor(only.id),
-                        mode = viewModel.calculatorMode,
-                        modifier = Modifier.testTag("amountInput"),
+                val globalSection = @Composable { sectionModifier: Modifier ->
+                    TagChipsSection(
+                        title = stringResource(R.string.tags_global_title),
+                        hint = stringResource(R.string.tags_global_hint),
+                        tags = globalTags,
+                        selectedIds = globalTagIds,
+                        fillHeight = fitOnOneScreen,
+                        onToggle = viewModel::toggleGlobalTag,
+                        onNewTag = { newTagTarget = NewTagTarget(isGlobal = true) },
+                        newTagChipTestTag = "newGlobalTagChip",
+                        modifier = sectionModifier,
                     )
-                    TextButton(
-                        onClick = viewModel::split,
-                        modifier = Modifier.testTag("splitButton"),
-                    ) { Text(stringResource(R.string.record_split)) }
                 }
-            } else {
-                ReceiptTotalSection(
-                    expression = parts.receiptTotalExpression,
-                    errors = errors,
-                    mode = viewModel.calculatorMode,
-                    onChange = viewModel::setReceiptTotal,
-                    onAdd = { viewModel.setReceiptTotal("") },
-                    onClear = viewModel::clearReceiptTotal,
-                )
-            }
-
-            if (parts.isSplit) {
-                val addPartButton = @Composable {
-                    TextButton(
-                        onClick = viewModel::addPart,
-                        modifier = Modifier.testTag("addPartButton"),
-                    ) { Text(stringResource(R.string.part_add)) }
-                }
-                parts.parts.forEachIndexed { index, part ->
-                    // New parts are inserted before the remainder, so the
-                    // button that adds them sits right above it too.
-                    if (part.id == parts.remainderPartId) addPartButton()
-                    PartCard(
-                        index = index,
-                        part = part,
-                        isRemainder = part.id == parts.remainderPartId,
-                        canRemove = parts.parts.size > 1 && part.id != parts.remainderPartId,
-                        evaluation = evaluation,
+                if (parts.isSplit) {
+                    // A split record's local tags belong to each part, inside its card.
+                    globalSection(Modifier.heightIn(max = MaxTagSectionHeight))
+                    ReceiptTotalSection(
+                        expression = parts.receiptTotalExpression,
                         errors = errors,
                         mode = viewModel.calculatorMode,
-                        localTags = localTags,
-                        onAmountChange = { viewModel.setPartAmount(part.id, it) },
-                        onToggleTag = { viewModel.togglePartTag(part.id, it) },
-                        onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = part.id) },
-                        onRemove = { viewModel.removePart(part.id) },
+                        onChange = viewModel::setReceiptTotal,
+                        onAdd = { viewModel.setReceiptTotal("") },
+                        onClear = viewModel::clearReceiptTotal,
+                        onUnsplit = {
+                            if (parts.hasPartData) showUnsplitDialog = true else viewModel.unsplit()
+                        },
+                    )
+                } else {
+                    // One layout whether the form fits or scrolls: the keyboard switches between
+                    // the two, and an amount field recreated by that would lose its focus.
+                    val only = parts.parts.single()
+                    SplitByContentColumn(
+                        first = { globalSection(Modifier) },
+                        between = {
+                            Column {
+                                AmountField(
+                                    value = only.amountExpression,
+                                    onValueChange = { viewModel.setPartAmount(only.id, it) },
+                                    label = stringResource(R.string.amount_label),
+                                    error = errors.amountErrorFor(only.id),
+                                    mode = viewModel.calculatorMode,
+                                    modifier = Modifier.testTag("amountInput"),
+                                )
+                                TextButton(
+                                    onClick = viewModel::split,
+                                    modifier = Modifier.testTag("splitButton"),
+                                ) { Text(stringResource(R.string.record_split)) }
+                            }
+                        },
+                        second = {
+                            TagChipsSection(
+                                title = stringResource(R.string.tags_local_title),
+                                hint = stringResource(R.string.tags_local_hint),
+                                tags = localTags,
+                                selectedIds = only.tagIds,
+                                fillHeight = fitOnOneScreen,
+                                onToggle = { viewModel.togglePartTag(only.id, it) },
+                                onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = only.id) },
+                                newTagChipTestTag = "newTagChip",
+                            )
+                        },
+                        spacing = 16.dp,
+                        maxSectionHeightWhenScrolling = MaxTagSectionHeight,
+                        modifier = if (fitOnOneScreen) Modifier.weight(1f) else Modifier,
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (parts.remainderPartId == null) addPartButton()
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = stringResource(R.string.record_total, evaluation.totalCents?.let { amountText(it) } ?: "—"),
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.testTag("recordTotal"),
-                    )
-                }
-            }
 
-            AlwaysLabeledTextField(
-                value = description,
-                onValueChange = viewModel::setDescription,
-                label = stringResource(R.string.description_label),
-                placeholder = stringResource(R.string.description_placeholder),
-                modifier = Modifier.testTag("descriptionInput"),
-            )
+                if (parts.isSplit) {
+                    val addPartButton = @Composable {
+                        TextButton(
+                            onClick = viewModel::addPart,
+                            modifier = Modifier.testTag("addPartButton"),
+                        ) { Text(stringResource(R.string.part_add)) }
+                    }
+                    parts.parts.forEachIndexed { index, part ->
+                        // New parts are inserted before the remainder, so the
+                        // button that adds them sits right above it too.
+                        if (part.id == parts.remainderPartId) addPartButton()
+                        PartCard(
+                            index = index,
+                            part = part,
+                            isRemainder = part.id == parts.remainderPartId,
+                            canRemove = parts.parts.size > 1 && part.id != parts.remainderPartId,
+                            evaluation = evaluation,
+                            errors = errors,
+                            mode = viewModel.calculatorMode,
+                            localTags = localTags,
+                            onAmountChange = { viewModel.setPartAmount(part.id, it) },
+                            onToggleTag = { viewModel.togglePartTag(part.id, it) },
+                            onNewTag = { newTagTarget = NewTagTarget(isGlobal = false, partId = part.id) },
+                            onRemove = { viewModel.removePart(part.id) },
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (parts.remainderPartId == null) addPartButton()
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(R.string.record_total, evaluation.totalCents?.let { amountText(it) } ?: "—"),
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.testTag("recordTotal"),
+                        )
+                    }
+                }
+
+                AlwaysLabeledTextField(
+                    value = description,
+                    onValueChange = viewModel::setDescription,
+                    label = stringResource(R.string.description_label),
+                    placeholder = stringResource(R.string.description_placeholder),
+                    modifier = Modifier.testTag("descriptionInput"),
+                )
+            }
         }
     }
 
@@ -318,6 +359,29 @@ fun RecordFormScreen(
             },
             error = tagNameError?.tagNameText(),
             onTextChange = viewModel::clearTagNameError,
+        )
+    }
+
+    if (showUnsplitDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsplitDialog = false },
+            title = { Text(stringResource(R.string.record_unsplit_title)) },
+            text = { Text(stringResource(R.string.record_unsplit_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnsplitDialog = false
+                        viewModel.unsplit()
+                    },
+                    modifier = Modifier.testTag("confirmUnsplitButton"),
+                ) { Text(stringResource(R.string.record_unsplit)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showUnsplitDialog = false },
+                    modifier = Modifier.testTag("cancelUnsplitButton"),
+                ) { Text(stringResource(R.string.action_cancel)) }
+            },
         )
     }
 
@@ -379,31 +443,40 @@ private fun ReceiptTotalSection(
     onChange: (String) -> Unit,
     onAdd: () -> Unit,
     onClear: () -> Unit,
+    onUnsplit: () -> Unit,
 ) {
-    if (expression == null) {
-        TextButton(
-            onClick = onAdd,
-            modifier = Modifier.testTag("addReceiptTotalButton"),
-        ) { Text(stringResource(R.string.receipt_total_add)) }
-        return
-    }
     Column {
-        AmountField(
-            value = expression,
-            onValueChange = onChange,
-            label = stringResource(R.string.receipt_total_label),
-            error = when {
-                PartsError.InvalidReceiptTotal in errors -> stringResource(R.string.error_receipt_total)
-                PartsError.PartsExceedReceiptTotal in errors -> stringResource(R.string.error_parts_exceed_total)
-                else -> null
-            },
-            mode = mode,
-            modifier = Modifier.testTag("receiptTotalInput"),
-        )
-        TextButton(
-            onClick = onClear,
-            modifier = Modifier.testTag("clearReceiptTotalButton"),
-        ) { Text(stringResource(R.string.receipt_total_clear)) }
+        if (expression != null) {
+            AmountField(
+                value = expression,
+                onValueChange = onChange,
+                label = stringResource(R.string.receipt_total_label),
+                error = when {
+                    PartsError.InvalidReceiptTotal in errors -> stringResource(R.string.error_receipt_total)
+                    PartsError.PartsExceedReceiptTotal in errors -> stringResource(R.string.error_parts_exceed_total)
+                    else -> null
+                },
+                mode = mode,
+                modifier = Modifier.testTag("receiptTotalInput"),
+            )
+        }
+        FlowRow {
+            if (expression != null) {
+                TextButton(
+                    onClick = onClear,
+                    modifier = Modifier.testTag("clearReceiptTotalButton"),
+                ) { Text(stringResource(R.string.receipt_total_clear)) }
+            } else {
+                TextButton(
+                    onClick = onAdd,
+                    modifier = Modifier.testTag("addReceiptTotalButton"),
+                ) { Text(stringResource(R.string.receipt_total_add)) }
+            }
+            TextButton(
+                onClick = onUnsplit,
+                modifier = Modifier.testTag("unsplitButton"),
+            ) { Text(stringResource(R.string.record_unsplit)) }
+        }
     }
 }
 
@@ -457,18 +530,17 @@ private fun PartCard(
                     }
                 }
             }
-            // "+" stays inline here: on the card's border it would read as "add a part".
-            TagChips(
+            // Its own box, so "+" on that border reads as "new tag", not "add a part".
+            TagChipsSection(
+                title = stringResource(R.string.tags_local_title),
+                hint = stringResource(R.string.tags_local_hint),
                 tags = localTags,
                 selectedIds = part.tagIds,
+                fillHeight = false,
                 onToggle = onToggleTag,
-                trailing = {
-                    AddChip(
-                        onClick = onNewTag,
-                        description = stringResource(R.string.tag_new),
-                        modifier = Modifier.testTag("newTagChip-$index"),
-                    )
-                },
+                onNewTag = onNewTag,
+                newTagChipTestTag = "newTagChip-$index",
+                modifier = Modifier.heightIn(max = MaxTagSectionHeight),
             )
             if (errors.any { it is PartsError.DuplicateTags && part.id in it.partIds }) {
                 Text(stringResource(R.string.error_duplicate_part_tags), color = MaterialTheme.colorScheme.error)
@@ -483,29 +555,39 @@ private fun TagChipsSection(
     hint: String,
     tags: List<Tag>,
     selectedIds: Set<Long>,
+    fillHeight: Boolean,
     onToggle: (Long) -> Unit,
     onNewTag: () -> Unit,
     newTagChipTestTag: String,
     modifier: Modifier = Modifier,
 ) {
     // Same border-cut label as the date, amount, and description fields;
-    // "+" cuts into the border at the other end.
+    // "+" cuts into the border at the other end, in view however far the chips scroll.
     LabeledOutlinedBox(
         label = "$title — $hint",
+        fillHeight = fillHeight,
         modifier = modifier,
         action = {
             AddChip(onClick = onNewTag, description = stringResource(R.string.tag_new), modifier = Modifier.testTag(newTagChipTestTag))
         },
     ) {
-        TagChips(tags = tags, selectedIds = selectedIds, onToggle = onToggle)
+        val scrollState = rememberScrollState()
+        TagChips(
+            tags = tags,
+            selectedIds = selectedIds,
+            onToggle = onToggle,
+            modifier = Modifier
+                .verticalScrollbar(scrollState, MaterialTheme.colorScheme.onSurfaceVariant)
+                .fadingBottomEdge(scrollState)
+                .verticalScroll(scrollState)
+                // Keeps the last chip in a row clear of the scrollbar.
+                .padding(end = 8.dp),
+        )
     }
 }
 
 /**
- * A tag level's chips in two columns: the tags on the left (wrapping
- * within that column, or a placeholder when there are none yet) and the
- * "+" (new tag) button on the right, so the button always sits in the
- * same place instead of trailing after however many tags there are.
+ * A tag level's chips, wrapping across the width given, or a placeholder when there are none yet.
  */
 @Composable
 private fun TagChips(
@@ -513,7 +595,6 @@ private fun TagChips(
     selectedIds: Set<Long>,
     onToggle: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         if (tags.isEmpty()) {
@@ -541,18 +622,18 @@ private fun TagChips(
                 // live in the full-width rows of the "Управление тегами" dialog
                 // instead (same layout TrackerListScreen's tracker rows already
                 // use safely, since there the icon sits far from the label).
-                for (tag in tags) {
-                    FilterChip(
-                        selected = tag.id in selectedIds,
-                        onClick = { onToggle(tag.id) },
-                        label = { Text(tag.name) },
-                    )
+                // Without the 48dp minimum touch target: its invisible margin above and
+                // below each 32dp chip made the gap between rows wider than between chips.
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                    for (tag in tags) {
+                        FilterChip(
+                            selected = tag.id in selectedIds,
+                            onClick = { onToggle(tag.id) },
+                            label = { Text(tag.name) },
+                        )
+                    }
                 }
             }
-        }
-        if (trailing != null) {
-            Spacer(modifier = Modifier.width(8.dp))
-            trailing()
         }
     }
 }

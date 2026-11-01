@@ -61,6 +61,27 @@ data class PartsInput(
         )
     }
 
+    /** Anything typed or selected that [unsplit] would throw away; the remainder's tags are the simple record's own. */
+    val hasPartData: Boolean
+        get() = parts.any { it.id != remainderPartId && (it.amountExpression.isNotBlank() || it.tagIds.isNotEmpty()) }
+
+    /**
+     * Split → simple, no merging: the receipt total goes back to being the
+     * amount, the parts are dropped. With nothing in them this undoes [split]
+     * exactly, tags included.
+     */
+    fun unsplit(): PartsInput {
+        val last = parts.last()
+        return PartsInput(
+            parts = listOf(
+                last.copy(
+                    amountExpression = receiptTotalExpression.orEmpty(),
+                    tagIds = if (hasPartData) emptySet() else last.tagIds,
+                ),
+            ),
+        )
+    }
+
     /** A new empty part — before the remainder, which always stays last. */
     fun addPart(): PartsInput {
         val newPart = PartInput(id = nextId())

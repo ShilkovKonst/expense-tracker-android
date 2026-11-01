@@ -119,6 +119,8 @@ class RecordFormViewModel(
 
     fun split() = _parts.update { it.split() }
 
+    fun unsplit() = _parts.update { it.unsplit() }
+
     fun addPart() = _parts.update { it.addPart() }
 
     fun removePart(partId: Int) = _parts.update { it.removePart(partId) }
