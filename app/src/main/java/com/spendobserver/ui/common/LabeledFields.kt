@@ -19,6 +19,7 @@ import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -48,13 +49,20 @@ fun AlwaysLabeledTextField(
 ) {
     val state = rememberTextFieldState(value)
     val currentOnValueChange by rememberUpdatedState(onValueChange)
+    // What the field has sent out and not yet seen come back. With fast typing an
+    // echo arrives after newer text is already in the field: applying it as an
+    // outside change would erase the characters typed since.
+    val sentValues = remember { mutableSetOf<String>() }
     // Outside → field: e.g. a stored value arriving after an async load.
     LaunchedEffect(value) {
-        if (state.text.toString() != value) state.setTextAndPlaceCursorAtEnd(value)
+        if (!sentValues.remove(value) && state.text.toString() != value) state.setTextAndPlaceCursorAtEnd(value)
     }
     // Field → outside: every edit the user makes.
     LaunchedEffect(state) {
-        snapshotFlow { state.text.toString() }.collect { currentOnValueChange(it) }
+        snapshotFlow { state.text.toString() }.collect {
+            sentValues += it
+            currentOnValueChange(it)
+        }
     }
     OutlinedTextField(
         state = state,
