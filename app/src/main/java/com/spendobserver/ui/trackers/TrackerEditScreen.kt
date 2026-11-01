@@ -49,6 +49,7 @@ import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.tagNameText
 import com.spendobserver.ui.common.trackerNameText
+import com.spendobserver.ui.common.verticalScrollbar
 
 /** Below this, two tag sections plus the name field leave too few rows per section to be worth splitting. */
 private val MinHeightForSplitTagSections = 480.dp
@@ -257,7 +258,15 @@ private fun TagSection(
             AddChip(onClick = onNewTag, description = stringResource(R.string.tag_new), modifier = Modifier.testTag(newTagButtonTestTag))
         },
     ) {
-        Column(modifier = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier) {
+        val scrollState = rememberScrollState()
+        val scrollbarColor = MaterialTheme.colorScheme.onSurfaceVariant
+        Column(
+            modifier = if (scrollable) {
+                Modifier.verticalScrollbar(scrollState, scrollbarColor).verticalScroll(scrollState)
+            } else {
+                Modifier
+            },
+        ) {
             if (tags.isEmpty()) {
                 Text(
                     text = stringResource(R.string.tags_none),
