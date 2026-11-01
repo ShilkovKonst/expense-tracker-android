@@ -52,6 +52,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.data.settings.ThemeMode
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.text.trimInvisible
 import com.spendobserver.ui.backup.ExportScope
@@ -72,6 +73,8 @@ fun TrackerListScreen(
     recordRepository: RecordRepository,
     backupRepository: BackupRepository,
     modifier: Modifier = Modifier,
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    onThemeModeChange: (ThemeMode) -> Unit = {},
     onTrackerClick: (Tracker) -> Unit = {},
     onEditTrackerClick: (Tracker) -> Unit = {},
     onTrackerCreated: (trackerId: Long) -> Unit = {},
@@ -92,6 +95,7 @@ fun TrackerListScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var trackerToDelete by remember { mutableStateOf<Tracker?>(null) }
     var showMenu by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     val importViewModel: ImportViewModel = viewModel(
         factory = remember(backupRepository, trackerRepository) {
@@ -166,6 +170,15 @@ fun TrackerListScreen(
                                 },
                                 modifier = Modifier.testTag("faqItem"),
                             )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_theme)) },
+                                onClick = {
+                                    showMenu = false
+                                    showThemeDialog = true
+                                },
+                                modifier = Modifier.testTag("themeItem"),
+                            )
                         }
                     }
                 },
@@ -226,6 +239,17 @@ fun TrackerListScreen(
                 showCreateDialog = false
                 viewModel.clearCreateError()
             },
+        )
+    }
+
+    if (showThemeDialog) {
+        ThemeDialog(
+            selected = themeMode,
+            onSelect = { mode ->
+                onThemeModeChange(mode)
+                showThemeDialog = false
+            },
+            onDismiss = { showThemeDialog = false },
         )
     }
 

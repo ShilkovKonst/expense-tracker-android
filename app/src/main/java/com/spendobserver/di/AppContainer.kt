@@ -6,6 +6,7 @@ import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.data.settings.ThemePreference
 
 /**
  * Manual dependency container (README's "ручной Container на первом этапе" —
@@ -20,4 +21,5 @@ class AppContainer(context: Context) {
     val tagRepository: TagRepository by lazy { TagRepository(database.tagDao()) }
     val recordRepository: RecordRepository by lazy { RecordRepository(database) }
     val backupRepository: BackupRepository by lazy { BackupRepository(database, recordRepository) }
+    val themePreference: ThemePreference = ThemePreference(context)
 }

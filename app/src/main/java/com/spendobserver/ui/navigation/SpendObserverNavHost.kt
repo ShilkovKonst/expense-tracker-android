@@ -14,6 +14,7 @@ import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.data.settings.ThemeMode
 import com.spendobserver.ui.help.FaqScreen
 import com.spendobserver.ui.help.HelpScreen
 import com.spendobserver.ui.record.RecordFormScreen
@@ -29,6 +30,8 @@ fun SpendObserverNavHost(
     recordRepository: RecordRepository,
     tagRepository: TagRepository,
     backupRepository: BackupRepository,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -41,6 +44,8 @@ fun SpendObserverNavHost(
                 trackerRepository = trackerRepository,
                 recordRepository = recordRepository,
                 backupRepository = backupRepository,
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
                 onTrackerClick = { tracker -> navController.navigate(Route.TrackerDetail(tracker.id)) },
                 onEditTrackerClick = { tracker -> navController.navigate(Route.TrackerEdit(tracker.id)) },
                 onTrackerCreated = { trackerId -> navController.navigate(Route.TrackerDetail(trackerId)) },

@@ -14,6 +14,10 @@
     <string name="menu_share_all">Поделиться всеми</string>
     <string name="menu_help">О приложении</string>
     <string name="menu_faq">Вопросы и ответы</string>
+    <string name="menu_theme">Тема</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
     <string name="tracker_new_title">Новый трекер</string>
     <string name="name_label">Название</string>
     <plurals name="imported_trackers">

@@ -16,6 +16,10 @@
     <string name="menu_share_all">Share all</string>
     <string name="menu_help">About the app</string>
     <string name="menu_faq">FAQ</string>
+    <string name="menu_theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="tracker_new_title">New tracker</string>
     <string name="name_label">Name</string>
     <plurals name="imported_trackers">

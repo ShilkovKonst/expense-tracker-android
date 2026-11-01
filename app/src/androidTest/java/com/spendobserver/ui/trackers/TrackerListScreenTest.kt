@@ -2,6 +2,7 @@ package com.spendobserver.ui.trackers
 
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +16,7 @@ import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.data.settings.ThemeMode
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.testing.plural
 import com.spendobserver.testing.signedAmount
@@ -222,5 +224,27 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("faqItem").performClick()
 
         assertEquals(listOf("help", "faq"), opened)
+    }
+
+    @Test
+    fun menu_themeItem_showsCurrentChoiceAndReportsNewOne() {
+        val chosen = mutableListOf<ThemeMode>()
+        composeRule.setContent {
+            TrackerListScreen(
+                trackerRepository = trackerRepository,
+                recordRepository = recordRepository,
+                backupRepository = BackupRepository(db),
+                themeMode = ThemeMode.LIGHT,
+                onThemeModeChange = { chosen += it },
+            )
+        }
+
+        composeRule.onNodeWithTag("trackerListMenuButton").performClick()
+        composeRule.onNodeWithTag("themeItem").performClick()
+        composeRule.onNodeWithTag("themeOption-LIGHT").assertIsSelected()
+        composeRule.onNodeWithTag("themeOption-DARK").performClick()
+
+        assertEquals(listOf(ThemeMode.DARK), chosen)
+        composeRule.onNodeWithTag("themeOption-DARK").assertDoesNotExist() // dialog closed
     }
 }
