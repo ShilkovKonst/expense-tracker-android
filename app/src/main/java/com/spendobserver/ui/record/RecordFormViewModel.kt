@@ -1,5 +1,6 @@
 package com.spendobserver.ui.record
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.local.entity.Record
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -28,6 +30,21 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+/** Where the form keeps its [FormDraft] in the [SavedStateHandle]. */
+internal const val FORM_DRAFT_KEY = "recordFormDraft"
+
+/** What the user has entered so far, kept across the system killing the app in the background. */
+@Serializable
+private data class FormDraft(
+    val type: RecordType,
+    val date: LocalDate,
+    val description: String,
+    val parts: PartsInput,
+    val globalTagIds: Set<Long>,
+)
 
 /**
  * Backs the create/edit record form. [recordId] is `null` when creating a
@@ -48,30 +65,33 @@ class RecordFormViewModel(
     private val recordId: Long?,
     private val recordRepository: RecordRepository,
     private val tagRepository: TagRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    private val draft = savedStateHandle.get<String>(FORM_DRAFT_KEY)?.let { Json.decodeFromString<FormDraft>(it) }
 
     /** How amount expressions are evaluated; the form's "= …" previews use it too. */
     val calculatorMode = CalculatorMode.ALGEBRAIC
 
     val isEditing: Boolean get() = recordId != null
 
-    private val _type = MutableStateFlow(RecordType.COST)
+    private val _type = MutableStateFlow(draft?.type ?: RecordType.COST)
     val type: StateFlow<RecordType> = _type.asStateFlow()
 
-    private val _date = MutableStateFlow(Clock.System.todayIn(TimeZone.currentSystemDefault()))
+    private val _date = MutableStateFlow(draft?.date ?: Clock.System.todayIn(TimeZone.currentSystemDefault()))
     val date: StateFlow<LocalDate> = _date.asStateFlow()
 
-    private val _description = MutableStateFlow("")
+    private val _description = MutableStateFlow(draft?.description.orEmpty())
     val description: StateFlow<String> = _description.asStateFlow()
 
-    private val _parts = MutableStateFlow(PartsInput())
+    private val _parts = MutableStateFlow(draft?.parts ?: PartsInput())
     val parts: StateFlow<PartsInput> = _parts.asStateFlow()
 
     val evaluation: StateFlow<PartsEvaluation> = _parts
         .map { it.evaluate(calculatorMode) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), PartsInput().evaluate())
 
-    private val _globalTagIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val _globalTagIds = MutableStateFlow(draft?.globalTagIds ?: emptySet())
     val globalTagIds: StateFlow<Set<Long>> = _globalTagIds.asStateFlow()
 
     val tags: StateFlow<List<Tag>> = tagRepository.observeTags(trackerId)
@@ -85,20 +105,28 @@ class RecordFormViewModel(
     private var loadedRecord: Record? = null
 
     init {
-        if (recordId != null) {
-            viewModelScope.launch {
-                val details = recordRepository.getRecord(recordId) ?: return@launch
-                val record = details.record
-                loadedRecord = record
-                _type.value = record.type
-                _date.value = record.date
-                _description.value = record.description.orEmpty()
-                _globalTagIds.value = details.tags.map { it.id }.toSet()
-                _parts.value = PartsInput.fromSaved(
-                    details.parts.map { p -> PartDraft(p.part.amountCents, p.tags.map { it.id }.toSet()) },
-                )
+        viewModelScope.launch {
+            recordId?.let { loadRecord(it) }
+            // Only from here on: a draft saved before the record loaded would restore an empty form.
+            combine(_type, _date, _description, _parts, _globalTagIds, ::FormDraft).collect {
+                savedStateHandle[FORM_DRAFT_KEY] = Json.encodeToString(it)
             }
         }
+    }
+
+    /** A restored [draft] keeps its fields; the record is still needed for [delete]. */
+    private suspend fun loadRecord(id: Long) {
+        val details = recordRepository.getRecord(id) ?: return
+        val record = details.record
+        loadedRecord = record
+        if (draft != null) return
+        _type.value = record.type
+        _date.value = record.date
+        _description.value = record.description.orEmpty()
+        _globalTagIds.value = details.tags.map { it.id }.toSet()
+        _parts.value = PartsInput.fromSaved(
+            details.parts.map { p -> PartDraft(p.part.amountCents, p.tags.map { it.id }.toSet()) },
+        )
     }
 
     fun setType(value: RecordType) {

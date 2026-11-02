@@ -42,6 +42,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -87,6 +90,12 @@ import kotlinx.datetime.number
 /** Where a tag created from the "+" chip goes: the record (global) or one part (local). */
 private data class NewTagTarget(val isGlobal: Boolean, val partId: Int? = null)
 
+/** Nothing is saved for `null`; otherwise whether it's global (1 or 0), then the part's id if any. */
+private val NewTagTargetSaver = Saver<NewTagTarget?, ArrayList<Int>>(
+    save = { target -> target?.let { arrayListOf(if (it.isGlobal) 1 else 0).apply { it.partId?.let(::add) } } },
+    restore = { saved -> NewTagTarget(isGlobal = saved[0] == 1, partId = saved.getOrNull(1)) },
+)
+
 /** Below this, the fixed fields leave the two tag sections too little height to be worth splitting. */
 private val MinHeightForOneScreenForm = 680.dp
 
@@ -107,7 +116,7 @@ fun RecordFormScreen(
     val viewModel: RecordFormViewModel = viewModel(
         factory = remember(trackerId, recordId, recordRepository, tagRepository) {
             viewModelFactory {
-                initializer { RecordFormViewModel(trackerId, recordId, recordRepository, tagRepository) }
+                initializer { RecordFormViewModel(trackerId, recordId, recordRepository, tagRepository, createSavedStateHandle()) }
             }
         },
     )
@@ -125,10 +134,10 @@ fun RecordFormScreen(
     val (globalTags, localTags) = remember(tags) { tags.partition { it.isGlobal } }
     val errors = if (showErrors) evaluation.errors else emptyList()
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    var newTagTarget by remember { mutableStateOf<NewTagTarget?>(null) }
-    var showDeleteRecordDialog by remember { mutableStateOf(false) }
-    var showUnsplitDialog by remember { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var newTagTarget by rememberSaveable(stateSaver = NewTagTargetSaver) { mutableStateOf<NewTagTarget?>(null) }
+    var showDeleteRecordDialog by rememberSaveable { mutableStateOf(false) }
+    var showUnsplitDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,

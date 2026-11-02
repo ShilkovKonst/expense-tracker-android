@@ -4,6 +4,7 @@ import com.spendobserver.domain.calculator.CalculatorMode
 import com.spendobserver.domain.calculator.amountCentsFrom
 import com.spendobserver.domain.calculator.filterAmountInput
 import com.spendobserver.domain.summary.formatCents
+import kotlinx.serialization.Serializable
 
 /** One part of a record as it's saved: an amount and its local tags. */
 data class PartDraft(val amountCents: Long, val tagIds: Set<Long>)
@@ -22,6 +23,7 @@ fun List<PartDraft>.mergeSameTags(): List<PartDraft> =
  * removed) — unrelated to the database id. [amountExpression] is raw
  * calculator input.
  */
+@Serializable
 data class PartInput(
     val id: Int,
     val amountExpression: String = "",
@@ -40,6 +42,7 @@ data class PartInput(
  *
  * Every operation returns a new value; this class never mutates.
  */
+@Serializable
 data class PartsInput(
     val parts: List<PartInput> = listOf(PartInput(id = 0)),
     val receiptTotalExpression: String? = null,
