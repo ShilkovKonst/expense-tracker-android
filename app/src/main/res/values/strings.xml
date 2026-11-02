@@ -186,7 +186,6 @@
     <string name="import_issue_tag_is_global">tag “%1$s” is global — it belongs on the record, not on its parts</string>
     <string name="import_issue_no_parts">no parts</string>
     <string name="import_issue_negative_amount">the amount can\'t be negative</string>
-    <string name="import_issue_duplicate_part_tags">two parts have the same tags</string>
     <string name="import_issue_several_global_tags">more than one global tag</string>
 
     <!-- Help -->

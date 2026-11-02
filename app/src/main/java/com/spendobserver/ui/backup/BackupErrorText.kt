@@ -62,5 +62,4 @@ private fun BackupIssue.text(): String = when (this) {
     BackupIssue.SeveralGlobalTags -> stringResource(R.string.import_issue_several_global_tags)
     BackupIssue.NoParts -> stringResource(R.string.import_issue_no_parts)
     BackupIssue.NegativeAmount -> stringResource(R.string.import_issue_negative_amount)
-    BackupIssue.DuplicatePartTags -> stringResource(R.string.import_issue_duplicate_part_tags)
 }

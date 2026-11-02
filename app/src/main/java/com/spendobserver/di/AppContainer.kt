@@ -18,7 +18,7 @@ class AppContainer(context: Context) {
     private val database: AppDatabase = AppDatabase.getInstance(context)
 
     val trackerRepository: TrackerRepository by lazy { TrackerRepository(database.trackerDao()) }
-    val tagRepository: TagRepository by lazy { TagRepository(database.tagDao()) }
+    val tagRepository: TagRepository by lazy { TagRepository(database.tagDao(), deleteTag = { recordRepository.deleteTag(it) }) }
     val recordRepository: RecordRepository by lazy { RecordRepository(database) }
     val backupRepository: BackupRepository by lazy { BackupRepository(database, recordRepository) }
     val themePreference: ThemePreference = ThemePreference(context)

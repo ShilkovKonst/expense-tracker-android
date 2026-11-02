@@ -184,7 +184,6 @@
     <string name="import_issue_tag_is_global">das Label „%1$s“ ist global – es gehört zum Eintrag, nicht zu seinen Teilen</string>
     <string name="import_issue_no_parts">keine Teile</string>
     <string name="import_issue_negative_amount">der Betrag darf nicht negativ sein</string>
-    <string name="import_issue_duplicate_part_tags">zwei Teile haben dieselben Labels</string>
     <string name="import_issue_several_global_tags">mehr als ein globales Label</string>
 
     <!-- Help -->

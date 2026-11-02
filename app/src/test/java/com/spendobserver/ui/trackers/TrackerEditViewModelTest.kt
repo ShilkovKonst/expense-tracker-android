@@ -50,7 +50,7 @@ class TrackerEditViewModelTest {
 
     /** A loaded ViewModel, with its WhileSubscribed state kept subscribed for the test's duration. */
     private fun TestScope.loadedViewModel(): TrackerEditViewModel {
-        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(tagDao))
+        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(tagDao, tagDao::delete))
         viewModel.isTitleChanged.onEach { }.launchIn(backgroundScope)
         viewModel.tags.onEach { }.launchIn(backgroundScope)
         advanceUntilIdle()

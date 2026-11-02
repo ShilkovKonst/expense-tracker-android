@@ -5,12 +5,15 @@ import com.spendobserver.data.local.AppDatabase
 import com.spendobserver.data.local.dao.RecordDao
 import com.spendobserver.data.local.dao.RecordPartDao
 import com.spendobserver.data.local.dao.RecordTagDao
+import com.spendobserver.data.local.dao.TagDao
 import com.spendobserver.data.local.entity.Record
 import com.spendobserver.data.local.entity.RecordPart
 import com.spendobserver.data.local.entity.RecordPartTag
 import com.spendobserver.data.local.entity.RecordTag
+import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.relation.RecordWithParts
 import com.spendobserver.domain.record.PartDraft
+import com.spendobserver.domain.record.mergeSameTags
 import com.spendobserver.domain.summary.AmountTotals
 import com.spendobserver.domain.summary.TrackerStats
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +24,7 @@ class RecordRepository(
     private val recordDao: RecordDao = db.recordDao(),
     private val recordTagDao: RecordTagDao = db.recordTagDao(),
     private val recordPartDao: RecordPartDao = db.recordPartDao(),
+    private val tagDao: TagDao = db.tagDao(),
 ) {
 
     fun observeAll(trackerId: Long): Flow<List<RecordWithParts>> =
@@ -65,8 +69,32 @@ class RecordRepository(
     /** Parts and all tag links go with it, via the foreign keys' CASCADE. */
     suspend fun deleteRecord(id: Long) = recordDao.deleteById(id)
 
+    /**
+     * Deletes [tag] and merges the parts this leaves with identical tags, in
+     * one transaction: amounts and record totals stay as they were.
+     */
+    suspend fun deleteTag(tag: Tag) {
+        db.withTransaction {
+            val recordIds = recordPartDao.getRecordIdsWithTag(tag.id)
+            tagDao.delete(tag)
+            for (recordId in recordIds) {
+                val saved = recordDao.getWithPartsById(recordId)?.withSortedParts() ?: continue
+                val parts = saved.parts.map { p -> PartDraft(p.part.amountCents, p.tags.mapTo(HashSet()) { it.id }) }
+                val merged = parts.mergeSameTags()
+                if (merged.size != parts.size) {
+                    recordPartDao.deleteForRecord(recordId)
+                    insertParts(recordId, merged)
+                }
+            }
+        }
+    }
+
     private suspend fun insertTagsAndParts(recordId: Long, tagIds: Set<Long>, parts: List<PartDraft>) {
         tagIds.forEach { tagId -> recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId)) }
+        insertParts(recordId, parts)
+    }
+
+    private suspend fun insertParts(recordId: Long, parts: List<PartDraft>) {
         parts.forEachIndexed { position, draft ->
             val partId = recordPartDao.insert(
                 RecordPart(recordId = recordId, amountCents = draft.amountCents, position = position),

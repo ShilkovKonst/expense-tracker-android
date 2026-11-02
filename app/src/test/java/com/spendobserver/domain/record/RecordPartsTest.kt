@@ -219,4 +219,23 @@ class RecordPartsTest {
         assertEquals(listOf("800.00", "2350.00"), input.parts.map { it.amountExpression })
         assertEquals(315000L, input.evaluate().totalCents)
     }
+
+    @Test
+    fun fromSaved_mergesEqualParts_soTheFormCanSaveThem() {
+        val input = PartsInput.fromSaved(listOf(PartDraft(100, emptySet()), PartDraft(200, setOf(alcohol)), PartDraft(50, emptySet())))
+
+        assertEquals(listOf("1.50", "2.00"), input.parts.map { it.amountExpression })
+        assertEquals(emptyList<PartsError>(), input.evaluate().errors)
+    }
+
+    @Test
+    fun mergeSameTags_sumsAmountsAtTheFirstPlace_andLeavesDistinctPartsAlone() {
+        val distinct = listOf(PartDraft(1, setOf(alcohol)), PartDraft(2, setOf(groceries)))
+        assertEquals(distinct, distinct.mergeSameTags())
+
+        assertEquals(
+            listOf(PartDraft(5, setOf(alcohol)), PartDraft(2, emptySet())),
+            listOf(PartDraft(1, setOf(alcohol)), PartDraft(2, emptySet()), PartDraft(4, setOf(alcohol))).mergeSameTags(),
+        )
+    }
 }

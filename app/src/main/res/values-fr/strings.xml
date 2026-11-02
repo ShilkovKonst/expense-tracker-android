@@ -191,7 +191,6 @@
     <string name="import_issue_tag_is_global">l’étiquette « %1$s » est globale : elle doit figurer sur l’opération, et non sur ses parties</string>
     <string name="import_issue_no_parts">aucune partie</string>
     <string name="import_issue_negative_amount">le montant ne peut pas être négatif</string>
-    <string name="import_issue_duplicate_part_tags">deux parties ont les mêmes étiquettes</string>
     <string name="import_issue_several_global_tags">plus d’une étiquette globale</string>
 
     <!-- Help -->

@@ -6,7 +6,15 @@ import com.spendobserver.domain.text.isSameNameAs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class TagRepository(private val tagDao: TagDao) {
+/**
+ * [deleteTag] is passed in, normally [RecordRepository.deleteTag]: deleting a
+ * tag also rewrites parts, which needs a database transaction this class,
+ * built on [TagDao] alone so JVM tests can fake it, doesn't have.
+ */
+class TagRepository(
+    private val tagDao: TagDao,
+    private val deleteTag: suspend (Tag) -> Unit,
+) {
 
     fun observeTags(trackerId: Long): Flow<List<Tag>> = tagDao.observeForTracker(trackerId)
 
@@ -14,7 +22,7 @@ class TagRepository(private val tagDao: TagDao) {
 
     suspend fun updateTag(tag: Tag) = tagDao.update(tag)
 
-    suspend fun deleteTag(tag: Tag) = tagDao.delete(tag)
+    suspend fun deleteTag(tag: Tag) = deleteTag.invoke(tag)
 
     /**
      * Whether another tag of [trackerId] — on either level — already has

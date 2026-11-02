@@ -59,7 +59,7 @@ class TrackerEditScreenTest {
     @Before
     fun setUp() = runBlocking {
         trackerRepository = TrackerRepository(db.trackerDao())
-        tagRepository = TagRepository(db.tagDao())
+        tagRepository = TagRepository(db.tagDao(), RecordRepository(db)::deleteTag)
 
         trackerId = trackerRepository.insertTracker(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
     }

@@ -86,6 +86,24 @@ class RecordRepositoryTest {
     }
 
     @Test
+    fun deleteTag_mergesPartsLeftWithTheSameTags_keepingTheTotal() = runBlocking {
+        val merging = repository.insertRecord(
+            record(),
+            emptySet(),
+            listOf(PartDraft(100, setOf(alcoholId)), PartDraft(200, setOf(groceriesId)), PartDraft(400, emptySet())),
+        )
+        val untouched = repository.insertRecord(record(), emptySet(), listOf(PartDraft(10, setOf(groceriesId)), PartDraft(20, emptySet())))
+
+        repository.deleteTag(db.tagDao().getForTracker(trackerId).single { it.id == alcoholId })
+
+        val merged = repository.getRecord(merging)!!
+        assertEquals(listOf(500L to emptySet<Long>(), 200L to setOf(groceriesId)), merged.partSummary())
+        assertEquals(700L, merged.amountCents)
+        assertEquals(listOf(10L to setOf(groceriesId), 20L to emptySet<Long>()), repository.getRecord(untouched)!!.partSummary())
+        assertTrue(db.tagDao().getForTracker(trackerId).none { it.id == alcoholId })
+    }
+
+    @Test
     fun updateRecord_replacesGlobalTagsAndAllParts() = runBlocking {
         val id = repository.insertRecord(
             record(),

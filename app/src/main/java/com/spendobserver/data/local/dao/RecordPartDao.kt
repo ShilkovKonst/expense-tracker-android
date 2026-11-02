@@ -25,6 +25,12 @@ interface RecordPartDao {
     @Query("DELETE FROM record_parts WHERE recordId = :recordId")
     suspend fun deleteForRecord(recordId: Long)
 
+    @Query(
+        "SELECT DISTINCT p.recordId FROM record_part_tags pt " +
+            "JOIN record_parts p ON p.id = pt.partId WHERE pt.tagId = :tagId",
+    )
+    suspend fun getRecordIdsWithTag(tagId: Long): List<Long>
+
     @Query("SELECT * FROM record_parts WHERE recordId = :recordId ORDER BY position ASC")
     suspend fun getForRecord(recordId: Long): List<RecordPart>
 }

@@ -61,7 +61,7 @@ class RecordFormScreenTest {
     @Before
     fun setUp() = runBlocking {
         recordRepository = RecordRepository(db)
-        tagRepository = TagRepository(db.tagDao())
+        tagRepository = TagRepository(db.tagDao(), RecordRepository(db)::deleteTag)
 
         trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
         savedCount = 0
@@ -287,8 +287,10 @@ class RecordFormScreenTest {
         composeRule.onNodeWithTag("splitButton").performClick()
         composeRule.onNodeWithText("Ашан").performScrollTo().performClick()
         composeRule.onNodeWithTag("partAmountInput-0").performScrollTo().performTextInput("800")
-        // Part 0's chips come first, the remainder's second.
-        composeRule.onAllNodesWithText("алко")[0].performScrollTo().performClick()
+        // Part 0's chips come first, the remainder's second. performScrollTo on a chip only moves
+        // its own chip list, so the form is scrolled first: the keyboard is up and covers the chip.
+        composeRule.onNodeWithTag("partCard-1").performScrollTo()
+        composeRule.onAllNodesWithText("алко")[0].performClick()
         // Scrolled past it first: a chip only just in view sits under the floating Cancel/Save.
         composeRule.onNodeWithTag("descriptionInput").performScrollTo()
         composeRule.onAllNodesWithText("продукты")[1].performClick()
@@ -388,10 +390,11 @@ class RecordFormScreenTest {
     @Test
     fun editingMultiPartRecord_showsEveryPartAndTheTotal() {
         val recordId = runBlocking {
+            val groceries = tagRepository.insertTag(Tag(trackerId = trackerId, name = "продукты"))
             recordRepository.insertRecord(
                 Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = null),
                 emptySet(),
-                listOf(PartDraft(80000, emptySet()), PartDraft(235000, emptySet())),
+                listOf(PartDraft(80000, emptySet()), PartDraft(235000, setOf(groceries))),
             )
         }
         setContent(recordId = recordId)

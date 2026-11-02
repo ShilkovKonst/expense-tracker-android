@@ -155,12 +155,18 @@ class BackupImportTest {
             BackupError.Invalid(inRecord.copy(partNumber = 2), BackupIssue.NegativeAmount),
             failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 5}, {"amount": -1, "tags": ["алко"]}]}""")),
         )
-        assertEquals(
-            BackupError.Invalid(inRecord, BackupIssue.DuplicatePartTags),
-            failure(
-                file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 1, "tags": ["алко", "продукты"]}, {"amount": 2, "tags": ["продукты", "алко"]}]}"""),
-            ),
+    }
+
+    @Test
+    fun partsWithSameTags_areMerged_keepingTheTotalAndTheOrder() {
+        val result = parseBackup(
+            file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 1, "tags": ["алко", "продукты"]}, {"amount": 4}, {"amount": 2, "tags": ["продукты", "алко"]}, {"amount": 8}]}"""),
         )
+
+        val parts = (result as BackupParseResult.Success).trackers.single().records.single().parts
+        assertEquals(listOf(3L, 12L), parts.map { it.amountCents })
+        assertEquals(setOf("алко", "продукты"), parts[0].tagNames.toSet())
+        assertEquals(emptyList<String>(), parts[1].tagNames)
     }
 
     @Test

@@ -9,6 +9,14 @@ import com.spendobserver.domain.summary.formatCents
 data class PartDraft(val amountCents: Long, val tagIds: Set<Long>)
 
 /**
+ * Parts with identical tags are one category, so they become one part with
+ * the summed amount, at the place of the first. A record can end up with such
+ * parts when deleting a tag makes two of them equal.
+ */
+fun List<PartDraft>.mergeSameTags(): List<PartDraft> =
+    groupBy { it.tagIds }.values.map { same -> same.first().copy(amountCents = same.sumOf { it.amountCents }) }
+
+/**
  * One part as the user is editing it. [id] is a form-local key (stable
  * across edits, so the UI can address a part even as others are added or
  * removed) — unrelated to the database id. [amountExpression] is raw
@@ -166,9 +174,13 @@ data class PartsInput(
     }
 
     companion object {
-        /** Editing an existing record: every saved part becomes a typed one (receipt totals aren't stored). */
+        /**
+         * Editing an existing record: every saved part becomes a typed one
+         * (receipt totals aren't stored). Merged, so older data with equal
+         * parts doesn't open in a state the form refuses to save.
+         */
         fun fromSaved(parts: List<PartDraft>): PartsInput = PartsInput(
-            parts = parts.mapIndexed { index, draft ->
+            parts = parts.mergeSameTags().mapIndexed { index, draft ->
                 PartInput(id = index, amountExpression = formatCents(draft.amountCents), tagIds = draft.tagIds)
             },
         )
