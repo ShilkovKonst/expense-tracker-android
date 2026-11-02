@@ -1,5 +1,6 @@
 package com.spendobserver.ui.backup
 
+import com.spendobserver.data.local.entity.TrackerEntity
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -14,7 +15,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.testing.InMemoryDatabaseRule
 import com.spendobserver.testing.waitFor
@@ -51,7 +52,7 @@ class ExportActionsTest {
 
     @Test
     fun turningThePhoneOnTheSaveScreen_stillWritesTheFile() {
-        runBlocking { dbRule.db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0)) }
+        runBlocking { dbRule.db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0)) }
         val context = ApplicationProvider.getApplicationContext<Context>()
         val file = File(context.cacheDir, "export-test.json").apply { writeText("") }
         val fakeRegistry = FakeRegistry()

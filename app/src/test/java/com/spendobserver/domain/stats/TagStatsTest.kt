@@ -1,7 +1,7 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Record
 import com.spendobserver.testing.TestPart
 import com.spendobserver.testing.taggedRecord
 import kotlinx.datetime.LocalDate
@@ -60,7 +60,7 @@ class TagStatsTest {
 
     @Test
     fun everyRequestedTag_isReturnedInOrder_unusedWithZeros() {
-        val stats = emptyList<RecordWithParts>().tagStats(allTags)
+        val stats = emptyList<Record>().tagStats(allTags)
 
         assertEquals(allTags, stats.map { it.tag })
         assertTrue(stats.all { it.recordCount == 0 && it.amountCents == 0L })

@@ -4,9 +4,10 @@ import android.database.sqlite.SQLiteException
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.CalculatorMode
@@ -118,15 +119,14 @@ class RecordFormViewModel(
     /** A restored [draft] keeps its fields; the record is still needed for [delete]. */
     private suspend fun loadRecord(id: Long) {
         val details = recordRepository.getRecord(id) ?: return
-        val record = details.record
-        loadedRecord = record
+        loadedRecord = details
         if (draft != null) return
-        _type.value = record.type
-        _date.value = record.date
-        _description.value = record.description.orEmpty()
+        _type.value = details.type
+        _date.value = details.date
+        _description.value = details.description.orEmpty()
         _globalTagIds.value = details.tags.map { it.id }.toSet()
         _parts.value = PartsInput.fromSaved(
-            details.parts.map { p -> PartDraft(p.part.amountCents, p.tags.map { it.id }.toSet()) },
+            details.parts.map { p -> PartDraft(p.amountCents, p.tags.map { it.id }.toSet()) },
         )
     }
 
@@ -238,7 +238,7 @@ class RecordFormViewModel(
         isFinishing = true
         viewModelScope.launch {
             finishing {
-                val record = Record(
+                val record = RecordDraft(
                     id = recordId ?: 0,
                     trackerId = trackerId,
                     date = _date.value,
@@ -251,7 +251,7 @@ class RecordFormViewModel(
                     recordRepository.updateRecord(record, _globalTagIds.value, drafts)
                     recordId
                 }
-                onSaved(record.change(savedId, deleted = false))
+                onSaved(recordChange(savedId, record.date, deleted = false))
             }
         }
     }
@@ -264,11 +264,11 @@ class RecordFormViewModel(
         viewModelScope.launch {
             finishing {
                 recordRepository.deleteRecord(record.id)
-                onDeleted(record.change(record.id, deleted = true))
+                onDeleted(recordChange(record.id, record.date, deleted = true))
             }
         }
     }
 }
 
-private fun Record.change(id: Long, deleted: Boolean) =
+private fun recordChange(id: Long, date: LocalDate, deleted: Boolean) =
     RecordChange(recordId = id, year = date.year, month = date.month.number, deleted = deleted)

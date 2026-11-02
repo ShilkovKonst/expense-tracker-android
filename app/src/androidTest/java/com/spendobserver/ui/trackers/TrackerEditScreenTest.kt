@@ -17,10 +17,11 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -234,7 +235,7 @@ class TrackerEditScreenTest {
         runBlocking {
             val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "алко"))
             RecordRepository(db).insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
                 emptySet(),
                 listOf(PartDraft(100, setOf(tagId))),
             )

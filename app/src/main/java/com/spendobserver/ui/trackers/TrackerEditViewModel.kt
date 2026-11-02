@@ -3,7 +3,7 @@ package com.spendobserver.ui.trackers
 import android.database.sqlite.SQLiteException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.text.trimInvisible

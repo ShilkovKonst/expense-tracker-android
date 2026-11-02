@@ -5,17 +5,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * [isGlobal] fixes which level a tag lives on: global tags ("где/с кем" —
- * a shop, a trip) go on the record itself via [RecordTag]; local tags
- * ("на что" — groceries, alcohol) go on its parts via [RecordPartTag].
- * Never both, so per-tag statistics stay unambiguous.
- */
+/** A row of `tags`; see [com.spendobserver.domain.model.Tag] for what a tag is. */
 @Entity(
     tableName = "tags",
     foreignKeys = [
         ForeignKey(
-            entity = Tracker::class,
+            entity = TrackerEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackerId"],
             onDelete = ForeignKey.CASCADE,
@@ -23,7 +18,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index("trackerId")],
 )
-data class Tag(
+data class TagEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val trackerId: Long,

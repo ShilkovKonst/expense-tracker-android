@@ -10,15 +10,15 @@ import com.spendobserver.data.local.dao.RecordPartDao
 import com.spendobserver.data.local.dao.RecordTagDao
 import com.spendobserver.data.local.dao.TagDao
 import com.spendobserver.data.local.dao.TrackerDao
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 
 @Database(
-    entities = [Tracker::class, Tag::class, Record::class, RecordTag::class, RecordPart::class, RecordPartTag::class],
+    entities = [TrackerEntity::class, TagEntity::class, RecordEntity::class, RecordTagEntity::class, RecordPartEntity::class, RecordPartTagEntity::class],
     version = 1,
     exportSchema = true,
 )

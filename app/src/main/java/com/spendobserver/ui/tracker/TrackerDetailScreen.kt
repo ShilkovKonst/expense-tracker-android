@@ -65,9 +65,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordType
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -252,8 +251,8 @@ fun TrackerDetailScreen(
                             is AccordionItem.RecordEntry -> RecordRow(
                                 details = item.record,
                                 partsExpanded = item.partsExpanded,
-                                onTogglePartsClick = { viewModel.toggleRecordParts(item.record.record.id) },
-                                onClick = { onRecordClick(item.record.record) },
+                                onTogglePartsClick = { viewModel.toggleRecordParts(item.record.id) },
+                                onClick = { onRecordClick(item.record) },
                                 // The month or year header after a month's last record is separator enough.
                                 showDivider = items.getOrNull(index + 1) is AccordionItem.RecordEntry,
                             )
@@ -280,7 +279,7 @@ private val AccordionItem.year: Int
     get() = when (this) {
         is AccordionItem.Year -> group.year
         is AccordionItem.Month -> group.year
-        is AccordionItem.RecordEntry -> record.record.date.year
+        is AccordionItem.RecordEntry -> record.date.year
     }
 
 @Composable
@@ -346,17 +345,16 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
  * A split record shows its global tags and description, then a collapsed
  * "▸ N частей" toggle; expanded, one line per part with its local tags and subtotal.
  * The toggle has its own click handler, so tapping it expands the parts
- * instead of opening the record.
+ * instead of opening the details.
  */
 @Composable
 private fun RecordRow(
-    details: RecordWithParts,
+    details: Record,
     partsExpanded: Boolean,
     onTogglePartsClick: () -> Unit,
     onClick: () -> Unit,
     showDivider: Boolean,
 ) {
-    val record = details.record
     val isSplit = details.parts.size > 1
     Column {
         Row(
@@ -366,7 +364,7 @@ private fun RecordRow(
                 .padding(start = 32.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         ) {
             Text(
-                text = record.date.day.toString().padStart(2, '0'),
+                text = details.date.day.toString().padStart(2, '0'),
                 fontWeight = RecordTextWeight,
                 fontSize = RecordTextSize,
                 modifier = Modifier.width(32.dp).alignByBaseline(),
@@ -381,22 +379,22 @@ private fun RecordRow(
                 val globalChips = details.tags.map { TagChip(it.name, global = true) }
                 val headerChips = if (isSplit) globalChips else globalChips + details.parts.single().tags.map { TagChip(it.name) }
                 LabeledTagsField(stringResource(R.string.record_tags_label), headerChips)
-                DescriptionLine(text = record.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
+                DescriptionLine(text = details.description?.takeIf { it.isNotBlank() } ?: stringResource(R.string.record_no_description))
                 if (isSplit) {
                     PartsToggle(
                         count = details.parts.size,
                         expanded = partsExpanded,
                         onClick = onTogglePartsClick,
-                        modifier = Modifier.testTag("partsToggle-${record.id}"),
+                        modifier = Modifier.testTag("partsToggle-${details.id}"),
                     )
                     if (partsExpanded) {
                         for (part in details.parts) {
-                            PartLine(tagNames = part.tags.map { it.name }, amountCents = part.part.amountCents)
+                            PartLine(tagNames = part.tags.map { it.name }, amountCents = part.amountCents)
                         }
                     }
                 }
             }
-            val (signedCents, color) = when (record.type) {
+            val (signedCents, color) = when (details.type) {
                 RecordType.INCOME -> details.amountCents to incomeColor
                 RecordType.COST -> -details.amountCents to MaterialTheme.colorScheme.error
             }

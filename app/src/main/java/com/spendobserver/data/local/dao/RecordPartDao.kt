@@ -3,8 +3,8 @@ package com.spendobserver.data.local.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
 
 /**
  * Parts and their tags are only ever written together with their record
@@ -16,10 +16,10 @@ import com.spendobserver.data.local.entity.RecordPartTag
 interface RecordPartDao {
 
     @Insert
-    suspend fun insert(part: RecordPart): Long
+    suspend fun insert(part: RecordPartEntity): Long
 
     @Insert
-    suspend fun insertTag(partTag: RecordPartTag)
+    suspend fun insertTag(partTag: RecordPartTagEntity)
 
     /** Also removes the parts' tag links, via the foreign key's CASCADE. */
     @Query("DELETE FROM record_parts WHERE recordId = :recordId")
@@ -32,5 +32,5 @@ interface RecordPartDao {
     suspend fun getRecordIdsWithTag(tagId: Long): List<Long>
 
     @Query("SELECT * FROM record_parts WHERE recordId = :recordId ORDER BY position ASC")
-    suspend fun getForRecord(recordId: Long): List<RecordPart>
+    suspend fun getForRecord(recordId: Long): List<RecordPartEntity>
 }

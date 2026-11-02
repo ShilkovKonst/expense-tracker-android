@@ -1,6 +1,6 @@
 package com.spendobserver.ui.tracker
 
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Record
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.ui.navigation.RecordChange
@@ -26,8 +26,8 @@ sealed interface AccordionItem {
     }
 
     /** [partsExpanded] only matters for a split record: whether its part lines are shown. */
-    data class RecordEntry(val record: RecordWithParts, val partsExpanded: Boolean = false) : AccordionItem {
-        override val key get() = recordKey(record.record.id)
+    data class RecordEntry(val record: Record, val partsExpanded: Boolean = false) : AccordionItem {
+        override val key get() = recordKey(record.id)
     }
 }
 
@@ -50,7 +50,7 @@ fun accordionItems(
             val monthExpanded = (monthGroup.year to monthGroup.month) in expandedMonths
             add(AccordionItem.Month(monthGroup, monthExpanded))
             if (monthExpanded) {
-                monthGroup.records.forEach { add(AccordionItem.RecordEntry(it, it.record.id in expandedRecords)) }
+                monthGroup.records.forEach { add(AccordionItem.RecordEntry(it, it.id in expandedRecords)) }
             }
         }
     }
@@ -70,7 +70,7 @@ fun resolveFocus(change: RecordChange, yearGroups: List<YearGroup>): FocusTarget
     val year = yearGroups.find { it.year == change.year }
     val month = year?.months?.find { it.month == change.month }
     return if (change.deleted) {
-        val stillPresent = yearGroups.any { yg -> yg.months.any { mg -> mg.records.any { it.record.id == change.recordId } } }
+        val stillPresent = yearGroups.any { yg -> yg.months.any { mg -> mg.records.any { it.id == change.recordId } } }
         when {
             stillPresent -> null
             month != null -> FocusTarget.Item(monthKey(change.year, change.month))
@@ -78,7 +78,7 @@ fun resolveFocus(change: RecordChange, yearGroups: List<YearGroup>): FocusTarget
             else -> FocusTarget.None
         }
     } else {
-        val arrived = month?.records?.any { it.record.id == change.recordId } == true
+        val arrived = month?.records?.any { it.id == change.recordId } == true
         if (arrived) FocusTarget.Item(recordKey(change.recordId)) else null
     }
 }

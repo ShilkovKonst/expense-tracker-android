@@ -1,7 +1,9 @@
 package com.spendobserver.data.repository
 
 import com.spendobserver.data.local.dao.TagDao
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.toEntity
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.domain.text.isSameNameAs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,11 +18,11 @@ class TagRepository(
     private val deleteTag: suspend (Tag) -> Unit,
 ) {
 
-    fun observeTags(trackerId: Long): Flow<List<Tag>> = tagDao.observeForTracker(trackerId)
+    fun observeTags(trackerId: Long): Flow<List<Tag>> = tagDao.observeForTracker(trackerId).map { list -> list.map { it.toDomain() } }
 
-    suspend fun insertTag(tag: Tag): Long = tagDao.insert(tag)
+    suspend fun insertTag(tag: Tag): Long = tagDao.insert(tag.toEntity())
 
-    suspend fun updateTag(tag: Tag) = tagDao.update(tag)
+    suspend fun updateTag(tag: Tag) = tagDao.update(tag.toEntity())
 
     suspend fun deleteTag(tag: Tag) = deleteTag.invoke(tag)
 

@@ -1,17 +1,20 @@
 package com.spendobserver.data.repository
 
 import com.spendobserver.data.local.dao.TrackerDao
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.toEntity
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.domain.text.isSameNameAs
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class TrackerRepository(private val trackerDao: TrackerDao) {
 
-    fun observeTrackers(): Flow<List<Tracker>> = trackerDao.observeAll()
+    fun observeTrackers(): Flow<List<Tracker>> = trackerDao.observeAll().map { list -> list.map { it.toDomain() } }
 
-    suspend fun getTracker(id: Long): Tracker? = trackerDao.getById(id)
+    suspend fun getTracker(id: Long): Tracker? = trackerDao.getById(id)?.toDomain()
 
-    fun observeTracker(id: Long): Flow<Tracker?> = trackerDao.observeById(id)
+    fun observeTracker(id: Long): Flow<Tracker?> = trackerDao.observeById(id).map { it?.toDomain() }
 
     /**
      * Whether another tracker already has [title] by [isSameNameAs] — so
@@ -22,9 +25,9 @@ class TrackerRepository(private val trackerDao: TrackerDao) {
     suspend fun isTitleTaken(title: String, exceptTrackerId: Long? = null): Boolean =
         trackerDao.getAll().any { it.id != exceptTrackerId && it.title.isSameNameAs(title) }
 
-    suspend fun insertTracker(tracker: Tracker): Long = trackerDao.insert(tracker)
+    suspend fun insertTracker(tracker: Tracker): Long = trackerDao.insert(tracker.toEntity())
 
-    suspend fun updateTracker(tracker: Tracker) = trackerDao.update(tracker)
+    suspend fun updateTracker(tracker: Tracker) = trackerDao.update(tracker.toEntity())
 
-    suspend fun deleteTracker(tracker: Tracker) = trackerDao.delete(tracker)
+    suspend fun deleteTracker(tracker: Tracker) = trackerDao.delete(tracker.toEntity())
 }

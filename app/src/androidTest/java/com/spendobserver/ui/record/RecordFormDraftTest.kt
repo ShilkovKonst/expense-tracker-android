@@ -1,11 +1,13 @@
 package com.spendobserver.ui.record
 
+import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
@@ -35,7 +37,7 @@ class RecordFormDraftTest {
     @Before
     fun setUp() = runBlocking {
         records = RecordRepository(dbRule.db)
-        trackerId = dbRule.db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerId = dbRule.db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
     }
 
     private fun viewModel(handle: SavedStateHandle, recordId: Long? = null): RecordFormViewModel {
@@ -75,7 +77,7 @@ class RecordFormDraftTest {
     @Test
     fun anEditedRecord_keepsTheEdits_overWhatTheDatabaseHolds_andCanStillBeDeleted() = runBlocking {
         val id = records.insertRecord(
-            Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "old"),
+            RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "old"),
             emptySet(),
             listOf(PartDraft(100, emptySet())),
         )

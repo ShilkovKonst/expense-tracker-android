@@ -1,8 +1,8 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Record
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -36,19 +36,19 @@ data class ChartBucket(
  * latest record of *either* type, stretched to include [today]'s year, so
  * flipping the type toggle never reshapes the axis.
  */
-fun List<RecordWithParts>.chartBuckets(
+fun List<Record>.chartBuckets(
     period: StatsPeriod,
     type: RecordType,
     subject: StatsSubject,
     today: LocalDate,
 ): List<ChartBucket> {
     val byKey = inPeriod(period)
-        .filter { it.record.type == type }
-        .groupBy { period.bucketKey(it.record.date) }
+        .filter { it.type == type }
+        .groupBy { period.bucketKey(it.date) }
 
     val keys = when (period) {
         StatsPeriod.AllTime -> {
-            val years = map { it.record.date.year } + today.year
+            val years = map { it.date.year } + today.year
             years.min()..years.max()
         }
         is StatsPeriod.Year -> 1..12
@@ -82,7 +82,7 @@ private fun StatsPeriod.drillDown(key: Int): StatsPeriod? = when (this) {
 private fun daysIn(year: Int, month: Int): Int =
     LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY).day
 
-private fun List<RecordWithParts>.measure(subject: StatsSubject): Pair<Int, Long> = when (subject) {
+private fun List<Record>.measure(subject: StatsSubject): Pair<Int, Long> = when (subject) {
     StatsSubject.Overview -> size to sumOf { it.amountCents }
     is StatsSubject.OfTag -> tagStats(listOf(subject.tag)).single().let { it.recordCount to it.amountCents }
 }

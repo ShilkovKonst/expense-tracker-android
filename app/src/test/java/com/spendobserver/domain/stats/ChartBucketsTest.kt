@@ -1,8 +1,8 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Record
 import com.spendobserver.testing.TestPart
 import com.spendobserver.testing.taggedRecord
 import kotlinx.datetime.LocalDate
@@ -61,7 +61,7 @@ class ChartBucketsTest {
 
     @Test
     fun allTime_withNoRecords_showsOnlyCurrentYear() {
-        val buckets = emptyList<RecordWithParts>()
+        val buckets = emptyList<Record>()
             .chartBuckets(StatsPeriod.AllTime, RecordType.COST, StatsSubject.Overview, today)
 
         assertEquals(listOf(2026), buckets.map { it.key })
@@ -81,10 +81,10 @@ class ChartBucketsTest {
 
     @Test
     fun month_hasOneBucketPerDay_andNoDrillDown() {
-        assertEquals(29, emptyList<RecordWithParts>().chartBuckets(StatsPeriod.Month(2024, 2), RecordType.COST, StatsSubject.Overview, today).size)
-        assertEquals(28, emptyList<RecordWithParts>().chartBuckets(StatsPeriod.Month(2026, 2), RecordType.COST, StatsSubject.Overview, today).size)
+        assertEquals(29, emptyList<Record>().chartBuckets(StatsPeriod.Month(2024, 2), RecordType.COST, StatsSubject.Overview, today).size)
+        assertEquals(28, emptyList<Record>().chartBuckets(StatsPeriod.Month(2026, 2), RecordType.COST, StatsSubject.Overview, today).size)
 
-        val december = emptyList<RecordWithParts>()
+        val december = emptyList<Record>()
             .chartBuckets(StatsPeriod.Month(2026, 12), RecordType.COST, StatsSubject.Overview, today)
         assertEquals(31, december.size)
         assertNull(december.last().drillDown)

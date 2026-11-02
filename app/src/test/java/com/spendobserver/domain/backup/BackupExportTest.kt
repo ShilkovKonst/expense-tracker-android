@@ -1,8 +1,8 @@
 package com.spendobserver.domain.backup
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.testing.TestPart
 import com.spendobserver.testing.taggedRecord
 import kotlinx.datetime.LocalDate
@@ -26,7 +26,7 @@ class BackupExportTest {
         tags = listOf(food, shop, alco, unused),
         records = listOf(
             taggedRecord(id = 2, date = LocalDate(2025, 10, 2), tags = listOf(shop), parts = listOf(TestPart(661, listOf(alco)), TestPart(4355, listOf(food))))
-                .let { it.copy(record = it.record.copy(description = "чек")) },
+                .copy(description = "чек"),
             taggedRecord(id = 1, date = LocalDate(2025, 9, 30), type = RecordType.INCOME, parts = listOf(TestPart(2700))),
         ),
     )

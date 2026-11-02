@@ -1,7 +1,7 @@
 package com.spendobserver.domain.summary
 
-import com.spendobserver.data.local.relation.RecordWithParts
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordType
 import com.spendobserver.testing.recordWithParts
 import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
@@ -14,7 +14,7 @@ class RecordGroupingTest {
 
     @Test
     fun emptyList_producesNoGroups() {
-        val groups = emptyList<RecordWithParts>().groupByYearMonth()
+        val groups = emptyList<Record>().groupByYearMonth()
 
         assertEquals(emptyList<YearGroup>(), groups)
     }
@@ -60,7 +60,7 @@ class RecordGroupingTest {
 
         val groups = records.groupByYearMonth()
 
-        val dates = groups[0].months[0].records.map { it.record.date }
+        val dates = groups[0].months[0].records.map { it.date }
         assertEquals(
             listOf(LocalDate(2026, 3, 1), LocalDate(2026, 3, 10), LocalDate(2026, 3, 20)),
             dates,
@@ -78,7 +78,7 @@ class RecordGroupingTest {
 
         val groups = records.groupByYearMonth()
 
-        assertEquals(listOf(1L, 2L, 3L), groups[0].months[0].records.map { it.record.id })
+        assertEquals(listOf(1L, 2L, 3L), groups[0].months[0].records.map { it.id })
     }
 
     @Test

@@ -3,56 +3,52 @@ package com.spendobserver.data.local.relation
 import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.data.local.entity.TagEntity
 
-/** A [RecordPart] with its local tags. */
+/** A [RecordPartEntity] with its local tags. */
 data class PartWithTags(
-    @Embedded val part: RecordPart,
+    @Embedded val part: RecordPartEntity,
     @Relation(
         parentColumn = "id",
         entityColumn = "id",
         associateBy = Junction(
-            value = RecordPartTag::class,
+            value = RecordPartTagEntity::class,
             parentColumn = "partId",
             entityColumn = "tagId",
         ),
     )
-    val tags: List<Tag>,
+    val tags: List<TagEntity>,
 )
 
 /**
- * A [Record] with its global tags and its parts (each with local tags) —
- * everything a screen needs to show or edit one record. Nested
+ * A [RecordEntity] with its global tags and its parts (each with local tags) —
+ * what [com.spendobserver.domain.model.Record] is built from. Nested
  * [Relation]s make Room load the whole tree in one transaction, and a
  * `Flow` of these re-emits when any of the five underlying tables change.
  *
  * Room doesn't order [Relation] lists, so [parts] arrive in arbitrary
- * order; [RecordRepository][com.spendobserver.data.repository.RecordRepository]
- * sorts them by [RecordPart.position] before handing them out.
+ * order; `toDomain()` sorts them by [RecordPartEntity.position].
  */
 data class RecordWithParts(
-    @Embedded val record: Record,
+    @Embedded val record: RecordEntity,
     @Relation(
         parentColumn = "id",
         entityColumn = "id",
         associateBy = Junction(
-            value = RecordTag::class,
+            value = RecordTagEntity::class,
             parentColumn = "recordId",
             entityColumn = "tagId",
         ),
     )
-    val tags: List<Tag>,
+    val tags: List<TagEntity>,
     @Relation(
-        entity = RecordPart::class,
+        entity = RecordPartEntity::class,
         parentColumn = "id",
         entityColumn = "recordId",
     )
     val parts: List<PartWithTags>,
-) {
-    /** The record's total — always derived, never stored. */
-    val amountCents: Long get() = parts.sumOf { it.part.amountCents }
-}
+)

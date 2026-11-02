@@ -1,13 +1,13 @@
 package com.spendobserver.domain.summary
 
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Record
 import kotlinx.datetime.number
 
 /** One month's records within a [YearGroup], from the start of the month to its end. */
 data class MonthGroup(
     val year: Int,
     val month: Int,
-    val records: List<RecordWithParts>,
+    val records: List<Record>,
     val totals: AmountTotals,
 )
 
@@ -27,12 +27,12 @@ data class YearGroup(
  * records they summarize — unlike the original web app's denormalized
  * `totalAmount` (see README "Отличия от оригинальной (IndexedDB) модели").
  */
-fun List<RecordWithParts>.groupByYearMonth(): List<YearGroup> =
-    groupBy { it.record.date.year }
+fun List<Record>.groupByYearMonth(): List<YearGroup> =
+    groupBy { it.date.year }
         .map { (year, yearRecords) ->
-            val months = yearRecords.groupBy { it.record.date.month.number }
+            val months = yearRecords.groupBy { it.date.month.number }
                 .map { (month, monthRecords) ->
-                    val sorted = monthRecords.sortedWith(compareBy({ it.record.date }, { it.record.id }))
+                    val sorted = monthRecords.sortedWith(compareBy({ it.date }, { it.id }))
                     MonthGroup(year = year, month = month, records = sorted, totals = sorted.amountTotals())
                 }
                 .sortedBy { it.month }

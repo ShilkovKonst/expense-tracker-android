@@ -1,7 +1,7 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.testing.TestPart
 import com.spendobserver.testing.taggedRecord
 import kotlinx.datetime.LocalDate

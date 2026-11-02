@@ -9,7 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository

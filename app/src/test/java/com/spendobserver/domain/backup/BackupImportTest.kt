@@ -1,6 +1,6 @@
 package com.spendobserver.domain.backup
 
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.RecordType
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertEquals

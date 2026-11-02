@@ -4,24 +4,15 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.spendobserver.domain.model.RecordType
 import kotlinx.datetime.LocalDate
 
-enum class RecordType {
-    INCOME,
-    COST,
-}
-
-/**
- * One real-world event — e.g. a single receipt. Its amount isn't stored:
- * it's always the sum of its [RecordPart]s (at least one per record), so
- * the total can never drift from the parts. Tags attached directly to a
- * record (through [RecordTag]) are global ones only ([Tag.isGlobal]).
- */
+/** A row of `records`; see [com.spendobserver.domain.model.Record] for what a record is. */
 @Entity(
     tableName = "records",
     foreignKeys = [
         ForeignKey(
-            entity = Tracker::class,
+            entity = TrackerEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackerId"],
             onDelete = ForeignKey.CASCADE,
@@ -29,7 +20,7 @@ enum class RecordType {
     ],
     indices = [Index("trackerId", "date")],
 )
-data class Record(
+data class RecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val trackerId: Long,

@@ -1,14 +1,18 @@
 package com.spendobserver.data.repository
 
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.domain.backup.BackupParseResult
 import com.spendobserver.domain.backup.ClashResolution
 import com.spendobserver.domain.backup.ImportItem
@@ -87,19 +91,19 @@ class BackupRepositoryTest {
         val tags = db.tagDao().getForTracker(id).associate { it.name to it.isGlobal }
         assertEquals(mapOf("Ашан" to true, "алко" to false, "продукты" to false), tags)
 
-        val stored = records.observeAll(id).first().sortedBy { it.record.date }
+        val stored = records.observeAll(id).first().sortedBy { it.date }
         assertEquals(2, stored.size)
         val receipt = stored[0]
         assertEquals(listOf("Ашан"), receipt.tags.map { it.name })
-        assertEquals("чек", receipt.record.description)
-        assertEquals(listOf(1000L, 500L), receipt.parts.map { it.part.amountCents })
+        assertEquals("чек", receipt.description)
+        assertEquals(listOf(1000L, 500L), receipt.parts.map { it.amountCents })
         assertEquals(listOf(listOf("алко"), listOf("продукты")), receipt.parts.map { p -> p.tags.map { it.name } })
-        assertEquals(RecordType.INCOME, stored[1].record.type)
+        assertEquals(RecordType.INCOME, stored[1].type)
     }
 
     @Test
     fun clash_withoutResolution_throws_andWritesNothing() = runBlocking {
-        db.trackerDao().insert(Tracker(title = "дом", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "дом", createdAt = 0, updatedAt = 0))
         val other = homeFile.copy(title = "Работа")
 
         assertThrows(IllegalStateException::class.java) {
@@ -112,9 +116,9 @@ class BackupRepositoryTest {
 
     @Test
     fun replace_deletesTheOldTrackerWithItsRecords() = runBlocking {
-        val oldId = db.trackerDao().insert(Tracker(title = "ДОМ", createdAt = 0, updatedAt = 0))
+        val oldId = db.trackerDao().insert(TrackerEntity(title = "ДОМ", createdAt = 0, updatedAt = 0))
         records.insertRecord(
-            Record(trackerId = oldId, date = LocalDate(2020, 1, 1), type = RecordType.COST, description = null),
+            RecordDraft(trackerId = oldId, date = LocalDate(2020, 1, 1), type = RecordType.COST, description = null),
             emptySet(),
             listOf(PartDraft(1, emptySet())),
         )
@@ -128,8 +132,8 @@ class BackupRepositoryTest {
 
     @Test
     fun copy_importsBesideUnderAFreeName() = runBlocking {
-        db.trackerDao().insert(Tracker(title = "Дом", createdAt = 0, updatedAt = 0))
-        db.trackerDao().insert(Tracker(title = "Дом (2)", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "Дом", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "Дом (2)", createdAt = 0, updatedAt = 0))
 
         repository.import(listOf(ImportItem(homeFile, ClashResolution.COPY)))
 
@@ -138,7 +142,7 @@ class BackupRepositoryTest {
 
     @Test
     fun copy_skipsTitlesTheFileItselfBrings() = runBlocking {
-        db.trackerDao().insert(Tracker(title = "Дом", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "Дом", createdAt = 0, updatedAt = 0))
         // "Дом (2)" isn't in the database, so it needs no resolution — but the copy mustn't take its name.
         val home2 = homeFile.copy(title = "Дом (2)")
 
@@ -150,7 +154,7 @@ class BackupRepositoryTest {
     @Test
     fun exportThenImport_asCopy_reproducesTheTracker() = runBlocking {
         val id = repository.import(listOf(ImportItem(homeFile))).single()
-        db.tagDao().insert(Tag(trackerId = id, name = "кино")) // unused tags travel too
+        db.tagDao().insert(TagEntity(trackerId = id, name = "кино")) // unused tags travel too
 
         val json = encodeBackup(buildBackup(listOf(repository.snapshot(id)!!), now, TimeZone.UTC))
         val parsed = (parseBackup(json) as BackupParseResult.Success).trackers.single()
@@ -166,16 +170,16 @@ class BackupRepositoryTest {
         val id = repository.import(listOf(ImportItem(homeFile))).single()
         val groceries = db.tagDao().getForTracker(id).single { it.name == "продукты" }
         val alcohol = db.tagDao().getForTracker(id).single { it.name == "алко" }
-        records.deleteTag(groceries)
-        records.deleteTag(alcohol)
+        records.deleteTag(groceries.toDomain())
+        records.deleteTag(alcohol.toDomain())
 
         val json = encodeBackup(buildBackup(listOf(repository.snapshot(id)!!), now, TimeZone.UTC))
         val parsed = (parseBackup(json) as BackupParseResult.Success).trackers.single()
         val copyId = repository.import(listOf(ImportItem(parsed, ClashResolution.COPY))).single()
 
         assertEquals(contentOf(id), contentOf(copyId))
-        val receipt = records.observeAll(copyId).first().minBy { it.record.date }
-        assertEquals(listOf(1500L), receipt.parts.map { it.part.amountCents })
+        val receipt = records.observeAll(copyId).first().minBy { it.date }
+        assertEquals(listOf(1500L), receipt.parts.map { it.amountCents })
     }
 
     private suspend fun tagsOf(trackerId: Long) =
@@ -184,18 +188,18 @@ class BackupRepositoryTest {
     /** Everything a record holds, by tag names: ids differ between a tracker and its copy. */
     private suspend fun contentOf(trackerId: Long) = records.observeAll(trackerId).first().map { r ->
         listOf(
-            r.record.date,
-            r.record.type,
-            r.record.description,
+            r.date,
+            r.type,
+            r.description,
             r.tags.map { it.name },
-            r.parts.map { p -> p.part.amountCents to p.tags.map { it.name }.toSet() },
+            r.parts.map { p -> p.amountCents to p.tags.map { it.name }.toSet() },
         )
     }.sortedBy { it[0].toString() }
 
     @Test
     fun markBackedUp_setsBackupAt_onlyOnTheGivenTrackers() = runBlocking {
         val id = repository.import(listOf(ImportItem(homeFile))).single()
-        val otherId = db.trackerDao().insert(Tracker(title = "Работа", createdAt = 0, updatedAt = 0))
+        val otherId = db.trackerDao().insert(TrackerEntity(title = "Работа", createdAt = 0, updatedAt = 0))
 
         repository.markBackedUp(listOf(id, 42)) // 42 doesn't exist: skipped, no error
 
@@ -206,7 +210,7 @@ class BackupRepositoryTest {
     @Test
     fun snapshotAll_coversEveryTracker_sortedByTitleIgnoringCase() = runBlocking {
         repository.import(listOf(ImportItem(homeFile)))
-        db.trackerDao().insert(Tracker(title = "авто", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "авто", createdAt = 0, updatedAt = 0))
 
         val snapshots = repository.snapshotAll()
 

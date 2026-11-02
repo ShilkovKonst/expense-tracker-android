@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
     tableName = "trackers",
     indices = [Index("title", unique = true)],
 )
-data class Tracker(
+data class TrackerEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val title: String,

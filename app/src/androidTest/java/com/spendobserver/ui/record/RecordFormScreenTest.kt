@@ -1,5 +1,6 @@
 package com.spendobserver.ui.record
 
+import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -16,10 +17,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
@@ -63,7 +65,7 @@ class RecordFormScreenTest {
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao(), RecordRepository(db)::deleteTag)
 
-        trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerId = db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
         savedCount = 0
         lastChange = null
     }
@@ -96,8 +98,8 @@ class RecordFormScreenTest {
         val list = runBlocking { recordRepository.observeAll(trackerId).first() }
         assertEquals(1, list.size)
         assertEquals(1250L, list[0].amountCents)
-        assertEquals(RecordType.INCOME, list[0].record.type)
-        assertEquals("salary", list[0].record.description)
+        assertEquals(RecordType.INCOME, list[0].type)
+        assertEquals("salary", list[0].description)
     }
 
     @Test
@@ -152,7 +154,7 @@ class RecordFormScreenTest {
         val tagId = runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "rent")) }
         val recordId = runBlocking {
             recordRepository.insertRecord(
-                Record(
+                RecordDraft(
                     trackerId = trackerId,
                     date = LocalDate(2026, 3, 15),
                     type = RecordType.COST,
@@ -179,7 +181,7 @@ class RecordFormScreenTest {
         val rentId = runBlocking { tagRepository.insertTag(Tag(trackerId = trackerId, name = "rent")) }
         val recordId = runBlocking {
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "monthly rent"),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "monthly rent"),
                 setOf(shopId),
                 listOf(PartDraft(45000, setOf(rentId))),
             )
@@ -198,10 +200,10 @@ class RecordFormScreenTest {
 
         assertEquals(RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false), lastChange)
         val saved = runBlocking { recordRepository.observeAll(trackerId).first() }.single()
-        assertEquals(recordId, saved.record.id)
+        assertEquals(recordId, saved.id)
         assertEquals(30000L, saved.amountCents)
-        assertEquals(RecordType.INCOME, saved.record.type)
-        assertEquals("deposit", saved.record.description)
+        assertEquals(RecordType.INCOME, saved.type)
+        assertEquals("deposit", saved.description)
         assertEquals(listOf(shopId), saved.tags.map { it.id })
         assertTrue(saved.parts.single().tags.isEmpty())
     }
@@ -210,7 +212,7 @@ class RecordFormScreenTest {
     fun deletingRecord_removesItAndCallsOnSaved() {
         val recordId = runBlocking {
             recordRepository.insertRecord(
-                Record(
+                RecordDraft(
                     trackerId = trackerId,
                     date = LocalDate(2026, 3, 15),
                     type = RecordType.COST,
@@ -320,7 +322,7 @@ class RecordFormScreenTest {
         assertEquals(listOf(shop), saved.tags.map { it.id })
         assertEquals(
             listOf(80000L to setOf(alcohol), 265000L to setOf(groceries)),
-            saved.parts.map { p -> p.part.amountCents to p.tags.map { it.id }.toSet() },
+            saved.parts.map { p -> p.amountCents to p.tags.map { it.id }.toSet() },
         )
     }
 
@@ -358,7 +360,7 @@ class RecordFormScreenTest {
         composeRule.waitFor { savedCount == 1 }
 
         val saved = runBlocking { recordRepository.observeAll(trackerId).first().single() }
-        assertEquals(listOf(10000L), saved.parts.map { it.part.amountCents })
+        assertEquals(listOf(10000L), saved.parts.map { it.amountCents })
     }
 
     @Test
@@ -384,7 +386,7 @@ class RecordFormScreenTest {
         assertTrue(saved.tags.isEmpty())
         assertEquals(
             listOf(3000L to listOf("кино"), 7000L to emptyList()),
-            saved.parts.map { p -> p.part.amountCents to p.tags.map { it.name } },
+            saved.parts.map { p -> p.amountCents to p.tags.map { it.name } },
         )
         assertFalse(saved.parts[0].tags.single().isGlobal)
     }
@@ -409,7 +411,7 @@ class RecordFormScreenTest {
         val recordId = runBlocking {
             val groceries = tagRepository.insertTag(Tag(trackerId = trackerId, name = "продукты"))
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = null),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = null),
                 emptySet(),
                 listOf(PartDraft(80000, emptySet()), PartDraft(235000, setOf(groceries))),
             )

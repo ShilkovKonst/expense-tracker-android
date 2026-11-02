@@ -2,7 +2,7 @@ package com.spendobserver.ui.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.RecordType
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.stats.ChartBucket
@@ -48,7 +48,7 @@ class StatsViewModel(
     private val type = MutableStateFlow(RecordType.COST)
 
     /**
-     * The selected tag by id, not as a [com.spendobserver.data.local.entity.Tag]:
+     * The selected tag by id, not as a [com.spendobserver.domain.model.Tag]:
      * the tag list is re-read from Room, and an id survives a rename there.
      * Null means the overview.
      */
@@ -70,7 +70,7 @@ class StatsViewModel(
         // Not flowOn() before stateIn(): the two fuse, and the state would then be
         // set on a background thread instead of the main one the UI collects on.
         withContext(Dispatchers.Default) {
-            val availableTypes = records.mapTo(HashSet()) { it.record.type }
+            val availableTypes = records.mapTo(HashSet()) { it.type }
             // A type the tracker has no records of (its toggle button is disabled)
             // gives way to the one it has — e.g. after the last income is deleted.
             val type = if (selectedType in availableTypes || availableTypes.isEmpty()) {

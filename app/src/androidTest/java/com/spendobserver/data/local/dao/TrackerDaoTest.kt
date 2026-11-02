@@ -5,7 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.TrackerEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -35,9 +35,9 @@ class TrackerDaoTest {
 
     @Test
     fun observeAll_ordersByTitle() = runBlocking {
-        trackerDao.insert(Tracker(title = "Work", createdAt = 0, updatedAt = 0))
-        trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-        trackerDao.insert(Tracker(title = "Personal", createdAt = 0, updatedAt = 0))
+        trackerDao.insert(TrackerEntity(title = "Work", createdAt = 0, updatedAt = 0))
+        trackerDao.insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerDao.insert(TrackerEntity(title = "Personal", createdAt = 0, updatedAt = 0))
 
         val titles = trackerDao.observeAll().first().map { it.title }
 
@@ -46,11 +46,11 @@ class TrackerDaoTest {
 
     @Test
     fun insert_duplicateTitle_fails() = runBlocking {
-        trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerDao.insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
 
         var threw = false
         try {
-            trackerDao.insert(Tracker(title = "Family", createdAt = 1, updatedAt = 1))
+            trackerDao.insert(TrackerEntity(title = "Family", createdAt = 1, updatedAt = 1))
         } catch (e: Exception) {
             threw = true
         }

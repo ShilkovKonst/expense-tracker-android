@@ -2,9 +2,10 @@ package com.spendobserver.data.repository
 
 import androidx.room.withTransaction
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.domain.model.RecordDraft
 import com.spendobserver.domain.backup.ClashResolution
 import com.spendobserver.domain.backup.ImportItem
 import com.spendobserver.domain.backup.TrackerSnapshot
@@ -38,9 +39,9 @@ class BackupRepository(
         trackerDao.getAll().sortedBy { it.title.lowercase() }.map { snapshotOf(it) }
     }
 
-    private suspend fun snapshotOf(tracker: Tracker) = TrackerSnapshot(
-        tracker = tracker,
-        tags = tagDao.getForTracker(tracker.id),
+    private suspend fun snapshotOf(tracker: TrackerEntity) = TrackerSnapshot(
+        tracker = tracker.toDomain(),
+        tags = tagDao.getForTracker(tracker.id).map { it.toDomain() },
         records = recordRepository.getAll(tracker.id),
     )
 
@@ -80,14 +81,14 @@ class BackupRepository(
         }
 
         val trackerId = trackerDao.insert(
-            Tracker(title = title, createdAt = imported.createdAt.toEpochMillis(zone()), updatedAt = now()),
+            TrackerEntity(title = title, createdAt = imported.createdAt.toEpochMillis(zone()), updatedAt = now()),
         )
         val tagIds = imported.tags.associate { tag ->
-            tag.name to tagDao.insert(Tag(trackerId = trackerId, name = tag.name, isGlobal = tag.isGlobal))
+            tag.name to tagDao.insert(TagEntity(trackerId = trackerId, name = tag.name, isGlobal = tag.isGlobal))
         }
         for (record in imported.records) {
             recordRepository.insertRecord(
-                record = Record(trackerId = trackerId, date = record.date, type = record.type, description = record.description),
+                record = RecordDraft(trackerId = trackerId, date = record.date, type = record.type, description = record.description),
                 tagIds = record.tagNames.mapTo(HashSet()) { tagIds.getValue(it) },
                 parts = record.parts.map { part -> PartDraft(part.amountCents, part.tagNames.mapTo(HashSet()) { tagIds.getValue(it) }) },
             )

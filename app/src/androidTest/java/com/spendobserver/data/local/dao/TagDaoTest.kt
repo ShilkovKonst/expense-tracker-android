@@ -5,13 +5,13 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -35,7 +35,7 @@ class TagDaoTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         tagDao = db.tagDao()
         trackerId = db.trackerDao().insert(
-            Tracker(title = "Family", createdAt = 0, updatedAt = 0),
+            TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0),
         )
     }
 
@@ -47,11 +47,11 @@ class TagDaoTest {
     @Test
     fun observeForTracker_ordersByNameAndExcludesOtherTrackers() = runBlocking {
         val otherTrackerId = db.trackerDao().insert(
-            Tracker(title = "Work", createdAt = 0, updatedAt = 0),
+            TrackerEntity(title = "Work", createdAt = 0, updatedAt = 0),
         )
-        tagDao.insert(Tag(trackerId = trackerId, name = "rent"))
-        tagDao.insert(Tag(trackerId = trackerId, name = "groceries"))
-        tagDao.insert(Tag(trackerId = otherTrackerId, name = "office"))
+        tagDao.insert(TagEntity(trackerId = trackerId, name = "rent"))
+        tagDao.insert(TagEntity(trackerId = trackerId, name = "groceries"))
+        tagDao.insert(TagEntity(trackerId = otherTrackerId, name = "office"))
 
         val names = tagDao.observeForTracker(trackerId).first().map { it.name }
 
@@ -60,7 +60,7 @@ class TagDaoTest {
 
     @Test
     fun deletingTracker_cascadesToItsTags() = runBlocking {
-        tagDao.insert(Tag(trackerId = trackerId, name = "groceries"))
+        tagDao.insert(TagEntity(trackerId = trackerId, name = "groceries"))
         val tracker = db.trackerDao().getById(trackerId)!!
 
         db.trackerDao().delete(tracker)
@@ -71,21 +71,21 @@ class TagDaoTest {
     /** A record using [globalTagIds] directly and one part per entry of [partTagIds]. */
     private suspend fun insertRecord(globalTagIds: List<Long> = emptyList(), vararg partTagIds: List<Long>): Long {
         val recordId = db.recordDao().insert(
-            Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
+            RecordEntity(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
         )
-        globalTagIds.forEach { db.recordTagDao().insert(RecordTag(recordId = recordId, tagId = it)) }
+        globalTagIds.forEach { db.recordTagDao().insert(RecordTagEntity(recordId = recordId, tagId = it)) }
         partTagIds.forEachIndexed { position, tagIds ->
-            val partId = db.recordPartDao().insert(RecordPart(recordId = recordId, amountCents = 100, position = position))
-            tagIds.forEach { db.recordPartDao().insertTag(RecordPartTag(partId = partId, tagId = it)) }
+            val partId = db.recordPartDao().insert(RecordPartEntity(recordId = recordId, amountCents = 100, position = position))
+            tagIds.forEach { db.recordPartDao().insertTag(RecordPartTagEntity(partId = partId, tagId = it)) }
         }
         return recordId
     }
 
     @Test
     fun observeUsage_countsRecordsOnBothLevels_onceEvenAcrossSeveralParts() = runBlocking {
-        val shop = tagDao.insert(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true))
-        val alcohol = tagDao.insert(Tag(trackerId = trackerId, name = "алко"))
-        val unused = tagDao.insert(Tag(trackerId = trackerId, name = "снеки"))
+        val shop = tagDao.insert(TagEntity(trackerId = trackerId, name = "Ашан", isGlobal = true))
+        val alcohol = tagDao.insert(TagEntity(trackerId = trackerId, name = "алко"))
+        val unused = tagDao.insert(TagEntity(trackerId = trackerId, name = "снеки"))
         insertRecord(listOf(shop), listOf(alcohol), listOf(alcohol)) // alcohol on two parts of one record
         insertRecord(listOf(shop), listOf(alcohol))
 

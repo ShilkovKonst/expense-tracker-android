@@ -226,7 +226,7 @@ const val MAX_AMOUNT_CENTS = 10_000_000_000_000L
  * [MAX_AMOUNT_CENTS]. Zero is a real
  * amount: work logged without pay. Amounts are never negative, with
  * income/cost conveyed separately by
- * [com.spendobserver.data.local.entity.RecordType].
+ * [com.spendobserver.domain.model.RecordType].
  */
 fun amountCentsFrom(expression: String, mode: CalculatorMode = CalculatorMode.ALGEBRAIC): Long? {
     val value = calcExpression(expression, mode)

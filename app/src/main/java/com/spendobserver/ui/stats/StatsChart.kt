@@ -37,7 +37,7 @@ import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.RecordType
 import com.spendobserver.domain.format.formatAmount
 import com.spendobserver.domain.format.formatWholeNumber
 import com.spendobserver.domain.format.shortMonthName

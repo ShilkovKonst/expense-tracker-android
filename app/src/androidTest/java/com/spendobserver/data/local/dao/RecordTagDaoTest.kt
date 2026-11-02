@@ -5,11 +5,11 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.After
@@ -34,17 +34,17 @@ class RecordTagDaoTest {
         recordTagDao = db.recordTagDao()
 
         trackerId = db.trackerDao().insert(
-            Tracker(title = "Family", createdAt = 0, updatedAt = 0),
+            TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0),
         )
         recordId = db.recordDao().insert(
-            Record(
+            RecordEntity(
                 trackerId = trackerId,
                 date = LocalDate(2026, 3, 15),
                 type = RecordType.COST,
                 description = null,
             ),
         )
-        tagId = db.tagDao().insert(Tag(trackerId = trackerId, name = "groceries"))
+        tagId = db.tagDao().insert(TagEntity(trackerId = trackerId, name = "groceries"))
     }
 
     @After
@@ -54,7 +54,7 @@ class RecordTagDaoTest {
 
     @Test
     fun deletingTag_cascadesToItsRecordTags() = runBlocking {
-        recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId))
+        recordTagDao.insert(RecordTagEntity(recordId = recordId, tagId = tagId))
         val tag = db.tagDao().getByTrackerAndName(trackerId, "groceries")!!
 
         db.tagDao().delete(tag)

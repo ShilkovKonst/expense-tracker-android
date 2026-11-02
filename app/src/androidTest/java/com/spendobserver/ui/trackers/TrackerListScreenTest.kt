@@ -10,9 +10,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -116,12 +117,12 @@ class TrackerListScreenTest {
         val trackerId = runBlocking { db.trackerDao().getByTitle("Family")!!.id }
         runBlocking {
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.INCOME, description = null),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 1), type = RecordType.INCOME, description = null),
                 emptySet(),
                 listOf(PartDraft(5000, emptySet())),
             )
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 2), type = RecordType.COST, description = null),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 2), type = RecordType.COST, description = null),
                 emptySet(),
                 listOf(PartDraft(2000, emptySet())),
             )

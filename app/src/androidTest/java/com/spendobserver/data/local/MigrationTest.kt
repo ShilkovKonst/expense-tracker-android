@@ -6,7 +6,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.RecordType
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
@@ -52,7 +52,7 @@ class MigrationTest {
             assertEquals(RecordType.COST, record.record.type)
             assertEquals("receipt", record.record.description)
             assertEquals(listOf("shop"), record.tags.map { it.name })
-            assertEquals(1550L, record.amountCents)
+            assertEquals(1550L, record.parts.sumOf { it.part.amountCents })
             val parts = record.parts.sortedBy { it.part.position }
             assertEquals(listOf("milk"), parts[0].tags.map { it.name })
             assertEquals(emptyList<String>(), parts[1].tags.map { it.name })

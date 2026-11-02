@@ -7,7 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.spendobserver.data.local.dto.TrackerRecordStatsRow
-import com.spendobserver.data.local.entity.Record
+import com.spendobserver.data.local.entity.RecordEntity
 import com.spendobserver.data.local.relation.RecordWithParts
 import kotlinx.coroutines.flow.Flow
 
@@ -15,17 +15,17 @@ import kotlinx.coroutines.flow.Flow
 interface RecordDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insert(record: Record): Long
+    suspend fun insert(record: RecordEntity): Long
 
     @Update
-    suspend fun update(record: Record)
+    suspend fun update(record: RecordEntity)
 
     /** Parts and all tag links go with it, via the foreign keys' CASCADE. */
     @Query("DELETE FROM records WHERE id = :id")
     suspend fun deleteById(id: Long)
 
     @Query("SELECT * FROM records WHERE id = :id")
-    suspend fun getById(id: Long): Record?
+    suspend fun getById(id: Long): RecordEntity?
 
     @Transaction
     @Query("SELECT * FROM records WHERE id = :id")
@@ -41,7 +41,7 @@ interface RecordDao {
     suspend fun getAll(trackerId: Long): List<RecordWithParts>
 
     /**
-     * Record count + income/cost totals per tracker, across all dates — for
+     * RecordEntity count + income/cost totals per tracker, across all dates — for
      * the tracker list and detail header. A tracker with zero records has no
      * row here. Amounts live on parts, so this joins them in; the join yields
      * one row per *part*, hence `COUNT(DISTINCT r.id)` to count records.

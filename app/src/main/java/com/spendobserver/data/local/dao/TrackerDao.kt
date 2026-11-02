@@ -5,23 +5,23 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.TrackerEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TrackerDao {
 
     @Insert
-    suspend fun insert(tracker: Tracker): Long
+    suspend fun insert(tracker: TrackerEntity): Long
 
     @Update
-    suspend fun update(tracker: Tracker)
+    suspend fun update(tracker: TrackerEntity)
 
     @Delete
-    suspend fun delete(tracker: Tracker)
+    suspend fun delete(tracker: TrackerEntity)
 
     @Query("SELECT * FROM trackers WHERE id = :id")
-    suspend fun getById(id: Long): Tracker?
+    suspend fun getById(id: Long): TrackerEntity?
 
     /** Ids that no longer exist are simply skipped. */
     @Query("UPDATE trackers SET backupAt = :at WHERE id IN (:ids)")
@@ -29,14 +29,14 @@ interface TrackerDao {
 
     /** Emits `null` once the tracker is deleted. */
     @Query("SELECT * FROM trackers WHERE id = :id")
-    fun observeById(id: Long): Flow<Tracker?>
+    fun observeById(id: Long): Flow<TrackerEntity?>
 
     @Query("SELECT * FROM trackers WHERE title = :title")
-    suspend fun getByTitle(title: String): Tracker?
+    suspend fun getByTitle(title: String): TrackerEntity?
 
     @Query("SELECT * FROM trackers ORDER BY title ASC")
-    fun observeAll(): Flow<List<Tracker>>
+    fun observeAll(): Flow<List<TrackerEntity>>
 
     @Query("SELECT * FROM trackers")
-    suspend fun getAll(): List<Tracker>
+    suspend fun getAll(): List<TrackerEntity>
 }

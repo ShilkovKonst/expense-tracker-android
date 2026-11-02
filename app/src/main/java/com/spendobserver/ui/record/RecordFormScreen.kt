@@ -60,8 +60,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.calculator.CalculatorMode

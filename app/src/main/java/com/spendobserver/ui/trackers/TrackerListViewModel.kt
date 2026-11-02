@@ -2,7 +2,7 @@ package com.spendobserver.ui.trackers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.text.trimInvisible

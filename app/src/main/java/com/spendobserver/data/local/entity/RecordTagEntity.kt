@@ -9,13 +9,13 @@ import androidx.room.Index
     primaryKeys = ["recordId", "tagId"],
     foreignKeys = [
         ForeignKey(
-            entity = Record::class,
+            entity = RecordEntity::class,
             parentColumns = ["id"],
             childColumns = ["recordId"],
             onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
-            entity = Tag::class,
+            entity = TagEntity::class,
             parentColumns = ["id"],
             childColumns = ["tagId"],
             onDelete = ForeignKey.CASCADE,
@@ -23,7 +23,7 @@ import androidx.room.Index
     ],
     indices = [Index("tagId")],
 )
-data class RecordTag(
+data class RecordTagEntity(
     val recordId: Long,
     val tagId: Long,
 )

@@ -1,6 +1,6 @@
 package com.spendobserver.domain.backup
 
-import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.model.RecordType
 import com.spendobserver.domain.calculator.MAX_AMOUNT_CENTS
 import com.spendobserver.domain.text.isSameNameAs
 import com.spendobserver.domain.text.trimInvisible

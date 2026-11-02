@@ -6,12 +6,14 @@ import com.spendobserver.data.local.dao.RecordDao
 import com.spendobserver.data.local.dao.RecordPartDao
 import com.spendobserver.data.local.dao.RecordTagDao
 import com.spendobserver.data.local.dao.TagDao
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.toEntity
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.domain.calculator.MAX_AMOUNT_CENTS
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.domain.record.mergeSameTags
@@ -28,11 +30,11 @@ class RecordRepository(
     private val tagDao: TagDao = db.tagDao(),
 ) {
 
-    fun observeAll(trackerId: Long): Flow<List<RecordWithParts>> =
-        recordDao.observeAll(trackerId).map { list -> list.map { it.withSortedParts() } }
+    fun observeAll(trackerId: Long): Flow<List<Record>> =
+        recordDao.observeAll(trackerId).map { list -> list.map { it.toDomain() } }
 
-    suspend fun getAll(trackerId: Long): List<RecordWithParts> =
-        recordDao.getAll(trackerId).map { it.withSortedParts() }
+    suspend fun getAll(trackerId: Long): List<Record> =
+        recordDao.getAll(trackerId).map { it.toDomain() }
 
     /** Record count + net totals per tracker, across all dates — trackers with no records are simply absent from the map. */
     fun observeStatsByTracker(): Flow<Map<Long, TrackerStats>> =
@@ -40,27 +42,27 @@ class RecordRepository(
             rows.associate { it.trackerId to TrackerStats(it.recordCount, AmountTotals(it.incomeCents, it.costCents)) }
         }
 
-    suspend fun getRecord(id: Long): RecordWithParts? = recordDao.getWithPartsById(id)?.withSortedParts()
+    suspend fun getRecord(id: Long): Record? = recordDao.getWithPartsById(id)?.toDomain()
 
     /**
      * Inserts [record] with its global [tagIds] and its [parts] in one
      * transaction. Which tags are global vs local isn't re-checked here —
      * the form only offers each tag on its own level.
      */
-    suspend fun insertRecord(record: Record, tagIds: Set<Long>, parts: List<PartDraft>): Long {
+    suspend fun insertRecord(record: RecordDraft, tagIds: Set<Long>, parts: List<PartDraft>): Long {
         requireValidParts(parts)
         return db.withTransaction {
-            val id = recordDao.insert(record)
+            val id = recordDao.insert(record.toEntity())
             insertTagsAndParts(id, tagIds, parts)
             id
         }
     }
 
     /** Replaces the record's fields, global tags, and all of its parts. */
-    suspend fun updateRecord(record: Record, tagIds: Set<Long>, parts: List<PartDraft>) {
+    suspend fun updateRecord(record: RecordDraft, tagIds: Set<Long>, parts: List<PartDraft>) {
         requireValidParts(parts)
         db.withTransaction {
-            recordDao.update(record)
+            recordDao.update(record.toEntity())
             recordTagDao.deleteForRecord(record.id)
             recordPartDao.deleteForRecord(record.id)
             insertTagsAndParts(record.id, tagIds, parts)
@@ -77,10 +79,10 @@ class RecordRepository(
     suspend fun deleteTag(tag: Tag) {
         db.withTransaction {
             val recordIds = recordPartDao.getRecordIdsWithTag(tag.id)
-            tagDao.delete(tag)
+            tagDao.delete(tag.toEntity())
             for (recordId in recordIds) {
-                val saved = recordDao.getWithPartsById(recordId)?.withSortedParts() ?: continue
-                val parts = saved.parts.map { p -> PartDraft(p.part.amountCents, p.tags.mapTo(HashSet()) { it.id }) }
+                val saved = recordDao.getWithPartsById(recordId)?.toDomain() ?: continue
+                val parts = saved.parts.map { p -> PartDraft(p.amountCents, p.tags.mapTo(HashSet()) { it.id }) }
                 val merged = parts.mergeSameTags()
                 if (merged.size != parts.size) {
                     recordPartDao.deleteForRecord(recordId)
@@ -91,16 +93,16 @@ class RecordRepository(
     }
 
     private suspend fun insertTagsAndParts(recordId: Long, tagIds: Set<Long>, parts: List<PartDraft>) {
-        tagIds.forEach { tagId -> recordTagDao.insert(RecordTag(recordId = recordId, tagId = tagId)) }
+        tagIds.forEach { tagId -> recordTagDao.insert(RecordTagEntity(recordId = recordId, tagId = tagId)) }
         insertParts(recordId, parts)
     }
 
     private suspend fun insertParts(recordId: Long, parts: List<PartDraft>) {
         parts.forEachIndexed { position, draft ->
             val partId = recordPartDao.insert(
-                RecordPart(recordId = recordId, amountCents = draft.amountCents, position = position),
+                RecordPartEntity(recordId = recordId, amountCents = draft.amountCents, position = position),
             )
-            draft.tagIds.forEach { tagId -> recordPartDao.insertTag(RecordPartTag(partId = partId, tagId = tagId)) }
+            draft.tagIds.forEach { tagId -> recordPartDao.insertTag(RecordPartTagEntity(partId = partId, tagId = tagId)) }
         }
     }
 
@@ -109,5 +111,3 @@ class RecordRepository(
         require(parts.all { it.amountCents in 0..MAX_AMOUNT_CENTS }) { "A part's amount is out of range" }
     }
 }
-
-private fun RecordWithParts.withSortedParts() = copy(parts = parts.sortedBy { it.part.position })

@@ -6,29 +6,29 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.spendobserver.data.local.dto.TagUsageRow
-import com.spendobserver.data.local.entity.Tag
+import com.spendobserver.data.local.entity.TagEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TagDao {
 
     @Insert
-    suspend fun insert(tag: Tag): Long
+    suspend fun insert(tag: TagEntity): Long
 
     @Update
-    suspend fun update(tag: Tag)
+    suspend fun update(tag: TagEntity)
 
     @Delete
-    suspend fun delete(tag: Tag)
+    suspend fun delete(tag: TagEntity)
 
     @Query("SELECT * FROM tags WHERE trackerId = :trackerId AND name = :name")
-    suspend fun getByTrackerAndName(trackerId: Long, name: String): Tag?
+    suspend fun getByTrackerAndName(trackerId: Long, name: String): TagEntity?
 
     @Query("SELECT * FROM tags WHERE trackerId = :trackerId ORDER BY name ASC")
-    fun observeForTracker(trackerId: Long): Flow<List<Tag>>
+    fun observeForTracker(trackerId: Long): Flow<List<TagEntity>>
 
     @Query("SELECT * FROM tags WHERE trackerId = :trackerId")
-    suspend fun getForTracker(trackerId: Long): List<Tag>
+    suspend fun getForTracker(trackerId: Long): List<TagEntity>
 
     /**
      * How many records use each of [trackerId]'s tags — directly (a global

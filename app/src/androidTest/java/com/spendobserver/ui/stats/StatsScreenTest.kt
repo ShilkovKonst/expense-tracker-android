@@ -1,5 +1,7 @@
 package com.spendobserver.ui.stats
 
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -18,10 +20,11 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.domain.record.PartDraft
@@ -62,7 +65,7 @@ class StatsScreenTest {
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao(), RecordRepository(db)::deleteTag)
 
-        trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerId = db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
         val auchan = tagRepository.insertTag(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true))
         val food = tagRepository.insertTag(Tag(trackerId = trackerId, name = "продукты"))
         tagRepository.insertTag(Tag(trackerId = trackerId, name = "кино"))
@@ -74,7 +77,7 @@ class StatsScreenTest {
 
     private suspend fun insert(date: LocalDate, type: RecordType, tagIds: Set<Long>, vararg parts: PartDraft) {
         recordRepository.insertRecord(
-            Record(trackerId = trackerId, date = date, type = type, description = null),
+            RecordDraft(trackerId = trackerId, date = date, type = type, description = null),
             tagIds,
             parts.toList(),
         )
@@ -212,9 +215,9 @@ class StatsScreenTest {
     @Test
     fun typeWithoutRecordsInTracker_isDisabled() {
         trackerId = runBlocking {
-            val id = db.trackerDao().insert(Tracker(title = "Costs only", createdAt = 0, updatedAt = 0))
+            val id = db.trackerDao().insert(TrackerEntity(title = "Costs only", createdAt = 0, updatedAt = 0))
             recordRepository.insertRecord(
-                Record(trackerId = id, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
+                RecordDraft(trackerId = id, date = LocalDate(2026, 3, 1), type = RecordType.COST, description = null),
                 emptySet(),
                 listOf(PartDraft(100, emptySet())),
             )
@@ -233,8 +236,8 @@ class StatsScreenTest {
         composeRule.waitForText(string(R.string.stats_incomes_amount, amount(9000)))
 
         runBlocking {
-            val income = recordRepository.getAll(trackerId).single { it.record.type == RecordType.INCOME }
-            recordRepository.deleteRecord(income.record.id)
+            val income = recordRepository.getAll(trackerId).single { it.type == RecordType.INCOME }
+            recordRepository.deleteRecord(income.id)
         }
 
         composeRule.waitForText(costs(1700))
@@ -250,7 +253,7 @@ class StatsScreenTest {
         composeRule.waitForText(costs(1200))
 
         runBlocking {
-            tagRepository.deleteTag(db.tagDao().getForTracker(trackerId).single { it.name == "продукты" })
+            tagRepository.deleteTag(db.tagDao().getForTracker(trackerId).single { it.name == "продукты" }.toDomain())
         }
 
         composeRule.waitForText(costs(1700))

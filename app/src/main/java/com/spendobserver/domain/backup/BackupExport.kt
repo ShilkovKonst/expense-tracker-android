@@ -1,9 +1,9 @@
 package com.spendobserver.domain.backup
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
+import com.spendobserver.domain.model.Record
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -14,7 +14,7 @@ import kotlin.time.Instant
 data class TrackerSnapshot(
     val tracker: Tracker,
     val tags: List<Tag>,
-    val records: List<RecordWithParts>,
+    val records: List<Record>,
 )
 
 /**
@@ -39,19 +39,18 @@ private fun TrackerSnapshot.toBackup(zone: TimeZone) = BackupTracker(
         .sortedWith(compareBy<Tag>({ !it.isGlobal }, { it.name.lowercase() }))
         .map { BackupTag(name = it.name, global = it.isGlobal) },
     records = records
-        .sortedWith(compareBy({ it.record.date }, { it.record.id }))
+        .sortedWith(compareBy({ it.date }, { it.id }))
         .map { record ->
             BackupRecord(
-                date = record.record.date.toString(),
-                type = when (record.record.type) {
+                date = record.date.toString(),
+                type = when (record.type) {
                     RecordType.COST -> "cost"
                     RecordType.INCOME -> "income"
                 },
                 tags = record.tags.map { it.name }.sorted(),
-                description = record.record.description,
+                description = record.description,
                 parts = record.parts
-                    .sortedBy { it.part.position }
-                    .map { part -> BackupPart(amount = part.part.amountCents, tags = part.tags.map { it.name }.sorted()) },
+                    .map { part -> BackupPart(amount = part.amountCents, tags = part.tags.map { it.name }.sorted()) },
             )
         },
 )

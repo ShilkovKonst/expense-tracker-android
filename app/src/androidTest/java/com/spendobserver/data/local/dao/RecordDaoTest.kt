@@ -5,13 +5,13 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.data.local.AppDatabase
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordPart
-import com.spendobserver.data.local.entity.RecordPartTag
-import com.spendobserver.data.local.entity.RecordTag
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.RecordPartEntity
+import com.spendobserver.data.local.entity.RecordPartTagEntity
+import com.spendobserver.data.local.entity.RecordTagEntity
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
@@ -37,7 +37,7 @@ class RecordDaoTest {
         recordDao = db.recordDao()
         recordPartDao = db.recordPartDao()
         trackerId = db.trackerDao().insert(
-            Tracker(title = "Family", createdAt = 0, updatedAt = 0),
+            TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0),
         )
     }
 
@@ -46,7 +46,7 @@ class RecordDaoTest {
         db.close()
     }
 
-    private fun record(date: LocalDate, type: RecordType = RecordType.COST, tracker: Long = trackerId) = Record(
+    private fun record(date: LocalDate, type: RecordType = RecordType.COST, tracker: Long = trackerId) = RecordEntity(
         trackerId = tracker,
         date = date,
         type = type,
@@ -54,10 +54,10 @@ class RecordDaoTest {
     )
 
     /** Inserts [record] plus one untagged part per amount, returning the record id. */
-    private suspend fun insertWithParts(record: Record, vararg partAmountsCents: Long = longArrayOf(1000)): Long {
+    private suspend fun insertWithParts(record: RecordEntity, vararg partAmountsCents: Long = longArrayOf(1000)): Long {
         val id = recordDao.insert(record)
         partAmountsCents.forEachIndexed { position, cents ->
-            recordPartDao.insert(RecordPart(recordId = id, amountCents = cents, position = position))
+            recordPartDao.insert(RecordPartEntity(recordId = id, amountCents = cents, position = position))
         }
         return id
     }
@@ -69,13 +69,13 @@ class RecordDaoTest {
         recordDao.deleteById(id)
 
         assertNull(recordDao.getById(id))
-        assertEquals(emptyList<RecordPart>(), recordPartDao.getForRecord(id))
+        assertEquals(emptyList<RecordPartEntity>(), recordPartDao.getForRecord(id))
     }
 
     @Test
     fun observeAll_returnsEveryRecordForTrackerOrderedByDate() = runBlocking {
         val otherTrackerId = db.trackerDao().insert(
-            Tracker(title = "Work", createdAt = 0, updatedAt = 0),
+            TrackerEntity(title = "Work", createdAt = 0, updatedAt = 0),
         )
         val jan = insertWithParts(record(LocalDate(2026, 1, 5)))
         val dec = insertWithParts(record(LocalDate(2025, 12, 20)))
@@ -88,27 +88,27 @@ class RecordDaoTest {
 
     @Test
     fun observeAll_loadsGlobalTagsAndEachPartWithItsOwnTags() = runBlocking {
-        val shop = db.tagDao().insert(Tag(trackerId = trackerId, name = "Ашан", isGlobal = true))
-        val groceries = db.tagDao().insert(Tag(trackerId = trackerId, name = "продукты"))
-        val alcohol = db.tagDao().insert(Tag(trackerId = trackerId, name = "алко"))
+        val shop = db.tagDao().insert(TagEntity(trackerId = trackerId, name = "Ашан", isGlobal = true))
+        val groceries = db.tagDao().insert(TagEntity(trackerId = trackerId, name = "продукты"))
+        val alcohol = db.tagDao().insert(TagEntity(trackerId = trackerId, name = "алко"))
         val id = recordDao.insert(record(LocalDate(2026, 3, 1)))
-        db.recordTagDao().insert(RecordTag(recordId = id, tagId = shop))
-        val groceriesPart = recordPartDao.insert(RecordPart(recordId = id, amountCents = 2350, position = 0))
-        recordPartDao.insertTag(RecordPartTag(partId = groceriesPart, tagId = groceries))
-        val alcoholPart = recordPartDao.insert(RecordPart(recordId = id, amountCents = 800, position = 1))
-        recordPartDao.insertTag(RecordPartTag(partId = alcoholPart, tagId = alcohol))
+        db.recordTagDao().insert(RecordTagEntity(recordId = id, tagId = shop))
+        val groceriesPart = recordPartDao.insert(RecordPartEntity(recordId = id, amountCents = 2350, position = 0))
+        recordPartDao.insertTag(RecordPartTagEntity(partId = groceriesPart, tagId = groceries))
+        val alcoholPart = recordPartDao.insert(RecordPartEntity(recordId = id, amountCents = 800, position = 1))
+        recordPartDao.insertTag(RecordPartTagEntity(partId = alcoholPart, tagId = alcohol))
 
         val loaded = recordDao.observeAll(trackerId).first().single()
 
         assertEquals(listOf("Ашан"), loaded.tags.map { it.name })
         val partTags = loaded.parts.sortedBy { it.part.position }.map { p -> p.tags.map { it.name } }
         assertEquals(listOf(listOf("продукты"), listOf("алко")), partTags)
-        assertEquals(3150L, loaded.amountCents)
+        assertEquals(3150L, loaded.parts.sumOf { it.part.amountCents })
     }
 
     @Test
     fun observeStatsByTracker_countsRecordsNotParts_andNetsIncomeAgainstCost() = runBlocking {
-        val otherTrackerId = db.trackerDao().insert(Tracker(title = "Work", createdAt = 0, updatedAt = 0))
+        val otherTrackerId = db.trackerDao().insert(TrackerEntity(title = "Work", createdAt = 0, updatedAt = 0))
         insertWithParts(record(LocalDate(2026, 3, 1), type = RecordType.INCOME), 5000)
         // One receipt split into three parts — still a single record.
         insertWithParts(record(LocalDate(2026, 3, 2)), 1000, 600, 400)
@@ -125,7 +125,7 @@ class RecordDaoTest {
 
     @Test
     fun observeStatsByTracker_trackerWithNoRecords_hasNoRow() = runBlocking {
-        db.trackerDao().insert(Tracker(title = "Empty", createdAt = 0, updatedAt = 0))
+        db.trackerDao().insert(TrackerEntity(title = "Empty", createdAt = 0, updatedAt = 0))
 
         val stats = recordDao.observeStatsByTracker().first()
 

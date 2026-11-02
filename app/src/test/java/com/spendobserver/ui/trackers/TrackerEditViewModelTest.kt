@@ -1,8 +1,11 @@
 package com.spendobserver.ui.trackers
 
+import com.spendobserver.data.local.toEntity
+import com.spendobserver.data.local.toDomain
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import com.spendobserver.data.local.dao.TagDao
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.common.NameError
@@ -40,8 +43,8 @@ class TrackerEditViewModelTest {
         trackerDao = FakeTrackerDao()
         tagDao = FakeTagDao()
         runBlocking {
-            trackerId = trackerDao.insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
-            trackerDao.insert(Tracker(title = "Work", createdAt = 0, updatedAt = 0))
+            trackerId = trackerDao.insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
+            trackerDao.insert(TrackerEntity(title = "Work", createdAt = 0, updatedAt = 0))
         }
     }
 
@@ -52,7 +55,7 @@ class TrackerEditViewModelTest {
 
     /** A loaded ViewModel, with its WhileSubscribed state kept subscribed for the test's duration. */
     private fun TestScope.loadedViewModel(): TrackerEditViewModel {
-        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(tagDao, tagDao::delete))
+        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(tagDao) { tagDao.delete(it.toEntity()) })
         viewModel.isTitleChanged.onEach { }.launchIn(backgroundScope)
         viewModel.tags.onEach { }.launchIn(backgroundScope)
         advanceUntilIdle()
@@ -213,13 +216,13 @@ class TrackerEditViewModelTest {
     fun createTag_tappedTwiceBeforeTheFirstFinishes_createsOneTag() = runTest(dispatcher) {
         // Suspends after reading the names, as Room does, so both calls would see the name as free.
         val suspendingDao = object : TagDao by tagDao {
-            override suspend fun getForTracker(trackerId: Long): List<Tag> {
+            override suspend fun getForTracker(trackerId: Long): List<TagEntity> {
                 val tags = tagDao.getForTracker(trackerId)
                 yield()
                 return tags
             }
         }
-        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(suspendingDao, tagDao::delete))
+        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(suspendingDao) { tagDao.delete(it.toEntity()) })
 
         viewModel.createTag("кино", isGlobal = false)
         viewModel.createTag("кино", isGlobal = false)
@@ -240,7 +243,7 @@ class TrackerEditViewModelTest {
     }
 
     private suspend fun tagOf(name: String): Tag {
-        val id = tagDao.insert(Tag(trackerId = trackerId, name = name))
-        return tagDao.getForTracker(trackerId).single { it.id == id }
+        val id = tagDao.insert(TagEntity(trackerId = trackerId, name = name))
+        return tagDao.getForTracker(trackerId).single { it.id == id }.toDomain()
     }
 }

@@ -1,5 +1,6 @@
 package com.spendobserver.ui.navigation
 
+import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -9,7 +10,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
@@ -40,7 +41,7 @@ class SpendObserverNavHostTest {
     @Test
     fun tappingBackTwiceDuringTheAnimation_stopsAtTheStartScreen() {
         val db = dbRule.db
-        runBlocking { db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0)) }
+        runBlocking { db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0)) }
         val records = RecordRepository(db)
         composeRule.setContent {
             navController = rememberNavController()

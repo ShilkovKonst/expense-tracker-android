@@ -1,5 +1,6 @@
 package com.spendobserver.ui.tracker
 
+import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -7,10 +8,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Record
+import com.spendobserver.domain.model.RecordDraft
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.BackupRepository
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
@@ -55,7 +57,7 @@ class TrackerDetailScreenTest {
         recordRepository = RecordRepository(db)
         tagRepository = TagRepository(db.tagDao(), RecordRepository(db)::deleteTag)
 
-        trackerId = db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerId = db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
     }
 
     private suspend fun insertRecord(
@@ -65,7 +67,7 @@ class TrackerDetailScreenTest {
         description: String?,
     ): Long =
         recordRepository.insertRecord(
-            Record(trackerId = trackerId, date = date, type = type, description = description),
+            RecordDraft(trackerId = trackerId, date = date, type = type, description = description),
             emptySet(),
             listOf(PartDraft(amountCents, emptySet())),
         )
@@ -166,7 +168,7 @@ class TrackerDetailScreenTest {
         runBlocking {
             val tagId = tagRepository.insertTag(Tag(trackerId = trackerId, name = "groceries"))
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "shopping"),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "shopping"),
                 emptySet(),
                 listOf(PartDraft(1000, setOf(tagId))),
             )
@@ -242,7 +244,7 @@ class TrackerDetailScreenTest {
     fun splitRecord_partsAreCollapsedAndToggleWithoutOpeningTheRecord() {
         val recordId = runBlocking {
             recordRepository.insertRecord(
-                Record(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "receipt"),
+                RecordDraft(trackerId = trackerId, date = LocalDate(2026, 3, 15), type = RecordType.COST, description = "receipt"),
                 emptySet(),
                 listOf(PartDraft(80000, emptySet()), PartDraft(235000, emptySet())),
             )

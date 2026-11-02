@@ -1,7 +1,7 @@
 package com.spendobserver.domain.summary
 
-import com.spendobserver.data.local.entity.RecordType
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.RecordType
+import com.spendobserver.domain.model.Record
 import com.spendobserver.testing.recordWithParts
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -12,7 +12,7 @@ class AmountTotalsTest {
 
     @Test
     fun emptyList_totalsAreZero() {
-        val totals = emptyList<RecordWithParts>().amountTotals()
+        val totals = emptyList<Record>().amountTotals()
 
         assertEquals(0L, totals.incomeCents)
         assertEquals(0L, totals.costCents)

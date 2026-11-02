@@ -1,14 +1,15 @@
 package com.spendobserver.ui.common
 
+import com.spendobserver.data.local.entity.TagEntity
+import com.spendobserver.data.local.entity.RecordEntity
+import com.spendobserver.data.local.entity.TrackerEntity
 import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.spendobserver.data.local.dao.RecordDao
 import com.spendobserver.data.local.dao.TagDao
-import com.spendobserver.data.local.entity.Record
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.entity.Tracker
+import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
@@ -36,7 +37,7 @@ class WriteFailureTest {
 
     @Before
     fun setUp() = runBlocking {
-        trackerId = dbRule.db.trackerDao().insert(Tracker(title = "Family", createdAt = 0, updatedAt = 0))
+        trackerId = dbRule.db.trackerDao().insert(TrackerEntity(title = "Family", createdAt = 0, updatedAt = 0))
     }
 
     private fun onMain(action: () -> Unit) = InstrumentationRegistry.getInstrumentation().runOnMainSync(action)
@@ -48,7 +49,7 @@ class WriteFailureTest {
         val db = dbRule.db
         val realDao = db.recordDao()
         val failingDao = object : RecordDao by realDao {
-            override suspend fun insert(record: Record): Long {
+            override suspend fun insert(record: RecordEntity): Long {
                 if (diskFull) throw SQLiteFullException()
                 return realDao.insert(record)
             }
@@ -78,7 +79,7 @@ class WriteFailureTest {
     fun trackerSettings_reportTheFailure_whenCreatingATag() = runBlocking {
         val realDao = dbRule.db.tagDao()
         val failingDao = object : TagDao by realDao {
-            override suspend fun insert(tag: Tag): Long = throw SQLiteFullException()
+            override suspend fun insert(tag: TagEntity): Long = throw SQLiteFullException()
         }
         val tags = TagRepository(failingDao, RecordRepository(dbRule.db)::deleteTag)
         lateinit var viewModel: TrackerEditViewModel

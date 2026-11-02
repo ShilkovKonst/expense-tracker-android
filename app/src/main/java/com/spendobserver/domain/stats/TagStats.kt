@@ -1,7 +1,7 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.entity.Tag
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.model.Record
 
 /** How often [tag] occurs in a set of records and how much money it covers. */
 data class TagStats(
@@ -20,7 +20,7 @@ data class TagStats(
  * parts of one receipt still counts once. A part with two local tags adds
  * its amount to both, which means tag amounts needn't add up to the total.
  */
-fun List<RecordWithParts>.tagStats(tags: List<Tag>): List<TagStats> {
+fun List<Record>.tagStats(tags: List<Tag>): List<TagStats> {
     val counts = HashMap<Long, Int>()
     val amounts = HashMap<Long, Long>()
     fun add(tagId: Long, cents: Long) {
@@ -36,7 +36,7 @@ fun List<RecordWithParts>.tagStats(tags: List<Tag>): List<TagStats> {
         for (part in record.parts) {
             for (tag in part.tags) {
                 localTagIds += tag.id
-                add(tag.id, part.part.amountCents)
+                add(tag.id, part.amountCents)
             }
         }
         for (tagId in localTagIds) counts[tagId] = (counts[tagId] ?: 0) + 1

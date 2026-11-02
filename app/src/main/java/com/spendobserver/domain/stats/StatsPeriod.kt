@@ -1,6 +1,6 @@
 package com.spendobserver.domain.stats
 
-import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.model.Record
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
@@ -21,5 +21,5 @@ sealed interface StatsPeriod {
     }
 }
 
-fun List<RecordWithParts>.inPeriod(period: StatsPeriod): List<RecordWithParts> =
-    filter { it.record.date in period }
+fun List<Record>.inPeriod(period: StatsPeriod): List<Record> =
+    filter { it.date in period }

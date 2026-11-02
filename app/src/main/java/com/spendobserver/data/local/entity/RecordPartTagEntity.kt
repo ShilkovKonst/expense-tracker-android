@@ -4,19 +4,19 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 
-/** Links a [RecordPart] to a local [Tag]; the composite key allows each tag once per part. */
+/** Links a [RecordPartEntity] to a local [TagEntity]; the composite key allows each tag once per part. */
 @Entity(
     tableName = "record_part_tags",
     primaryKeys = ["partId", "tagId"],
     foreignKeys = [
         ForeignKey(
-            entity = RecordPart::class,
+            entity = RecordPartEntity::class,
             parentColumns = ["id"],
             childColumns = ["partId"],
             onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
-            entity = Tag::class,
+            entity = TagEntity::class,
             parentColumns = ["id"],
             childColumns = ["tagId"],
             onDelete = ForeignKey.CASCADE,
@@ -24,7 +24,7 @@ import androidx.room.Index
     ],
     indices = [Index("tagId")],
 )
-data class RecordPartTag(
+data class RecordPartTagEntity(
     val partId: Long,
     val tagId: Long,
 )
