@@ -101,6 +101,23 @@ class RecordFormScreenTest {
     }
 
     @Test
+    fun tappingSaveTwice_storesOneRecord() {
+        setContent()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("amountInput").performTextInput("12.50")
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitFor { savedCount >= 1 }
+        // The form stays on screen here: a late second tap is the case being tested.
+        composeRule.onNodeWithTag("saveButton").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, savedCount)
+        assertEquals(1, runBlocking { recordRepository.observeAll(trackerId).first() }.size)
+    }
+
+    @Test
     fun amountField_evaluatesAlgebraically_andFiltersWhatIsTyped() {
         setContent()
         composeRule.waitForIdle()

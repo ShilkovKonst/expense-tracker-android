@@ -94,17 +94,26 @@ class TrackerEditViewModel(
         _tagNameError.value = null
     }
 
+    /** A second tap must not pass the name check while the first is still between it and the insert. */
+    private var isCreatingTag = false
+
     /** Refuses an empty or already-used name (see [tagNameError]); [onCreated] runs only on success. */
     fun createTag(name: String, isGlobal: Boolean, onCreated: () -> Unit = {}) {
+        if (isCreatingTag) return
+        isCreatingTag = true
         val normalized = name.trimInvisible()
         viewModelScope.launch {
-            tagRepository.tagNameError(trackerId, normalized)?.let {
-                _tagNameError.value = it
-                return@launch
+            try {
+                tagRepository.tagNameError(trackerId, normalized)?.let {
+                    _tagNameError.value = it
+                    return@launch
+                }
+                tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
+                _tagNameError.value = null
+                onCreated()
+            } finally {
+                isCreatingTag = false
             }
-            tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
-            _tagNameError.value = null
-            onCreated()
         }
     }
 

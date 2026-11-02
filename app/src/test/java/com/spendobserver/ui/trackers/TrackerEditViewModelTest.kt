@@ -1,5 +1,6 @@
 package com.spendobserver.ui.trackers
 
+import com.spendobserver.data.local.dao.TagDao
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.repository.TagRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -149,6 +151,7 @@ class TrackerEditViewModelTest {
         var created = 0
 
         viewModel.createTag(" Ашан ", isGlobal = true) { created++ }
+        advanceUntilIdle()
         viewModel.createTag("продукты", isGlobal = false) { created++ }
         advanceUntilIdle()
 
@@ -204,6 +207,25 @@ class TrackerEditViewModelTest {
         assertEquals(NameError.TAKEN, viewModel.tagNameError.value)
         assertFalse(renamed)
         assertEquals(listOf("алко", "Кино"), viewModel.tags.value.map { it.name }.sortedBy { it.lowercase() })
+    }
+
+    @Test
+    fun createTag_tappedTwiceBeforeTheFirstFinishes_createsOneTag() = runTest(dispatcher) {
+        // Suspends after reading the names, as Room does, so both calls would see the name as free.
+        val suspendingDao = object : TagDao by tagDao {
+            override suspend fun getForTracker(trackerId: Long): List<Tag> {
+                val tags = tagDao.getForTracker(trackerId)
+                yield()
+                return tags
+            }
+        }
+        val viewModel = TrackerEditViewModel(trackerId, TrackerRepository(trackerDao), TagRepository(suspendingDao, tagDao::delete))
+
+        viewModel.createTag("кино", isGlobal = false)
+        viewModel.createTag("кино", isGlobal = false)
+        advanceUntilIdle()
+
+        assertEquals(1, tagDao.getForTracker(trackerId).size)
     }
 
     @Test

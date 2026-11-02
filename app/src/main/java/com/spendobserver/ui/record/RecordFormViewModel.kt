@@ -140,6 +140,9 @@ class RecordFormViewModel(
         _tagNameError.value = null
     }
 
+    /** A second tap must not pass the name check while the first is still between it and the insert. */
+    private var isCreatingTag = false
+
     /**
      * Creates a tag on the level it was asked for from: a global one is
      * selected on the record, a local one ([forPartId] set) on that part.
@@ -147,29 +150,44 @@ class RecordFormViewModel(
      * [tagNameError] instead; [onCreated] runs only on success.
      */
     fun createTag(name: String, isGlobal: Boolean, forPartId: Int? = null, onCreated: () -> Unit = {}) {
+        if (isCreatingTag) return
+        isCreatingTag = true
         val normalized = name.trimInvisible()
         viewModelScope.launch {
-            tagRepository.tagNameError(trackerId, normalized)?.let {
-                _tagNameError.value = it
-                return@launch
-            }
-            val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
-            _tagNameError.value = null
-            onCreated()
-            if (isGlobal) {
-                _globalTagIds.value = setOf(id)
-            } else if (forPartId != null) {
-                _parts.update { it.togglePartTag(forPartId, id) }
+            try {
+                tagRepository.tagNameError(trackerId, normalized)?.let {
+                    _tagNameError.value = it
+                    return@launch
+                }
+                val id = tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
+                _tagNameError.value = null
+                onCreated()
+                if (isGlobal) {
+                    _globalTagIds.value = setOf(id)
+                } else if (forPartId != null) {
+                    _parts.update { it.togglePartTag(forPartId, id) }
+                }
+            } finally {
+                isCreatingTag = false
             }
         }
     }
 
+    /**
+     * Set by the first [save] or [delete] and never cleared: the form closes
+     * after either, but its buttons take taps until the closing animation
+     * ends, and a second tap would store a second record.
+     */
+    private var isFinishing = false
+
     fun save(onSaved: (RecordChange) -> Unit) {
+        if (isFinishing) return
         val drafts = _parts.value.toDrafts(calculatorMode)
         if (drafts == null) {
             _showErrors.value = true
             return
         }
+        isFinishing = true
         viewModelScope.launch {
             val record = Record(
                 id = recordId ?: 0,
@@ -191,6 +209,8 @@ class RecordFormViewModel(
     /** Does nothing until the record has loaded — the form is empty until then anyway. */
     fun delete(onDeleted: (RecordChange) -> Unit) {
         val record = loadedRecord ?: return
+        if (isFinishing) return
+        isFinishing = true
         viewModelScope.launch {
             recordRepository.deleteRecord(record.id)
             onDeleted(record.change(record.id, deleted = true))
