@@ -21,7 +21,7 @@ private fun Char.isDecimalSeparator() = this == '.' || this == ','
  * holds what [calcExpression] understands: digits, one decimal separator
  * per number (a dot or a comma — kept as typed), `+ - * /` (`× ÷ −` become
  * those), and parentheses. Everything else — spaces, letters, `%` — is
- * dropped.
+ * dropped. Several separators in one number are resolved by [normalizeNumber].
  *
  * An operator right after another one replaces it, as on a pocket
  * calculator: `5+` then `*` gives `5*`, so `5+*3` can't be typed. The only
@@ -33,7 +33,7 @@ fun filterAmountInput(text: String): String {
         val c = OPERATOR_ALIASES[raw] ?: raw
         when {
             c in '0'..'9' || c == '(' || c == ')' -> out.append(c)
-            c.isDecimalSeparator() -> if (!out.endsInNumberWithSeparator()) out.append(c)
+            c.isDecimalSeparator() -> out.append(c)
             c in OPERATORS -> {
                 while (out.isNotEmpty() && out.last() in OPERATORS) out.deleteAt(out.lastIndex)
                 val prev = out.lastOrNull()
@@ -41,16 +41,42 @@ fun filterAmountInput(text: String): String {
             }
         }
     }
-    return out.toString()
+    return NUMBER_RUN.replace(out) { normalizeNumber(it.value) }
 }
 
-private fun StringBuilder.endsInNumberWithSeparator(): Boolean {
-    var i = lastIndex
-    while (i >= 0 && (this[i].isDigit() || this[i].isDecimalSeparator())) {
-        if (this[i].isDecimalSeparator()) return true
-        i--
+private val NUMBER_RUN = Regex("[0-9.,]+")
+
+/**
+ * Leaves at most one decimal separator in a run of digits and separators.
+ *
+ * - A separator at the end goes: that's a key just pressed, and the field
+ *   re-filters on every keystroke, so a second one simply can't be typed.
+ * - What remains with several can only be a paste. A number written with
+ *   thousands groups keeps its value: `1,234.56` and `1.234,56` become
+ *   `1234.56` and `1234,56`, `1,234,567` becomes `1234567`.
+ * - Anything else (`1.2.3`) isn't a way of writing a number, so only the first
+ *   separator counts: `1.23`.
+ */
+private fun normalizeNumber(run: String): String {
+    var number = run
+    while (number.count { it.isDecimalSeparator() } > 1 && number.last().isDecimalSeparator()) {
+        number = number.dropLast(1)
     }
-    return false
+    val separators = number.filter { it.isDecimalSeparator() }
+    if (separators.length < 2) return number
+
+    val groups = number.split('.', ',')
+    val isGrouped = groups.first().length in 1..3 && groups.subList(1, groups.lastIndex).all { it.length == 3 }
+    val grouping = separators.dropLast(1)
+    if (isGrouped && grouping.all { it == grouping.first() }) {
+        val digitsBeforeLast = groups.dropLast(1).joinToString("")
+        when {
+            separators.last() != grouping.first() -> return digitsBeforeLast + separators.last() + groups.last()
+            groups.last().length == 3 -> return digitsBeforeLast + groups.last()
+        }
+    }
+    val first = number.indexOfFirst { it.isDecimalSeparator() }
+    return number.take(first + 1) + number.drop(first + 1).filterNot { it.isDecimalSeparator() }
 }
 
 private sealed interface Token {

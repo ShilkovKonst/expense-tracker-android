@@ -57,8 +57,34 @@ class FilterAmountInputTest {
     }
 
     @Test
+    fun aPastedNumberWithThousandsGroups_keepsItsValue() {
+        assertFiltered("1234.56", "1,234.56")
+        assertFiltered("1234,56", "1.234,56")
+        assertFiltered("1234567.89", "1,234,567.89")
+        assertFiltered("1234567", "1,234,567")
+        assertFiltered("1234567", "1.234.567")
+        assertFiltered("1234.56+2000,5", "1,234.56+2.000,5")
+        assertEquals(123456L, amountCentsFrom(filterAmountInput("1,234.56")))
+    }
+
+    @Test
+    fun aNumberWithSeveralSeparatorsButNoGroups_keepsOnlyTheFirst() {
+        assertFiltered("1.2345", "1.23.45")
+        assertFiltered("12345.6", "12345.6.")
+        assertFiltered(".5", "..5")
+        assertFiltered("1234.567", "1234.5.67")
+    }
+
+    @Test
+    fun aSecondSeparatorIsNotTypeable_evenAfterAGroupLikeNumber() {
+        var field = ""
+        for (key in "1,234.56") field = filterAmountInput(field + key)
+        assertEquals("1,23456", field)
+    }
+
+    @Test
     fun filteringTwice_changesNothing() {
-        for (input in listOf(" 1 000,50 €", "5+-*/3", "(-*5", "1.2.3", "5×3÷2−1", "+(*5")) {
+        for (input in listOf(" 1 000,50 €", "5+-*/3", "(-*5", "1.2.3", "5×3÷2−1", "+(*5", "1,234.56", "1.234.567", "1.,")) {
             val once = filterAmountInput(input)
             assertEquals("«$input»", once, filterAmountInput(once))
         }
