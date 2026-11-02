@@ -8,12 +8,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import com.spendobserver.R
 import com.spendobserver.data.repository.BackupRepository
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+
+/** No value is saved for `null`; all trackers are an empty list, one is its id and title. */
+private val PendingExportSaver = Saver<ExportScope?, ArrayList<Any>>(
+    save = { target ->
+        when (target) {
+            null -> null
+            ExportScope.All -> arrayListOf()
+            is ExportScope.One -> arrayListOf(target.trackerId, target.title)
+        }
+    },
+    restore = { saved ->
+        if (saved.isEmpty()) ExportScope.All else ExportScope.One(saved[0] as Long, saved[1] as String)
+    },
+)
 
 /** Starts an export; results (and failures) come back through the `onMessage` it was made with. */
 class ExportActions internal constructor(
@@ -36,12 +53,15 @@ fun rememberExportActions(backupRepository: BackupRepository, onMessage: (String
     val exporter = remember(context, backupRepository) { BackupExporter(context.applicationContext, backupRepository) }
 
     // What the open create-document screen is for; the launcher result only carries the Uri.
-    var pending by remember { mutableStateOf<ExportScope?>(null) }
+    // Saveable: turning the phone on that screen recreates the activity beneath it, and
+    // without this the document it creates would stay empty.
+    var pending by rememberSaveable(stateSaver = PendingExportSaver) { mutableStateOf<ExportScope?>(null) }
     val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val target = pending
         pending = null
         if (uri != null && target != null) {
-            scope.launch {
+            // Detached from the composition: a turn of the phone mid-write must not cut the file short.
+            scope.launch(NonCancellable) {
                 runCatching { exporter.saveTo(uri, target) }
                     .onSuccess { currentOnMessage(resources.getString(R.string.export_saved)) }
                     .onFailure { currentOnMessage(resources.getString(R.string.export_save_failed)) }

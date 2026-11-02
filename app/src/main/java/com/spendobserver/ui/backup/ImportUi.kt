@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.spendobserver.R
 import com.spendobserver.domain.backup.ClashResolution
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -45,7 +46,8 @@ fun rememberImportLauncher(onText: (String?) -> Unit): () -> Unit {
     val currentOnText by rememberUpdatedState(onText)
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
+        // Detached from the composition: a turn of the phone while reading must not lose the chosen file.
+        scope.launch(NonCancellable) {
             val text = withContext(Dispatchers.IO) {
                 runCatching { context.contentResolver.openInputStream(uri)?.use { it.reader().readText() } }.getOrNull()
             }
