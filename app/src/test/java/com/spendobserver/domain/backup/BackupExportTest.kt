@@ -25,7 +25,8 @@ class BackupExportTest {
         tracker = Tracker(id = 1, title = "домашний", createdAt = createdAt, updatedAt = createdAt),
         tags = listOf(food, shop, alco, unused),
         records = listOf(
-            taggedRecord(id = 2, date = LocalDate(2025, 10, 2), tags = listOf(shop), parts = listOf(TestPart(661, listOf(alco)), TestPart(4355, listOf(food)))),
+            taggedRecord(id = 2, date = LocalDate(2025, 10, 2), tags = listOf(shop), parts = listOf(TestPart(661, listOf(alco)), TestPart(4355, listOf(food))))
+                .let { it.copy(record = it.record.copy(description = "чек")) },
             taggedRecord(id = 1, date = LocalDate(2025, 9, 30), type = RecordType.INCOME, parts = listOf(TestPart(2700))),
         ),
     )
@@ -59,6 +60,8 @@ class BackupExportTest {
         assertEquals(snapshot.tags.map { ImportedTag(it.name, it.isGlobal) }.toSet(), tracker.tags.toSet())
         val receipt = tracker.records.single { it.date == LocalDate(2025, 10, 2) }
         assertEquals(listOf("g20"), receipt.tagNames)
+        assertEquals(RecordType.COST, receipt.type)
+        assertEquals("чек", receipt.description)
         assertEquals(
             listOf(ImportedPart(661, listOf("алко")), ImportedPart(4355, listOf("продукты"))),
             receipt.parts,

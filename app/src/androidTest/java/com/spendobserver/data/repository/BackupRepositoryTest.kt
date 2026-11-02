@@ -157,11 +157,40 @@ class BackupRepositoryTest {
         val copyId = repository.import(listOf(ImportItem(parsed, ClashResolution.COPY))).single()
 
         assertEquals("Дом (2)", db.trackerDao().getById(copyId)!!.title)
-        assertEquals(4, db.tagDao().getForTracker(copyId).size)
-        val original = records.observeAll(id).first().map { r -> r.record.date to r.parts.map { it.part.amountCents } }
-        val copy = records.observeAll(copyId).first().map { r -> r.record.date to r.parts.map { it.part.amountCents } }
-        assertEquals(original.sortedBy { it.first }, copy.sortedBy { it.first })
+        assertEquals(tagsOf(id), tagsOf(copyId))
+        assertEquals(contentOf(id), contentOf(copyId))
     }
+
+    @Test
+    fun exportThenImport_afterDeletingATagThatMadeTwoPartsEqual_works() = runBlocking {
+        val id = repository.import(listOf(ImportItem(homeFile))).single()
+        val groceries = db.tagDao().getForTracker(id).single { it.name == "продукты" }
+        val alcohol = db.tagDao().getForTracker(id).single { it.name == "алко" }
+        records.deleteTag(groceries)
+        records.deleteTag(alcohol)
+
+        val json = encodeBackup(buildBackup(listOf(repository.snapshot(id)!!), now, TimeZone.UTC))
+        val parsed = (parseBackup(json) as BackupParseResult.Success).trackers.single()
+        val copyId = repository.import(listOf(ImportItem(parsed, ClashResolution.COPY))).single()
+
+        assertEquals(contentOf(id), contentOf(copyId))
+        val receipt = records.observeAll(copyId).first().minBy { it.record.date }
+        assertEquals(listOf(1500L), receipt.parts.map { it.part.amountCents })
+    }
+
+    private suspend fun tagsOf(trackerId: Long) =
+        db.tagDao().getForTracker(trackerId).map { it.name to it.isGlobal }.sortedBy { it.first }
+
+    /** Everything a record holds, by tag names: ids differ between a tracker and its copy. */
+    private suspend fun contentOf(trackerId: Long) = records.observeAll(trackerId).first().map { r ->
+        listOf(
+            r.record.date,
+            r.record.type,
+            r.record.description,
+            r.tags.map { it.name },
+            r.parts.map { p -> p.part.amountCents to p.tags.map { it.name }.toSet() },
+        )
+    }.sortedBy { it[0].toString() }
 
     @Test
     fun markBackedUp_setsBackupAt_onlyOnTheGivenTrackers() = runBlocking {

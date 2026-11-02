@@ -77,13 +77,31 @@ class RecordRepositoryTest {
 
     @Test
     fun observeAll_returnsPartsSortedByPosition() = runBlocking {
-        // Enough parts that Room's unordered relation load would likely scramble them.
-        val amounts = (1L..8L).map { it * 100 }
-        repository.insertRecord(record(), emptySet(), amounts.map { PartDraft(it, emptySet()) })
+        // Stored last position first, so reading in insertion order would come out reversed.
+        val id = db.recordDao().insert(record())
+        for (position in 2 downTo 0) {
+            db.recordPartDao().insert(RecordPart(recordId = id, amountCents = position * 100L, position = position))
+        }
 
         val loaded = repository.observeAll(trackerId).first().single()
 
-        assertEquals(amounts, loaded.parts.map { it.part.amountCents })
+        assertEquals(listOf(0L, 100L, 200L), loaded.parts.map { it.part.amountCents })
+    }
+
+    @Test
+    fun updateRecord_thatFailsPartWay_leavesTheRecordAsItWas() = runBlocking<Unit> {
+        val id = repository.insertRecord(record().copy(description = "old"), emptySet(), listOf(PartDraft(100, setOf(groceriesId))))
+        val noSuchTag = 999_999L
+
+        assertThrows(Exception::class.java) {
+            runBlocking {
+                repository.updateRecord(record().copy(id = id, description = "new"), emptySet(), listOf(PartDraft(200, setOf(noSuchTag))))
+            }
+        }
+
+        val stored = repository.getRecord(id)!!
+        assertEquals("old", stored.record.description)
+        assertEquals(listOf(100L to setOf(groceriesId)), stored.partSummary())
     }
 
     @Test
