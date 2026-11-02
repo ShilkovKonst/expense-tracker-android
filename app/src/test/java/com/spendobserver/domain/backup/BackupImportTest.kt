@@ -158,6 +158,14 @@ class BackupImportTest {
     }
 
     @Test
+    fun amountOverTheLimit_isNamed() {
+        assertEquals(
+            BackupError.Invalid(inRecord.copy(partNumber = 1), BackupIssue.AmountTooLarge),
+            failure(file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 9223372036854775807}]}""")),
+        )
+    }
+
+    @Test
     fun partsWithSameTags_areMerged_keepingTheTotalAndTheOrder() {
         val result = parseBackup(
             file(records = """{"date": "2025-10-02", "type": "cost", "parts": [{"amount": 1, "tags": ["алко", "продукты"]}, {"amount": 4}, {"amount": 2, "tags": ["продукты", "алко"]}, {"amount": 8}]}"""),

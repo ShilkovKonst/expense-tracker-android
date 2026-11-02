@@ -98,7 +98,7 @@
     <string name="receipt_total_clear">Убрать итог</string>
     <string name="record_delete_title">Удалить запись?</string>
     <string name="record_delete_text">Это действие нельзя отменить.</string>
-    <string name="error_amount">Введите сумму не меньше нуля</string>
+    <string name="error_amount">Введите сумму от 0 до 100 млрд</string>
     <string name="error_receipt_total">Введите итог чека</string>
     <string name="error_parts_exceed_total">Сумма частей должна быть меньше итога чека</string>
     <string name="error_duplicate_part_tags">Часть с такими же тегами уже есть</string>
@@ -198,6 +198,7 @@
     <string name="import_issue_tag_is_global">тег «%1$s» общий — он ставится на запись, а не на её часть</string>
     <string name="import_issue_no_parts">нет ни одной части</string>
     <string name="import_issue_negative_amount">сумма не может быть отрицательной</string>
+    <string name="import_issue_amount_too_large">сумма больше 100 млрд</string>
     <string name="import_issue_several_global_tags">больше одного общего тега</string>
 
     <!-- Help -->

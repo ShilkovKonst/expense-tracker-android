@@ -97,7 +97,7 @@
     <string name="receipt_total_clear">Supprimer le total</string>
     <string name="record_delete_title">Supprimer l’opération ?</string>
     <string name="record_delete_text">Cette action est irréversible.</string>
-    <string name="error_amount">Saisissez un montant égal ou supérieur à zéro</string>
+    <string name="error_amount">Saisissez un montant de 0 à 100 milliards</string>
     <string name="error_receipt_total">Saisissez le total du ticket</string>
     <string name="error_parts_exceed_total">La somme des parties doit être inférieure au total du ticket</string>
     <string name="error_duplicate_part_tags">Une autre partie a déjà les mêmes étiquettes</string>
@@ -191,6 +191,7 @@
     <string name="import_issue_tag_is_global">l’étiquette « %1$s » est globale : elle doit figurer sur l’opération, et non sur ses parties</string>
     <string name="import_issue_no_parts">aucune partie</string>
     <string name="import_issue_negative_amount">le montant ne peut pas être négatif</string>
+    <string name="import_issue_amount_too_large">le montant dépasse 100 milliards</string>
     <string name="import_issue_several_global_tags">plus d’une étiquette globale</string>
 
     <!-- Help -->

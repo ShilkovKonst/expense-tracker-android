@@ -60,6 +60,13 @@ class AmountCentsFromTest {
     }
 
     @Test
+    fun amountsOverTheLimit_areRefused() {
+        assertEquals(MAX_AMOUNT_CENTS, amountCentsFrom("100000000000"))
+        assertNull(amountCentsFrom("100000000000.01"))
+        assertNull(amountCentsFrom("99999999999999999999"))
+    }
+
+    @Test
     fun respectsSelectedCalculatorMode() {
         // (5+10)/2 = 7.5 left-to-right, vs 5+(10/2) = 10 with algebraic precedence.
         assertEquals(750L, amountCentsFrom("5+10/2", CalculatorMode.LEFT_TO_RIGHT))

@@ -1,6 +1,7 @@
 package com.spendobserver.domain.backup
 
 import com.spendobserver.data.local.entity.RecordType
+import com.spendobserver.domain.calculator.MAX_AMOUNT_CENTS
 import com.spendobserver.domain.text.isSameNameAs
 import com.spendobserver.domain.text.trimInvisible
 import kotlinx.datetime.LocalDate
@@ -74,6 +75,7 @@ sealed interface BackupIssue {
     data object SeveralGlobalTags : BackupIssue
     data object NoParts : BackupIssue
     data object NegativeAmount : BackupIssue
+    data object AmountTooLarge : BackupIssue
 }
 
 /** Parses and validates a whole file; the first problem found is the [BackupParseResult.Failure]. */
@@ -99,7 +101,7 @@ private fun fail(where: BackupLocation, issue: BackupIssue): Nothing = fail(Back
  * so an import can't store what the app could never have produced:
  * names non-blank and unique ignoring case, global tags only on records and
  * local ones only on parts, at most one global tag and at least one part per
- * record, no negative amounts. Parts of one record with the same tags aren't
+ * record, amounts from 0 to [MAX_AMOUNT_CENTS]. Parts of one record with the same tags aren't
  * an error: files from older versions can hold them, so they're merged, the
  * amounts summed (see [com.spendobserver.domain.record.mergeSameTags]).
  */
@@ -167,6 +169,7 @@ private fun validateRecord(record: BackupRecord, trackerWhere: BackupLocation, t
     val parts = record.parts.mapIndexed { i, part ->
         val partWhere = where.copy(partNumber = i + 1)
         if (part.amount < 0) fail(partWhere, BackupIssue.NegativeAmount)
+        if (part.amount > MAX_AMOUNT_CENTS) fail(partWhere, BackupIssue.AmountTooLarge)
         ImportedPart(part.amount, resolve(part.tags, global = false, owner = partWhere))
     }.groupBy { it.tagNames.toSet() }.values.map { same ->
         same.first().copy(amountCents = same.sumOf { it.amountCents })

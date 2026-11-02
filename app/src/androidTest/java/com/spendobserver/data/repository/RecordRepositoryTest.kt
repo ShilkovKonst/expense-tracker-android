@@ -11,6 +11,7 @@ import com.spendobserver.data.local.entity.RecordType
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.entity.Tracker
 import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.calculator.MAX_AMOUNT_CENTS
 import com.spendobserver.domain.record.PartDraft
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -83,6 +84,18 @@ class RecordRepositoryTest {
         val loaded = repository.observeAll(trackerId).first().single()
 
         assertEquals(amounts, loaded.parts.map { it.part.amountCents })
+    }
+
+    @Test
+    fun insertRecord_refusesAnAmountOverTheLimit() = runBlocking<Unit> {
+        var refused = false
+        try {
+            repository.insertRecord(record(), emptySet(), listOf(PartDraft(MAX_AMOUNT_CENTS + 1, emptySet())))
+        } catch (_: IllegalArgumentException) {
+            refused = true
+        }
+        assertTrue(refused)
+        assertTrue(repository.observeAll(trackerId).first().isEmpty())
     }
 
     @Test

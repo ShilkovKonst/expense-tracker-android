@@ -177,10 +177,18 @@ fun calcExpression(expression: String, mode: CalculatorMode = CalculatorMode.ALG
 }
 
 /**
+ * The largest amount of one part: 100 billion. Far beyond any real expense, and
+ * low enough that sums of parts neither overflow a `Long` (SQLite's `SUM()` would
+ * throw on every read of the totals) nor lose precision in a `Double`.
+ */
+const val MAX_AMOUNT_CENTS = 10_000_000_000_000L
+
+/**
  * Evaluates the amount field's calculator [expression] into whole cents for
  * storage as [com.spendobserver.data.local.entity.RecordPart.amountCents].
  * Returns `null` for anything that isn't a finite amount of zero or more
- * (empty input, a malformed expression, a negative result). Zero is a real
+ * (empty input, a malformed expression, a negative result) or that's over
+ * [MAX_AMOUNT_CENTS]. Zero is a real
  * amount: work logged without pay. Amounts are never negative, with
  * income/cost conveyed separately by
  * [com.spendobserver.data.local.entity.RecordType].
@@ -188,5 +196,5 @@ fun calcExpression(expression: String, mode: CalculatorMode = CalculatorMode.ALG
 fun amountCentsFrom(expression: String, mode: CalculatorMode = CalculatorMode.ALGEBRAIC): Long? {
     val value = calcExpression(expression, mode)
     if (!value.isFinite() || value < 0.0) return null
-    return Math.round(value * 100)
+    return Math.round(value * 100).takeIf { it <= MAX_AMOUNT_CENTS }
 }

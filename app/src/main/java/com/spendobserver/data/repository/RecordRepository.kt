@@ -12,6 +12,7 @@ import com.spendobserver.data.local.entity.RecordPartTag
 import com.spendobserver.data.local.entity.RecordTag
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.local.relation.RecordWithParts
+import com.spendobserver.domain.calculator.MAX_AMOUNT_CENTS
 import com.spendobserver.domain.record.PartDraft
 import com.spendobserver.domain.record.mergeSameTags
 import com.spendobserver.domain.summary.AmountTotals
@@ -105,7 +106,7 @@ class RecordRepository(
 
     private fun requireValidParts(parts: List<PartDraft>) {
         require(parts.isNotEmpty()) { "A record needs at least one part" }
-        require(parts.all { it.amountCents >= 0 }) { "A part's amount can't be negative" }
+        require(parts.all { it.amountCents in 0..MAX_AMOUNT_CENTS }) { "A part's amount is out of range" }
     }
 }
 
