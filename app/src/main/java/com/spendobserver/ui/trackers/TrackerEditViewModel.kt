@@ -1,5 +1,6 @@
 package com.spendobserver.ui.trackers
 
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.local.entity.Tag
@@ -45,6 +46,22 @@ class TrackerEditViewModel(
     val tagUsage: StateFlow<Map<Long, Int>> = tagRepository.observeUsage(trackerId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), emptyMap())
 
+    /** The database refused a write (a full disk, say). */
+    private val _writeFailed = MutableStateFlow(false)
+    val writeFailed: StateFlow<Boolean> = _writeFailed.asStateFlow()
+
+    fun clearWriteFailed() {
+        _writeFailed.value = false
+    }
+
+    private suspend fun reportingWriteFailure(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (_: SQLiteException) {
+            _writeFailed.value = true
+        }
+    }
+
     private val _saveError = MutableStateFlow<NameError?>(null)
     val saveError: StateFlow<NameError?> = _saveError.asStateFlow()
 
@@ -75,14 +92,16 @@ class TrackerEditViewModel(
                 return@launch
             }
             val tracker = trackerRepository.getTracker(trackerId) ?: return@launch
-            catchingTitleClash {
-                trackerRepository.updateTracker(tracker.copy(title = title, updatedAt = System.currentTimeMillis()))
-            }.onSuccess {
-                savedTitle.value = title
-                _title.value = title
-                onSaved()
+            reportingWriteFailure {
+                catchingTitleClash {
+                    trackerRepository.updateTracker(tracker.copy(title = title, updatedAt = System.currentTimeMillis()))
+                }.onSuccess {
+                    savedTitle.value = title
+                    _title.value = title
+                    onSaved()
+                }
+                    .onFailure { _saveError.value = NameError.TAKEN }
             }
-                .onFailure { _saveError.value = NameError.TAKEN }
         }
     }
 
@@ -111,6 +130,8 @@ class TrackerEditViewModel(
                 tagRepository.insertTag(Tag(trackerId = trackerId, name = normalized, isGlobal = isGlobal))
                 _tagNameError.value = null
                 onCreated()
+            } catch (_: SQLiteException) {
+                _writeFailed.value = true
             } finally {
                 isCreatingTag = false
             }
@@ -129,13 +150,15 @@ class TrackerEditViewModel(
                 _tagNameError.value = it
                 return@launch
             }
-            tagRepository.updateTag(tag.copy(name = name))
-            _tagNameError.value = null
-            onRenamed()
+            reportingWriteFailure {
+                tagRepository.updateTag(tag.copy(name = name))
+                _tagNameError.value = null
+                onRenamed()
+            }
         }
     }
 
     fun deleteTag(tag: Tag) {
-        viewModelScope.launch { tagRepository.deleteTag(tag) }
+        viewModelScope.launch { reportingWriteFailure { tagRepository.deleteTag(tag) } }
     }
 }

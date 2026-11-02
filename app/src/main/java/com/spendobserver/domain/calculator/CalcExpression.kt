@@ -142,6 +142,7 @@ private fun tokenize(expression: String): List<Token>? {
  */
 private class Parser(private val tokens: List<Token>, private val mode: CalculatorMode) {
     private var pos = 0
+    private var depth = 0
 
     fun parse(): Double {
         val value = expr()
@@ -175,13 +176,21 @@ private class Parser(private val tokens: List<Token>, private val mode: Calculat
         }
     }
 
-    private fun factor(): Double = when (val token = tokens.getOrNull(pos++)) {
-        is Token.Number -> token.value
-        Token.Operator('-') -> -factor()
-        Token.Open -> expr().also { if (tokens.getOrNull(pos++) != Token.Close) throw MalformedExpression }
-        else -> throw MalformedExpression
+    private fun factor(): Double {
+        if (++depth > MAX_NESTING) throw MalformedExpression
+        val value = when (val token = tokens.getOrNull(pos++)) {
+            is Token.Number -> token.value
+            Token.Operator('-') -> -factor()
+            Token.Open -> expr().also { if (tokens.getOrNull(pos++) != Token.Close) throw MalformedExpression }
+            else -> throw MalformedExpression
+        }
+        depth--
+        return value
     }
 }
+
+/** Beyond any real expression; a pasted wall of `(((` must end in "malformed", not a stack overflow. */
+private const val MAX_NESTING = 100
 
 /** Thrown by [Parser] only, caught right away by [calcExpression]; no stack trace needed. */
 private object MalformedExpression : RuntimeException(null, null, false, false)

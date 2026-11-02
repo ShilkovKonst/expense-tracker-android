@@ -83,6 +83,7 @@ import com.spendobserver.ui.common.dateText
 import com.spendobserver.ui.common.fadingBottomEdge
 import com.spendobserver.ui.navigation.RecordChange
 import com.spendobserver.ui.common.tagNameText
+import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.verticalScrollbar
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
@@ -393,6 +394,9 @@ fun RecordFormScreen(
             },
         )
     }
+
+    val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
+    if (writeFailed) WriteFailedDialog(onDismiss = viewModel::clearWriteFailed)
 
     if (showDeleteRecordDialog) {
         AlertDialog(

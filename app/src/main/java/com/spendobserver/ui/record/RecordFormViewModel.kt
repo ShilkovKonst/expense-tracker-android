@@ -1,5 +1,6 @@
 package com.spendobserver.ui.record
 
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -195,6 +196,8 @@ class RecordFormViewModel(
                 } else if (forPartId != null) {
                     _parts.update { it.togglePartTag(forPartId, id) }
                 }
+            } catch (_: SQLiteException) {
+                _writeFailed.value = true
             } finally {
                 isCreatingTag = false
             }
@@ -208,6 +211,23 @@ class RecordFormViewModel(
      */
     private var isFinishing = false
 
+    /** The database refused a write (a full disk, say): the form stays open with everything entered. */
+    private val _writeFailed = MutableStateFlow(false)
+    val writeFailed: StateFlow<Boolean> = _writeFailed.asStateFlow()
+
+    fun clearWriteFailed() {
+        _writeFailed.value = false
+    }
+
+    private suspend fun finishing(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (_: SQLiteException) {
+            isFinishing = false
+            _writeFailed.value = true
+        }
+    }
+
     fun save(onSaved: (RecordChange) -> Unit) {
         if (isFinishing) return
         val drafts = _parts.value.toDrafts(calculatorMode)
@@ -217,20 +237,22 @@ class RecordFormViewModel(
         }
         isFinishing = true
         viewModelScope.launch {
-            val record = Record(
-                id = recordId ?: 0,
-                trackerId = trackerId,
-                date = _date.value,
-                type = _type.value,
-                description = _description.value.trim().ifEmpty { null },
-            )
-            val savedId = if (recordId == null) {
-                recordRepository.insertRecord(record, _globalTagIds.value, drafts)
-            } else {
-                recordRepository.updateRecord(record, _globalTagIds.value, drafts)
-                recordId
+            finishing {
+                val record = Record(
+                    id = recordId ?: 0,
+                    trackerId = trackerId,
+                    date = _date.value,
+                    type = _type.value,
+                    description = _description.value.trimInvisible().ifEmpty { null },
+                )
+                val savedId = if (recordId == null) {
+                    recordRepository.insertRecord(record, _globalTagIds.value, drafts)
+                } else {
+                    recordRepository.updateRecord(record, _globalTagIds.value, drafts)
+                    recordId
+                }
+                onSaved(record.change(savedId, deleted = false))
             }
-            onSaved(record.change(savedId, deleted = false))
         }
     }
 
@@ -240,8 +262,10 @@ class RecordFormViewModel(
         if (isFinishing) return
         isFinishing = true
         viewModelScope.launch {
-            recordRepository.deleteRecord(record.id)
-            onDeleted(record.change(record.id, deleted = true))
+            finishing {
+                recordRepository.deleteRecord(record.id)
+                onDeleted(record.change(record.id, deleted = true))
+            }
         }
     }
 }

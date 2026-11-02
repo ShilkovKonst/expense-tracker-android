@@ -61,6 +61,7 @@
     <!-- Export -->
     <string name="export_saved">Файл сохранён</string>
     <string name="export_save_failed">Не удалось сохранить файл</string>
+    <string name="write_failed">Не удалось сохранить изменения. Проверьте, есть ли свободное место на устройстве, и повторите.</string>
     <string name="export_prepare_failed">Не удалось подготовить файл</string>
 
     <!-- Shared form pieces -->

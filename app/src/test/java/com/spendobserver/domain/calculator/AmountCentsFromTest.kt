@@ -60,6 +60,12 @@ class AmountCentsFromTest {
     }
 
     @Test
+    fun nesting_isFineWithinReason_andRefusedBeyondIt() {
+        assertEquals(500L, amountCentsFrom("(".repeat(50) + "5"))
+        assertNull(amountCentsFrom("(".repeat(100_000) + "5"))
+    }
+
+    @Test
     fun amountsOverTheLimit_areRefused() {
         assertEquals(MAX_AMOUNT_CENTS, amountCentsFrom("100000000000"))
         assertNull(amountCentsFrom("100000000000.01"))

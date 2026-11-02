@@ -96,6 +96,8 @@ class BackupImportTest {
     fun foreignFormat_andNewerVersion_areRefused() {
         assertEquals(BackupError.NotSpendObserver, failure(file(format = "other")))
         assertEquals(BackupError.NewerVersion, failure(file(version = BACKUP_VERSION + 1)))
+        assertEquals(BackupError.Damaged, failure(file(version = 0)))
+        assertEquals(BackupError.Damaged, failure(file(version = -1)))
     }
 
     @Test
@@ -175,6 +177,18 @@ class BackupImportTest {
         assertEquals(listOf(3L, 12L), parts.map { it.amountCents })
         assertEquals(setOf("алко", "продукты"), parts[0].tagNames.toSet())
         assertEquals(emptyList<String>(), parts[1].tagNames)
+    }
+
+    @Test
+    fun aDateFarFromAnyRealRecord_isRefused() {
+        assertEquals(
+            BackupError.Invalid(inTracker, BackupIssue.BadRecordDate("+999999-01-01")),
+            failure(file(records = """{"date": "+999999-01-01", "type": "cost", "parts": [{"amount": 1}]}""")),
+        )
+        assertEquals(
+            BackupError.Invalid(inTracker, BackupIssue.BadRecordDate("1899-12-31")),
+            failure(file(records = """{"date": "1899-12-31", "type": "cost", "parts": [{"amount": 1}]}""")),
+        )
     }
 
     @Test

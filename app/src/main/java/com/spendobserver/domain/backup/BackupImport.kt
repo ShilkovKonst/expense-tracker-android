@@ -89,6 +89,9 @@ fun parseBackup(json: String): BackupParseResult {
     return validateBackup(file)
 }
 
+/** Dates a real record can have; the statistics draw a bar for every period between the first and the last. */
+private val RECORD_YEARS = 1900..2100
+
 /** Thrown inside validation to stop at the first problem; never escapes [validateBackup]. */
 private class InvalidBackup(val error: BackupError) : Exception()
 
@@ -107,6 +110,7 @@ private fun fail(where: BackupLocation, issue: BackupIssue): Nothing = fail(Back
  */
 fun validateBackup(file: BackupFile): BackupParseResult = try {
     if (file.format != BACKUP_FORMAT) fail(BackupError.NotSpendObserver)
+    if (file.version < 1) fail(BackupError.Damaged)
     if (file.version > BACKUP_VERSION) fail(BackupError.NewerVersion)
     if (file.trackers.isEmpty()) fail(BackupError.NoTrackers)
 
@@ -143,7 +147,7 @@ private fun validateTracker(tracker: BackupTracker, index: Int): ImportedTracker
 }
 
 private fun validateRecord(record: BackupRecord, trackerWhere: BackupLocation, tags: List<ImportedTag>): ImportedRecord {
-    val date = parseOrNull { LocalDate.parse(record.date) }
+    val date = parseOrNull { LocalDate.parse(record.date) }?.takeIf { it.year in RECORD_YEARS }
         ?: fail(trackerWhere, BackupIssue.BadRecordDate(record.date))
     val where = trackerWhere.copy(recordDate = record.date)
 

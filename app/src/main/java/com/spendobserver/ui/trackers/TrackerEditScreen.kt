@@ -43,6 +43,7 @@ import com.spendobserver.R
 import com.spendobserver.data.local.entity.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.LabeledOutlinedBox
@@ -214,6 +215,9 @@ fun TrackerEditScreen(
             onTextChange = viewModel::clearTagNameError,
         )
     }
+
+    val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
+    if (writeFailed) WriteFailedDialog(onDismiss = viewModel::clearWriteFailed)
 
     tagToDelete?.let { tag ->
         AlertDialog(

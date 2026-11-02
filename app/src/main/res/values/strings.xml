@@ -57,6 +57,7 @@
     <!-- Export -->
     <string name="export_saved">File saved</string>
     <string name="export_save_failed">Couldn’t save the file</string>
+    <string name="write_failed">Couldn’t save the changes. Check that the device has free space and try again.</string>
     <string name="export_prepare_failed">Couldn’t prepare the file</string>
 
     <!-- Shared form pieces -->

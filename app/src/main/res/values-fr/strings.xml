@@ -60,6 +60,7 @@
     <!-- Export -->
     <string name="export_saved">Fichier enregistré</string>
     <string name="export_save_failed">Impossible d’enregistrer le fichier</string>
+    <string name="write_failed">Impossible d’enregistrer les modifications. Vérifiez qu’il reste de l’espace libre sur l’appareil, puis réessayez.</string>
     <string name="export_prepare_failed">Impossible de préparer le fichier</string>
 
     <!-- Shared form pieces -->

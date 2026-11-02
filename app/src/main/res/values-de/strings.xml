@@ -57,6 +57,7 @@
     <!-- Export -->
     <string name="export_saved">Datei gespeichert</string>
     <string name="export_save_failed">Die Datei konnte nicht gespeichert werden</string>
+    <string name="write_failed">Die Änderungen konnten nicht gespeichert werden. Prüfen Sie, ob auf dem Gerät genug Speicher frei ist, und versuchen Sie es erneut.</string>
     <string name="export_prepare_failed">Die Datei konnte nicht vorbereitet werden</string>
 
     <!-- Shared form pieces -->

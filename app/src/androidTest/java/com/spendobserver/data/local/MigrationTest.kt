@@ -31,7 +31,7 @@ class MigrationTest {
      * entities follow the current schema, while this test stays on version 1.
      */
     @Test
-    fun dataFromVersion1SurvivesUpgradeToCurrentVersion() = runBlocking {
+    fun dataWrittenWithTheVersion1Schema_opensInTheCurrentDatabase() = runBlocking {
         val date = LocalDate(2026, 3, 15)
         helper.createDatabase(TEST_DB, 1).use { db ->
             db.execSQL("INSERT INTO trackers (id, title, createdAt, updatedAt, backupAt) VALUES (1, 'Family', 10, 20, NULL)")
