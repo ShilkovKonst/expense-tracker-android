@@ -32,6 +32,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -220,21 +221,22 @@ fun TrackerDetailScreen(
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             /** A menu entry that closes the menu before acting. */
                             @Composable
-                            fun item(label: String, tag: String, action: () -> Unit) = DropdownMenuItem(
+                            fun item(label: String, tag: String, destructive: Boolean = false, action: () -> Unit) = DropdownMenuItem(
                                 text = { Text(label) },
                                 onClick = {
                                     showMenu = false
                                     action()
                                 },
+                                colors = if (destructive) MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error) else MenuDefaults.itemColors(),
                                 modifier = Modifier.testTag(tag),
                             )
-                            item(stringResource(R.string.menu_stats), "statsItem", onStatsClick)
-                            item(stringResource(R.string.menu_settings), "editTrackerItem", onEditTrackerClick)
+                            item(stringResource(R.string.menu_stats), "statsItem", action = onStatsClick)
+                            item(stringResource(R.string.menu_settings), "editTrackerItem", action = onEditTrackerClick)
                             HorizontalDivider()
                             item(stringResource(R.string.menu_save_to_file), "exportSaveItem") { exportActions.save(exportScope) }
                             item(stringResource(R.string.menu_share), "exportShareItem") { exportActions.share(exportScope) }
                             HorizontalDivider()
-                            item(stringResource(R.string.action_delete), "deleteTrackerItem") { showDeleteTrackerDialog = true }
+                            item(stringResource(R.string.action_delete), "deleteTrackerItem", destructive = true) { showDeleteTrackerDialog = true }
                         }
                     }
                 },

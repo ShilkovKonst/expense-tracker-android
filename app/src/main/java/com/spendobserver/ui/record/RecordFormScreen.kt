@@ -84,6 +84,8 @@ import com.spendobserver.ui.common.dateText
 import com.spendobserver.ui.common.fadingBottomEdge
 import com.spendobserver.ui.navigation.RecordChange
 import com.spendobserver.ui.common.tagNameText
+import com.spendobserver.ui.common.DeleteIconButton
+import com.spendobserver.ui.common.DeleteTextButton
 import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.verticalScrollbar
 import kotlinx.datetime.LocalDate
@@ -151,10 +153,10 @@ fun RecordFormScreen(
                 },
                 actions = {
                     if (viewModel.isEditing) {
-                        IconButton(
+                        DeleteIconButton(
                             onClick = { showDeleteRecordDialog = true },
                             modifier = Modifier.testTag("deleteRecordButton"),
-                        ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
@@ -405,10 +407,10 @@ fun RecordFormScreen(
             title = { Text(stringResource(R.string.record_delete_title)) },
             text = { Text(stringResource(R.string.record_delete_text)) },
             confirmButton = {
-                TextButton(onClick = {
+                DeleteTextButton(onClick = {
                     showDeleteRecordDialog = false
                     viewModel.delete(onSaved)
-                }) { Text(stringResource(R.string.action_delete)) }
+                })
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteRecordDialog = false }) { Text(stringResource(R.string.action_cancel)) }

@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -315,18 +316,19 @@ private fun TrackerRow(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     /** A menu entry that closes the menu before acting. */
                     @Composable
-                    fun item(label: String, tag: String, action: () -> Unit) = DropdownMenuItem(
+                    fun item(label: String, tag: String, destructive: Boolean = false, action: () -> Unit) = DropdownMenuItem(
                         text = { Text(label) },
                         onClick = {
                             showMenu = false
                             action()
                         },
+                        colors = if (destructive) MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error) else MenuDefaults.itemColors(),
                         modifier = Modifier.testTag("$tag-${tracker.title}"),
                     )
-                    item(stringResource(R.string.menu_stats), "statsTrackerItem", onStatsClick)
-                    item(stringResource(R.string.menu_settings), "editTrackerItem", onEditClick)
+                    item(stringResource(R.string.menu_stats), "statsTrackerItem", action = onStatsClick)
+                    item(stringResource(R.string.menu_settings), "editTrackerItem", action = onEditClick)
                     HorizontalDivider()
-                    item(stringResource(R.string.action_delete), "deleteTrackerItem", onDeleteClick)
+                    item(stringResource(R.string.action_delete), "deleteTrackerItem", destructive = true, action = onDeleteClick)
                 }
             }
         },

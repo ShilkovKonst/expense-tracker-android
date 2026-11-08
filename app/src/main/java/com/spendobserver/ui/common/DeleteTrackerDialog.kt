@@ -15,7 +15,7 @@ fun DeleteTrackerDialog(trackerTitle: String, onConfirm: () -> Unit, onDismiss: 
         title = { Text(stringResource(R.string.delete_tracker_title, trackerTitle)) },
         text = { Text(stringResource(R.string.delete_tracker_text)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_delete)) }
+            DeleteTextButton(onClick = onConfirm)
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }

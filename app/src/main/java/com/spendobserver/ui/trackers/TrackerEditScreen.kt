@@ -43,6 +43,8 @@ import com.spendobserver.R
 import com.spendobserver.domain.model.Tag
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
+import com.spendobserver.ui.common.DeleteIconButton
+import com.spendobserver.ui.common.DeleteTextButton
 import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.BackButton
@@ -225,10 +227,10 @@ fun TrackerEditScreen(
             title = { Text(stringResource(R.string.tag_delete_title, tag.name)) },
             text = { Text(stringResource(R.string.tag_delete_text)) },
             confirmButton = {
-                TextButton(onClick = {
+                DeleteTextButton(onClick = {
                     viewModel.deleteTag(tag)
                     tagToDelete = null
-                }) { Text(stringResource(R.string.action_delete)) }
+                })
             },
             dismissButton = {
                 TextButton(onClick = { tagToDelete = null }) { Text(stringResource(R.string.action_cancel)) }
@@ -301,10 +303,10 @@ private fun TagSection(
                         onClick = { onRename(tag) },
                         modifier = Modifier.testTag("renameTagButton-${tag.name}"),
                     ) { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.menu_edit)) }
-                    IconButton(
+                    DeleteIconButton(
                         onClick = { onDelete(tag) },
                         modifier = Modifier.testTag("deleteTagButton-${tag.name}"),
-                    ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
+                    )
                 }
             }
         }
