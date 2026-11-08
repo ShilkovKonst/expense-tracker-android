@@ -119,7 +119,10 @@ fun TrackerDetailScreen(
     )
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
-    val items by viewModel.items.collectAsStateWithLifecycle()
+    // A plain value, not `by`: a delegate would let the LazyColumn's content lambda read a newer list
+    // at measure time than the one yearPositions below was built from. summary and items update
+    // separately, so the list can appear while items is still empty and fill in before it's measured.
+    val items = viewModel.items.collectAsStateWithLifecycle().value
     // Each year's place among the years, whatever months and records lie open between them.
     val yearPositions = remember(items) {
         items.filterIsInstance<AccordionItem.Year>().withIndex().associate { (position, year) -> year.group.year to position }
