@@ -65,6 +65,11 @@
     <string name="action_ok">OK</string>
     <string name="action_back">Back</string>
     <string name="action_more">More options</string>
+    <!-- Screen reader: the state of an expandable row, and what a double tap does ("double-tap to …"). -->
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
+    <string name="action_expand">expand</string>
+    <string name="action_collapse">collapse</string>
     <string name="tags_global_title">Global tags</string>
     <string name="tags_global_hint">where or with whom</string>
     <string name="tags_local_title">Tags</string>

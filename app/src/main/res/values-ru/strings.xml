@@ -69,6 +69,10 @@
     <string name="action_ok">ОК</string>
     <string name="action_back">Назад</string>
     <string name="action_more">Ещё</string>
+    <string name="state_expanded">Развёрнуто</string>
+    <string name="state_collapsed">Свёрнуто</string>
+    <string name="action_expand">развернуть</string>
+    <string name="action_collapse">свернуть</string>
     <string name="tags_global_title">Общие теги</string>
     <string name="tags_global_hint">где или с кем</string>
     <string name="tags_local_title">Теги</string>

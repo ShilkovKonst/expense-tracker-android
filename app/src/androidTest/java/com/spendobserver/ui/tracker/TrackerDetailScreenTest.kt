@@ -1,6 +1,11 @@
 package com.spendobserver.ui.tracker
 
 import com.spendobserver.data.local.entity.TrackerEntity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -123,6 +128,27 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText(month(3)).performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText(description("groceries")).assertExists()
+    }
+
+    @Test
+    fun yearHeader_tellsScreenReadersWhetherItIsOpen_andWhatATapDoes() {
+        runBlocking { insertRecord(LocalDate(2026, 3, 15), RecordType.COST, 1000, "groceries") }
+        setContent()
+        composeRule.waitForText("2026")
+        val year = composeRule.onNodeWithText("2026")
+
+        year.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, string(R.string.state_collapsed)))
+        year.assert(clickLabel(string(R.string.action_expand)))
+
+        year.performClick()
+        composeRule.waitForIdle()
+
+        year.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, string(R.string.state_expanded)))
+        year.assert(clickLabel(string(R.string.action_collapse)))
+    }
+
+    private fun clickLabel(label: String) = SemanticsMatcher("click label is $label") {
+        it.config.getOrNull(SemanticsActions.OnClick)?.label == label
     }
 
     @Test

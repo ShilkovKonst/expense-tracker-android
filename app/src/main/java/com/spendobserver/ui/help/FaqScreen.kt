@@ -2,7 +2,6 @@ package com.spendobserver.ui.help
 
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +30,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.ExpandChevron
+import com.spendobserver.ui.common.expandLabels
+import com.spendobserver.ui.common.expandToggle
 import com.spendobserver.R
 
 /** One question of the FAQ and its answer, one paragraph per array item. */
@@ -95,7 +96,7 @@ private fun FaqItem(entry: FaqEntry, tag: String) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .expandToggle(expandLabels(expanded)) { expanded = !expanded }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Text(

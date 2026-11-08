@@ -65,6 +65,10 @@
     <string name="action_ok">OK</string>
     <string name="action_back">Zurück</string>
     <string name="action_more">Weitere Optionen</string>
+    <string name="state_expanded">Ausgeklappt</string>
+    <string name="state_collapsed">Eingeklappt</string>
+    <string name="action_expand">ausklappen</string>
+    <string name="action_collapse">einklappen</string>
     <string name="tags_global_title">Globale Labels</string>
     <string name="tags_global_hint">wo oder mit wem</string>
     <string name="tags_local_title">Labels</string>

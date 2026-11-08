@@ -50,6 +50,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.ExpandChevron
+import com.spendobserver.ui.common.expandLabels
+import com.spendobserver.ui.common.expandToggle
 import com.spendobserver.ui.theme.incomeColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -319,7 +321,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
     val count = yearGroup.months.sumOf { it.records.size }
     Column {
         ListItem(
-            modifier = Modifier.clickable(onClick = onClick),
+            modifier = Modifier.expandToggle(expandLabels(expanded), onClick),
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             leadingContent = { ExpandChevron(expanded) },
             headlineContent = {
@@ -339,7 +341,7 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
 private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -> Unit) {
     Column {
         ListItem(
-            modifier = Modifier.clickable(onClick = onClick).padding(start = 16.dp),
+            modifier = Modifier.expandToggle(expandLabels(expanded), onClick).padding(start = 16.dp),
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             leadingContent = { ExpandChevron(expanded) },
             headlineContent = {
@@ -455,7 +457,7 @@ private fun PartsToggle(count: Int, expanded: Boolean, onClick: () -> Unit, modi
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.expandToggle(expandLabels(expanded), onClick),
     ) {
         Box(
             modifier = Modifier

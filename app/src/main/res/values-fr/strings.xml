@@ -68,6 +68,10 @@
     <string name="action_ok">OK</string>
     <string name="action_back">Retour</string>
     <string name="action_more">Plus d’options</string>
+    <string name="state_expanded">Développé</string>
+    <string name="state_collapsed">Réduit</string>
+    <string name="action_expand">développer</string>
+    <string name="action_collapse">réduire</string>
     <string name="tags_global_title">Étiquettes globales</string>
     <string name="tags_global_hint">où ou avec qui</string>
     <string name="tags_local_title">Étiquettes</string>

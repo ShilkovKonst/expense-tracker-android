@@ -18,7 +18,7 @@ fun BackButton(onClick: () -> Unit) {
     }
 }
 
-/** Points right while collapsed, down while expanded. The row it sits in carries the meaning, so no description. */
+/** Points right while collapsed, down while expanded. No description: the row it sits in tells screen readers its state, see [expandToggle]. */
 @Composable
 fun ExpandChevron(expanded: Boolean, modifier: Modifier = Modifier, tint: Color = LocalContentColor.current) {
     Icon(
