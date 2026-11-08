@@ -97,4 +97,32 @@ class AccordionTest {
 
         assertEquals(FocusTarget.None, resolveFocus(change, after))
     }
+
+    // year-2026, month-2026-8, month-2026-9, record-2, record-1, year-2025
+    private val openItems = accordionItems(groups, expandedYears = setOf(2026), expandedMonths = setOf(2026 to 9))
+
+    @Test
+    fun scrolledPastHeaders_yearHeaderOnTop_namesNothing() {
+        assertNull(scrolledPastHeaders(openItems, firstVisibleIndex = 0))
+        assertNull(scrolledPastHeaders(openItems, firstVisibleIndex = 5))
+    }
+
+    @Test
+    fun scrolledPastHeaders_monthHeaderOnTop_namesItsYearOnly() {
+        assertEquals(ScrolledPastHeaders(2026), scrolledPastHeaders(openItems, firstVisibleIndex = 1))
+        assertEquals(ScrolledPastHeaders(2026), scrolledPastHeaders(openItems, firstVisibleIndex = 2))
+    }
+
+    @Test
+    fun scrolledPastHeaders_recordOnTop_namesItsYearAndMonth() {
+        assertEquals(ScrolledPastHeaders(2026, 9), scrolledPastHeaders(openItems, firstVisibleIndex = 3))
+        assertEquals(ScrolledPastHeaders(2026, 9), scrolledPastHeaders(openItems, firstVisibleIndex = 4))
+    }
+
+    @Test
+    fun scrolledPastHeaders_indexOutsideTheList_namesNothing() {
+        // An emptied list can briefly report the old scroll position.
+        assertNull(scrolledPastHeaders(openItems, firstVisibleIndex = 99))
+        assertNull(scrolledPastHeaders(emptyList(), firstVisibleIndex = 0))
+    }
 }

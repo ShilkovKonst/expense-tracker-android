@@ -2,6 +2,7 @@ package com.spendobserver.ui.tracker
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -129,6 +133,10 @@ fun TrackerDetailScreen(
     }
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    // derivedStateOf: the scroll position changes every frame, but the title only when a header crosses the top edge.
+    val scrolledPast by remember(items) {
+        derivedStateOf { scrolledPastHeaders(items, listState.firstVisibleItemIndex) }
+    }
     var showDeleteTrackerDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -168,7 +176,25 @@ fun TrackerDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(trackerTitle ?: "")
+                        // The tracker's name, then the year and month whose headers have scrolled
+                        // away. One line: the font shrinks to fit before the end gets cut.
+                        val title = buildList {
+                            add(trackerTitle.orEmpty())
+                            scrolledPast?.let { headers ->
+                                add(headers.year.toString())
+                                headers.month?.let { add(monthText(it)) }
+                            }
+                        }.joinToString(" · ")
+                        Text(
+                            text = title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 12.sp,
+                                maxFontSize = LocalTextStyle.current.fontSize,
+                            ),
+                            modifier = Modifier.testTag("trackerTitle"),
+                        )
                         Text(
                             text = pluralStringResource(R.plurals.records_count, summary.recordCount, summary.recordCount) +
                                 " · " + signedAmountText(summary.totals.netCents),
@@ -233,7 +259,7 @@ fun TrackerDetailScreen(
                 // Room below the last row for the FAB (56dp + 16dp margins),
                 // so the last record's amount can scroll out from under it.
                 contentPadding = PaddingValues(bottom = 88.dp),
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("recordList"),
             ) {
                 // contentType: a scrolled-off record row is reused only for another record, not rebuilt as a header.
                 itemsIndexed(items, key = { _, item -> item.key }, contentType = { _, item -> item::class }) { index, item ->

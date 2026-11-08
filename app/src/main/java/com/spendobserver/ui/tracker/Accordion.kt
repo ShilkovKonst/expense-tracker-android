@@ -4,6 +4,7 @@ import com.spendobserver.domain.model.Record
 import com.spendobserver.domain.summary.MonthGroup
 import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.ui.navigation.RecordChange
+import kotlinx.datetime.number
 
 /** A month's identity within the accordion: (year, month 1..12). */
 typealias YearMonth = Pair<Int, Int>
@@ -89,3 +90,21 @@ sealed interface FocusTarget {
     /** Nothing left to scroll to — the change is handled. */
     data object None : FocusTarget
 }
+
+/** The year, and possibly the month, whose headers have scrolled off the top of the list. */
+data class ScrolledPastHeaders(val year: Int, val month: Int? = null)
+
+/**
+ * What the top bar should name for a list scrolled to [firstVisibleIndex]
+ * (the topmost item, even if only partly visible). A header still on screen
+ * names itself, so it isn't repeated: a year shows once its header is above
+ * the first visible item, and its month joins it once the month's header is
+ * above too. Rows below a header exist only while it's expanded, so a header
+ * above the first row is always an expanded one.
+ */
+fun scrolledPastHeaders(items: List<AccordionItem>, firstVisibleIndex: Int): ScrolledPastHeaders? =
+    when (val first = items.getOrNull(firstVisibleIndex)) {
+        null, is AccordionItem.Year -> null
+        is AccordionItem.Month -> ScrolledPastHeaders(first.group.year)
+        is AccordionItem.RecordEntry -> ScrolledPastHeaders(first.record.date.year, first.record.date.month.number)
+    }

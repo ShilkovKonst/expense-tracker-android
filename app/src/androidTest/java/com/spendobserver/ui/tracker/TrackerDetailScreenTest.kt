@@ -2,10 +2,12 @@ package com.spendobserver.ui.tracker
 
 import com.spendobserver.data.local.entity.TrackerEntity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spendobserver.R
 import com.spendobserver.domain.model.Record
@@ -271,6 +273,28 @@ class TrackerDetailScreenTest {
         composeRule.onNodeWithText(amount(80000)).assertIsDisplayed()
         composeRule.onNodeWithText(amount(235000)).assertIsDisplayed()
         assertEquals(0, openedCount)
+    }
+
+    @Test
+    fun appBarTitle_namesTheYearAndMonthWhoseHeadersScrolledAway() {
+        val recordId = runBlocking {
+            for (day in 2..28) insertRecord(LocalDate(2026, 3, day), RecordType.COST, 100, "filler $day")
+            insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 100, "target")
+        }
+        // Opens 2026 and March: year-2026 (0), month-2026-3 (1), then the records.
+        setContent(RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false))
+        composeRule.waitForText(description("target"))
+        val title = composeRule.onNodeWithTag("trackerTitle")
+        val list = composeRule.onNodeWithTag("recordList")
+
+        list.performScrollToIndex(1)
+        title.assertTextEquals("Family · 2026")
+
+        list.performScrollToIndex(2)
+        title.assertTextEquals("Family · 2026 · " + month(3))
+
+        list.performScrollToIndex(0)
+        title.assertTextEquals("Family")
     }
 
     @Test
