@@ -3,7 +3,6 @@ package com.spendobserver.ui.trackers
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -79,6 +78,7 @@ fun TrackerListScreen(
     onThemeModeChange: (ThemeMode) -> Unit = {},
     onTrackerClick: (Tracker) -> Unit = {},
     onEditTrackerClick: (Tracker) -> Unit = {},
+    onStatsClick: (Tracker) -> Unit = {},
     onTrackerCreated: (trackerId: Long) -> Unit = {},
     onHelpClick: () -> Unit = {},
     onFaqClick: () -> Unit = {},
@@ -216,6 +216,7 @@ fun TrackerListScreen(
                         position = index,
                         stats = statsByTracker[tracker.id] ?: TrackerStats.EMPTY,
                         onClick = { onTrackerClick(tracker) },
+                        onStatsClick = { onStatsClick(tracker) },
                         onEditClick = { onEditTrackerClick(tracker) },
                         onDeleteClick = { trackerToDelete = tracker },
                     )
@@ -281,9 +282,12 @@ private fun TrackerRow(
     position: Int,
     stats: TrackerStats,
     onClick: () -> Unit,
+    onStatsClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
+    // Each row keeps its own open/closed flag; LazyColumn keys rows by tracker id, so it stays with its tracker.
+    var showMenu by remember { mutableStateOf(false) }
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
         colors = ListItemDefaults.colors(containerColor = alternatingRowColor(position)),
@@ -297,15 +301,28 @@ private fun TrackerRow(
             )
         },
         trailingContent = {
-            Row {
+            // The Box anchors the dropdown to the button, as in the top bar's menu.
+            Box {
                 IconButton(
-                    onClick = onEditClick,
-                    modifier = Modifier.testTag("editTrackerButton-${tracker.title}"),
-                ) { Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.menu_settings)) }
-                IconButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.testTag("deleteTrackerButton-${tracker.title}"),
-                ) { Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete)) }
+                    onClick = { showMenu = true },
+                    modifier = Modifier.testTag("trackerRowMenu-${tracker.title}"),
+                ) { Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more)) }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    /** A menu entry that closes the menu before acting. */
+                    @Composable
+                    fun item(label: String, tag: String, action: () -> Unit) = DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            showMenu = false
+                            action()
+                        },
+                        modifier = Modifier.testTag("$tag-${tracker.title}"),
+                    )
+                    item(stringResource(R.string.menu_stats), "statsTrackerItem", onStatsClick)
+                    item(stringResource(R.string.menu_settings), "editTrackerItem", onEditClick)
+                    HorizontalDivider()
+                    item(stringResource(R.string.action_delete), "deleteTrackerItem", onDeleteClick)
+                }
             }
         },
     )

@@ -216,7 +216,7 @@
     <string-array name="faq_trackers_a">
         <item>A tracker is a separate log with its own records and tags, for example a personal, family or work one. Trackers are independent of each other.</item>
         <item>To create a tracker, tap “Add tracker” on the main screen and enter a name. The new tracker opens right away.</item>
-        <item>A tracker can be renamed or deleted with the ⚙ and 🗑 buttons in its row on the main screen, or through the “⋮” menu on the tracker screen. Deleting a tracker deletes all of its records.</item>
+        <item>A tracker’s statistics, settings and deletion are in the “⋮” menu of its row on the main screen, and in the “⋮” menu on the tracker screen. Deleting a tracker deletes all of its records.</item>
     </string-array>
     <string name="faq_records_q">How do I add, edit or delete a record?</string>
     <string-array name="faq_records_a">

@@ -56,6 +56,7 @@ class TrackerListScreenTest {
 
     private fun setContent(
         onEditTrackerClick: (Tracker) -> Unit = {},
+        onStatsClick: (Tracker) -> Unit = {},
         onHelpClick: () -> Unit = {},
         onFaqClick: () -> Unit = {},
     ) {
@@ -65,6 +66,7 @@ class TrackerListScreenTest {
                 recordRepository = recordRepository,
                 backupRepository = BackupRepository(db),
                 onEditTrackerClick = onEditTrackerClick,
+                onStatsClick = onStatsClick,
                 onHelpClick = onHelpClick,
                 onFaqClick = onFaqClick,
             )
@@ -75,7 +77,37 @@ class TrackerListScreenTest {
         composeRule.onNodeWithTag("addTrackerButton").performClick()
         composeRule.onNodeWithTag("trackerTitleInput").performTextInput(title)
         composeRule.onNodeWithText(string(R.string.action_create)).performClick()
-        composeRule.waitForTag("editTrackerButton-$title")
+        composeRule.waitForTag("trackerRowMenu-$title")
+    }
+
+    private fun openRowMenu(title: String) {
+        composeRule.onNodeWithTag("trackerRowMenu-$title").performClick()
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun statsItem_invokesOnStatsClickWithTheTracker() {
+        var clicked: Tracker? = null
+        setContent(onStatsClick = { clicked = it })
+        createTracker("Family")
+
+        openRowMenu("Family")
+        composeRule.onNodeWithTag("statsTrackerItem-Family").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals("Family", clicked?.title)
+    }
+
+    @Test
+    fun rowMenu_isClosedAfterChoosingAnItem() {
+        setContent()
+        createTracker("Family")
+
+        openRowMenu("Family")
+        composeRule.onNodeWithTag("statsTrackerItem-Family").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("statsTrackerItem-Family").assertDoesNotExist()
     }
 
     @Test
@@ -131,12 +163,13 @@ class TrackerListScreenTest {
     }
 
     @Test
-    fun editButton_invokesOnEditTrackerClickWithTheTracker() {
+    fun settingsItem_invokesOnEditTrackerClickWithTheTracker() {
         var clicked: Tracker? = null
         setContent(onEditTrackerClick = { clicked = it })
         createTracker("Family")
 
-        composeRule.onNodeWithTag("editTrackerButton-Family").performClick()
+        openRowMenu("Family")
+        composeRule.onNodeWithTag("editTrackerItem-Family").performClick()
         composeRule.waitForIdle()
 
         assertEquals("Family", clicked?.title)
@@ -147,7 +180,8 @@ class TrackerListScreenTest {
         setContent()
         createTracker("Family")
 
-        composeRule.onNodeWithTag("deleteTrackerButton-Family").performClick()
+        openRowMenu("Family")
+        composeRule.onNodeWithTag("deleteTrackerItem-Family").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText(string(R.string.delete_tracker_title, "Family")).assertExists()
         composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
@@ -161,7 +195,8 @@ class TrackerListScreenTest {
         setContent()
         createTracker("Family")
 
-        composeRule.onNodeWithTag("deleteTrackerButton-Family").performClick()
+        openRowMenu("Family")
+        composeRule.onNodeWithTag("deleteTrackerItem-Family").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText(string(R.string.action_cancel)).performClick()
 

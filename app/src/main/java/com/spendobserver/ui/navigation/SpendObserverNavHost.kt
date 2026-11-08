@@ -50,6 +50,7 @@ fun SpendObserverNavHost(
                 onThemeModeChange = onThemeModeChange,
                 onTrackerClick = { tracker -> navigation.open(Route.TrackerDetail(tracker.id)) },
                 onEditTrackerClick = { tracker -> navigation.open(Route.TrackerEdit(tracker.id)) },
+                onStatsClick = { tracker -> navigation.open(Route.TrackerStats(tracker.id)) },
                 onTrackerCreated = { trackerId -> navigation.open(Route.TrackerDetail(trackerId)) },
                 onHelpClick = { navigation.open(Route.Help) },
                 onFaqClick = { navigation.open(Route.Faq) },
