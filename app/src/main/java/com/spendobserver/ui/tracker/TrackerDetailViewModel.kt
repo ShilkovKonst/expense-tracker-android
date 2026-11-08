@@ -1,5 +1,6 @@
 package com.spendobserver.ui.tracker
 
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.data.repository.RecordRepository
@@ -13,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -115,12 +117,31 @@ class TrackerDetailViewModel(
         pendingChange.value = null
     }
 
+    /** The database refused a write (a full disk, say). */
+    private val _writeFailed = MutableStateFlow(false)
+    val writeFailed: StateFlow<Boolean> = _writeFailed.asStateFlow()
+
+    fun clearWriteFailed() {
+        _writeFailed.value = false
+    }
+
+    private suspend fun reportingWriteFailure(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (_: SQLiteException) {
+            _writeFailed.value = true
+        }
+    }
+
     /** Deletes the tracker with all its records, then calls [onDeleted] — only once the delete has finished, since navigating away clears this ViewModel and would cancel it. */
     fun deleteTracker(onDeleted: () -> Unit) {
         viewModelScope.launch {
             val tracker = trackerRepository.getTracker(trackerId) ?: return@launch
-            trackerRepository.deleteTracker(tracker)
-            onDeleted()
+            // A refused delete reports itself and leaves the screen open.
+            reportingWriteFailure {
+                trackerRepository.deleteTracker(tracker)
+                onDeleted()
+            }
         }
     }
 }

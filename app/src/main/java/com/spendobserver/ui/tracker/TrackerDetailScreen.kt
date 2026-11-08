@@ -80,6 +80,7 @@ import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.alternatingRowColor
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.monthText
@@ -132,6 +133,7 @@ fun TrackerDetailScreen(
         items.filterIsInstance<AccordionItem.Year>().withIndex().associate { (position, year) -> year.group.year to position }
     }
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
+    val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     // derivedStateOf: the scroll position changes every frame, but the title only when a header crosses the top edge.
     val scrolledPast by remember(items) {
@@ -302,6 +304,7 @@ fun TrackerDetailScreen(
             onDismiss = { showDeleteTrackerDialog = false },
         )
     }
+    if (writeFailed) WriteFailedDialog(onDismiss = viewModel::clearWriteFailed)
 }
 
 private val AccordionItem.year: Int

@@ -62,6 +62,7 @@ import com.spendobserver.ui.backup.ImportViewModel
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.backup.rememberImportLauncher
 import com.spendobserver.ui.common.DeleteTrackerDialog
+import com.spendobserver.ui.common.WriteFailedDialog
 import com.spendobserver.ui.common.alternatingRowColor
 import com.spendobserver.ui.common.signedAmountText
 import com.spendobserver.ui.common.trackerNameText
@@ -93,6 +94,7 @@ fun TrackerListScreen(
     val trackers by viewModel.trackers.collectAsStateWithLifecycle()
     val statsByTracker by viewModel.statsByTracker.collectAsStateWithLifecycle()
     val createError by viewModel.createError.collectAsStateWithLifecycle()
+    val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var trackerToDelete by remember { mutableStateOf<Tracker?>(null) }
@@ -274,6 +276,9 @@ fun TrackerListScreen(
             onDismiss = { trackerToDelete = null },
         )
     }
+
+    // After the create dialog, so it shows on top of it.
+    if (writeFailed) WriteFailedDialog(onDismiss = viewModel::clearWriteFailed)
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.spendobserver.ui.trackers
 
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendobserver.domain.model.Tracker
@@ -41,6 +42,22 @@ class TrackerListViewModel(
             initialValue = emptyMap(),
         )
 
+    /** The database refused a write (a full disk, say). */
+    private val _writeFailed = MutableStateFlow(false)
+    val writeFailed: StateFlow<Boolean> = _writeFailed.asStateFlow()
+
+    fun clearWriteFailed() {
+        _writeFailed.value = false
+    }
+
+    private suspend fun reportingWriteFailure(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (_: SQLiteException) {
+            _writeFailed.value = true
+        }
+    }
+
     /** Why the last [createTracker] call was refused; shown in the create dialog, which stays open. */
     private val _createError = MutableStateFlow<NameError?>(null)
     val createError: StateFlow<NameError?> = _createError.asStateFlow()
@@ -62,18 +79,21 @@ class TrackerListViewModel(
                 return@launch
             }
             val now = System.currentTimeMillis()
-            catchingTitleClash {
-                trackerRepository.insertTracker(Tracker(title = normalized, createdAt = now, updatedAt = now))
-            }.onSuccess { id ->
-                _createError.value = null
-                onCreated(id)
-            }.onFailure { _createError.value = NameError.TAKEN }
+            // A name clash stays in the dialog; any other refusal is reported over it, which stays open.
+            reportingWriteFailure {
+                catchingTitleClash {
+                    trackerRepository.insertTracker(Tracker(title = normalized, createdAt = now, updatedAt = now))
+                }.onSuccess { id ->
+                    _createError.value = null
+                    onCreated(id)
+                }.onFailure { _createError.value = NameError.TAKEN }
+            }
         }
     }
 
     fun deleteTracker(tracker: Tracker) {
         viewModelScope.launch {
-            trackerRepository.deleteTracker(tracker)
+            reportingWriteFailure { trackerRepository.deleteTracker(tracker) }
         }
     }
 }

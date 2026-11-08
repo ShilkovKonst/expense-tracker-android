@@ -9,17 +9,23 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.spendobserver.data.local.dao.RecordDao
 import com.spendobserver.data.local.dao.TagDao
+import com.spendobserver.data.local.dao.TrackerDao
 import com.spendobserver.domain.model.Tracker
 import com.spendobserver.data.repository.RecordRepository
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.testing.InMemoryDatabaseRule
 import com.spendobserver.ui.record.RecordFormViewModel
+import com.spendobserver.ui.tracker.TrackerDetailViewModel
 import com.spendobserver.ui.trackers.TrackerEditViewModel
+import com.spendobserver.ui.trackers.TrackerListViewModel
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -90,5 +96,53 @@ class WriteFailureTest {
         viewModel.writeFailed.awaitTrue()
 
         assertEquals(0, created)
+    }
+
+    /** The tracker table refuses every insert and delete, as a full disk would. */
+    private fun failingTrackers(): TrackerRepository {
+        val realDao = dbRule.db.trackerDao()
+        return TrackerRepository(object : TrackerDao by realDao {
+            override suspend fun insert(tracker: TrackerEntity): Long = throw SQLiteFullException()
+            override suspend fun delete(tracker: TrackerEntity) = throw SQLiteFullException()
+        })
+    }
+
+    @Test
+    fun trackerList_reportsTheFailure_whenCreatingATracker() = runBlocking {
+        lateinit var viewModel: TrackerListViewModel
+        onMain { viewModel = TrackerListViewModel(failingTrackers(), emptyFlow()) }
+        var created = 0
+
+        onMain { viewModel.createTracker("Work") { created++ } }
+        viewModel.writeFailed.awaitTrue()
+
+        assertEquals(0, created)
+        // Not a name clash: the create dialog shows no name error.
+        assertNull(viewModel.createError.value)
+    }
+
+    @Test
+    fun trackerList_reportsTheFailure_whenDeletingATracker() = runBlocking {
+        lateinit var viewModel: TrackerListViewModel
+        onMain { viewModel = TrackerListViewModel(failingTrackers(), emptyFlow()) }
+        val tracker = TrackerRepository(dbRule.db.trackerDao()).getTracker(trackerId)!!
+
+        onMain { viewModel.deleteTracker(tracker) }
+        viewModel.writeFailed.awaitTrue()
+
+        assertNotNull(dbRule.db.trackerDao().getById(trackerId))
+    }
+
+    @Test
+    fun trackerScreen_reportsTheFailure_andStaysOpen_whenDeletingItsTracker() = runBlocking {
+        lateinit var viewModel: TrackerDetailViewModel
+        onMain { viewModel = TrackerDetailViewModel(trackerId, failingTrackers(), RecordRepository(dbRule.db)) }
+        var deleted = 0
+
+        onMain { viewModel.deleteTracker { deleted++ } }
+        viewModel.writeFailed.awaitTrue()
+
+        assertEquals(0, deleted)
+        assertNotNull(dbRule.db.trackerDao().getById(trackerId))
     }
 }
