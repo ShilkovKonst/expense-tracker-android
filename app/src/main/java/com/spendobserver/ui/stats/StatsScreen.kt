@@ -10,12 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -105,10 +103,28 @@ fun StatsScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
+            // Laid out like the record list's bar beside it: a title with a subtitle line
+            // (here the way back up the periods), the one control in the right corner.
+            val current = state
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.stats_title)) },
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(R.string.stats_title), maxLines = 1)
+                        if (current != null) Breadcrumbs(current.period, onSelect = viewModel::setPeriod)
+                    }
+                },
                 navigationIcon = {
                     if (onBackClick != null) BackButton(onClick = onBackClick)
+                },
+                actions = {
+                    if (current != null) {
+                        TypeToggle(
+                            current.type,
+                            current.availableTypes,
+                            onSelect = viewModel::setType,
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                    }
                 },
             )
         },
@@ -121,17 +137,6 @@ fun StatsScreen(
             return@Scaffold
         }
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // Outside the list, so the way back up and the type stay on screen while scrolling.
-            // 48dp minimum, the height of a crumb link: without it the row would
-            // shrink on "Всё время", where the only crumb is plain text.
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.heightIn(min = 48.dp).padding(end = 16.dp),
-            ) {
-                Breadcrumbs(current.period, onSelect = viewModel::setPeriod, modifier = Modifier.weight(1f))
-                TypeToggle(current.type, current.availableTypes, onSelect = viewModel::setType)
-            }
-            HorizontalDivider()
             // A plain scrolling Column: it's one block of content, nothing for a lazy list to skip.
             Column(
                 modifier = Modifier
@@ -190,12 +195,12 @@ fun StatsScreen(
 /**
  * "−" for costs, "+" for incomes — the signs amounts carry everywhere else
  * in the app; screen readers get the words. Compact (32dp, no check mark) so
- * it fits beside the breadcrumbs without making that row taller. A type with
- * no records in the tracker at all can't be picked — there'd be nothing to show.
+ * it fits in the top bar's action slot. A type with no records in the tracker
+ * at all can't be picked — there'd be nothing to show.
  */
 @Composable
-private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (RecordType) -> Unit) {
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.height(32.dp)) {
+private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (RecordType) -> Unit, modifier: Modifier = Modifier) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier.height(32.dp)) {
         for ((index, option) in listOf(RecordType.COST, RecordType.INCOME).withIndex()) {
             // Read here: the semantics block below isn't composable.
             val description = typeLabel(option)
@@ -219,12 +224,16 @@ private fun TypeToggle(type: RecordType, available: Set<RecordType>, onSelect: (
 }
 
 private const val CRUMB_SEPARATOR = "›"
-private val CrumbPadding = 8.dp
+private val CrumbPadding = 4.dp
 
 /**
- * `Всё время › 2026 › Октябрь`: every level above the current one is a link back to it.
- * Always one line: where the labels don't fit beside the type toggle (a month in
- * French or German), all crumbs shrink by the same factor rather than wrap.
+ * `Всё время › 2026 › Октябрь`, the top bar's subtitle line: every level above the
+ * current one is a link back to it. Always one line: where the labels don't fit
+ * between the back arrow and the type toggle (a month in French or German), all
+ * crumbs shrink by the same factor rather than wrap.
+ *
+ * The links are only a line of small text high, so the bar keeps its usual height;
+ * Compose still takes a tap within 48dp of one as a tap on it.
  */
 @Composable
 private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
@@ -241,10 +250,11 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
             }
         }
     }
-    val linkStyle = MaterialTheme.typography.titleSmall
+    // The record list's subtitle size, so the two bars side by side read alike.
+    val linkStyle = MaterialTheme.typography.bodySmall
     val currentStyle = linkStyle.copy(fontWeight = FontWeight.SemiBold)
     val measurer = rememberTextMeasurer()
-    BoxWithConstraints(modifier = modifier.padding(horizontal = 4.dp).testTag("breadcrumbs")) {
+    BoxWithConstraints(modifier = modifier.testTag("breadcrumbs")) {
         val density = LocalDensity.current
         val scale = remember(crumbs, constraints.maxWidth, linkStyle, density) {
             val textWidth = crumbs.withIndex().sumOf { (index, crumb) ->
@@ -262,7 +272,14 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
                     Text(CRUMB_SEPARATOR, style = scaled(linkStyle), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (index == crumbs.lastIndex) {
-                    Text(label, style = scaled(currentStyle), maxLines = 1, softWrap = false, modifier = Modifier.padding(horizontal = CrumbPadding))
+                    Text(
+                        label,
+                        style = scaled(currentStyle),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(horizontal = CrumbPadding),
+                    )
                 } else {
                     // A bare clickable label, not a TextButton: its 58dp minimum width
                     // and wide padding would push the current crumb off the line.
@@ -273,11 +290,9 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier
-                            .heightIn(min = 48.dp)
                             .clip(MaterialTheme.shapes.small)
                             .clickable(role = Role.Button) { onSelect(target) }
-                            .padding(horizontal = CrumbPadding)
-                            .wrapContentHeight(),
+                            .padding(horizontal = CrumbPadding),
                     )
                 }
             }
