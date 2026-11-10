@@ -113,7 +113,8 @@ fun TrackerDetailScreen(
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
     onEditTrackerClick: () -> Unit = {},
-    onStatsClick: () -> Unit = {},
+    /** Null hides the menu's «Статистика»: in two columns the statistics are already on screen. */
+    onStatsClick: (() -> Unit)? = {},
     onTrackerDeleted: () -> Unit = {},
     recordChange: RecordChange? = null,
     onRecordChangeConsumed: () -> Unit = {},
@@ -230,7 +231,7 @@ fun TrackerDetailScreen(
                                 colors = if (destructive) MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error) else MenuDefaults.itemColors(),
                                 modifier = Modifier.testTag(tag),
                             )
-                            item(stringResource(R.string.menu_stats), "statsItem", action = onStatsClick)
+                            if (onStatsClick != null) item(stringResource(R.string.menu_stats), "statsItem", action = onStatsClick)
                             item(stringResource(R.string.menu_settings), "editTrackerItem", action = onEditTrackerClick)
                             HorizontalDivider()
                             item(stringResource(R.string.menu_save_to_file), "exportSaveItem") { exportActions.save(exportScope) }

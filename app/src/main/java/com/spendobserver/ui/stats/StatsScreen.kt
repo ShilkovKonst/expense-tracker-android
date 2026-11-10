@@ -85,7 +85,8 @@ fun StatsScreen(
     trackerId: Long,
     recordRepository: RecordRepository,
     tagRepository: TagRepository,
-    onBackClick: () -> Unit,
+    /** Null when the screen is a column beside the record list: there's nowhere to go back to. */
+    onBackClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     /** Overridable so a test's "all time" axis doesn't grow with the real calendar. */
     today: () -> LocalDate = ::systemToday,
@@ -107,7 +108,7 @@ fun StatsScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.stats_title)) },
                 navigationIcon = {
-                    BackButton(onClick = onBackClick)
+                    if (onBackClick != null) BackButton(onClick = onBackClick)
                 },
             )
         },
