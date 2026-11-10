@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CenterAlignedTopAppBar
+import com.spendobserver.ui.common.AppTopBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -106,7 +106,7 @@ fun StatsScreen(
             // Laid out like the record list's bar beside it: a title with a subtitle line
             // (here the way back up the periods), the one control in the right corner.
             val current = state
-            CenterAlignedTopAppBar(
+            AppTopBar(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(stringResource(R.string.stats_title), maxLines = 1)

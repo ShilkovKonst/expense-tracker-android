@@ -20,7 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CenterAlignedTopAppBar
+import com.spendobserver.ui.common.AppTopBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -152,7 +152,7 @@ fun RecordFormScreen(
         // above it instead of leaving them hidden underneath.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
-            CenterAlignedTopAppBar(
+            AppTopBar(
                 title = { Text(stringResource(if (viewModel.isEditing) R.string.record_edit_title else R.string.record_new_title)) },
                 navigationIcon = {
                     BackButton(onClick = onBackClick)
