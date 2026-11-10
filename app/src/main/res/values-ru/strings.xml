@@ -88,6 +88,7 @@
     <string name="record_type_income">Доход</string>
     <string name="record_date_label">Дата</string>
     <string name="amount_label">Сумма</string>
+    <string name="amount_placeholder">Число или выражение</string>
     <string name="record_split">Разбить по частям</string>
     <string name="record_unsplit">Без частей</string>
     <string name="record_unsplit_title">Убрать части?</string>

@@ -84,6 +84,7 @@
     <string name="record_type_income">Einnahme</string>
     <string name="record_date_label">Datum</string>
     <string name="amount_label">Betrag</string>
+    <string name="amount_placeholder">Zahl oder Ausdruck</string>
     <string name="record_split">In Teile aufteilen</string>
     <string name="record_unsplit">Ohne Teile</string>
     <string name="record_unsplit_title">Teile entfernen?</string>

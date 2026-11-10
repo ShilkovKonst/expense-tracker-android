@@ -85,6 +85,7 @@
     <string name="record_type_income">Income</string>
     <string name="record_date_label">Date</string>
     <string name="amount_label">Amount</string>
+    <string name="amount_placeholder">Number or expression</string>
     <string name="record_split">Split into parts</string>
     <string name="record_unsplit">Without parts</string>
     <string name="record_unsplit_title">Remove the parts?</string>

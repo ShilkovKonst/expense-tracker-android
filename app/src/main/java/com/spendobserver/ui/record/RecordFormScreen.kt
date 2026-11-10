@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -145,6 +148,9 @@ fun RecordFormScreen(
 
     Scaffold(
         modifier = modifier,
+        // With the keyboard in the insets, Scaffold lifts the floating Отмена/Сохранить
+        // above it instead of leaving them hidden underneath.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(if (viewModel.isEditing) R.string.record_edit_title else R.string.record_new_title)) },
@@ -170,14 +176,13 @@ fun RecordFormScreen(
             )
         },
     ) { innerPadding ->
-        // imePadding: the open keyboard takes height away, so the form falls back
-        // to scrolling and the field being typed in can move above the keyboard.
+        // innerPadding now includes the keyboard: it takes height away, so the form
+        // falls back to scrolling and the field being typed in can move above it.
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .imePadding(),
+                .consumeWindowInsets(innerPadding),
         ) {
             // A split record grows past the screen anyway; so does a form too short to split usefully.
             val fitOnOneScreen = !parts.isSplit && maxHeight >= MinHeightForOneScreenForm
@@ -434,8 +439,10 @@ private fun AmountField(
             value = value,
             onValueChange = onValueChange,
             label = { Text(label) },
-            placeholder = { Text("120+50/2") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            placeholder = { Text(stringResource(R.string.amount_placeholder)) },
+            // The phone pad: digits plus * + ( ) / - . — the only standard keyboard
+            // with all the calculator's signs; Number/Decimal pads have no operators.
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             isError = error != null,
             modifier = modifier.fillMaxWidth(),
         )
