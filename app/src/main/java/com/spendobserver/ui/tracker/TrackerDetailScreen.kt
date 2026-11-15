@@ -84,7 +84,7 @@ import com.spendobserver.ui.backup.ExportScope
 import com.spendobserver.ui.backup.rememberExportActions
 import com.spendobserver.ui.common.DeleteTrackerDialog
 import com.spendobserver.ui.common.WriteFailedDialog
-import com.spendobserver.ui.common.alternatingRowColor
+import com.spendobserver.ui.common.nestedLevelColor
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.monthText
 import com.spendobserver.ui.common.signedAmountText
@@ -129,13 +129,9 @@ fun TrackerDetailScreen(
     val trackerTitle by viewModel.trackerTitle.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     // A plain value, not `by`: a delegate would let the LazyColumn's content lambda read a newer list
-    // at measure time than the one yearPositions below was built from. summary and items update
+    // at measure time than the one its rows' neighbours are looked up in. summary and items update
     // separately, so the list can appear while items is still empty and fill in before it's measured.
     val items = viewModel.items.collectAsStateWithLifecycle().value
-    // Each year's place among the years, whatever months and records lie open between them.
-    val yearPositions = remember(items) {
-        items.filterIsInstance<AccordionItem.Year>().withIndex().associate { (position, year) -> year.group.year to position }
-    }
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -270,19 +266,26 @@ fun TrackerDetailScreen(
             ) {
                 // contentType: a scrolled-off record row is reused only for another record, not rebuilt as a header.
                 itemsIndexed(items, key = { _, item -> item.key }, contentType = { _, item -> item::class }) { index, item ->
-                    // A year's shade covers everything open under it, down to its last record.
-                    val yearColor = alternatingRowColor(yearPositions.getValue(item.year))
-                    Box(modifier = Modifier.fillMaxWidth().background(yearColor)) {
+                    // An open year's months sit one shade off the background, an open month's records two.
+                    val level = when (item) {
+                        is AccordionItem.Year -> 0
+                        is AccordionItem.Month -> 1
+                        is AccordionItem.RecordEntry -> 2
+                    }
+                    Box(modifier = Modifier.fillMaxWidth().background(nestedLevelColor(level))) {
                         when (item) {
                             is AccordionItem.Year -> YearHeader(
                                 yearGroup = item.group,
                                 expanded = item.expanded,
                                 onClick = { viewModel.toggleYear(item.group.year) },
+                                showDivider = index > 0,
                             )
                             is AccordionItem.Month -> MonthHeader(
                                 monthGroup = item.group,
                                 expanded = item.expanded,
                                 onClick = { viewModel.toggleMonth(item.group.year, item.group.month) },
+                                // The first month is set off from its year by the shade alone.
+                                showDivider = items.getOrNull(index - 1) !is AccordionItem.Year,
                             )
                             is AccordionItem.RecordEntry -> RecordRow(
                                 details = item.record,
@@ -312,17 +315,12 @@ fun TrackerDetailScreen(
     if (writeFailed) WriteFailedDialog(onDismiss = viewModel::clearWriteFailed)
 }
 
-private val AccordionItem.year: Int
-    get() = when (this) {
-        is AccordionItem.Year -> group.year
-        is AccordionItem.Month -> group.year
-        is AccordionItem.RecordEntry -> record.date.year
-    }
-
 @Composable
-private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> Unit) {
+private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> Unit, showDivider: Boolean) {
     val count = yearGroup.months.sumOf { it.records.size }
     Column {
+        // Across the whole width, above every year but the first.
+        if (showDivider) HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         ListItem(
             modifier = Modifier.expandToggle(expandLabels(expanded), onClick),
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -333,16 +331,20 @@ private fun YearHeader(yearGroup: YearGroup, expanded: Boolean, onClick: () -> U
             supportingContent = { Text(pluralStringResource(R.plurals.records_count, count, count)) },
             trailingContent = { NetAmountText(yearGroup.totals) },
         )
-        // Across the whole width and thicker than a month's, while its months are open below it.
-        if (expanded) {
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
-        }
     }
 }
 
 @Composable
-private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -> Unit) {
+private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -> Unit, showDivider: Boolean) {
     Column {
+        // Indented like the month itself, so it reads as finer than a year's.
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+        }
         ListItem(
             modifier = Modifier.expandToggle(expandLabels(expanded), onClick).padding(start = 16.dp),
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -354,11 +356,6 @@ private fun MonthHeader(monthGroup: MonthGroup, expanded: Boolean, onClick: () -
                 Text(pluralStringResource(R.plurals.records_count, monthGroup.records.size, monthGroup.records.size))
             },
             trailingContent = { NetAmountText(monthGroup.totals) },
-        )
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
