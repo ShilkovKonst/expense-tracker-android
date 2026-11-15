@@ -74,6 +74,7 @@ import com.spendobserver.domain.record.PartInput
 import com.spendobserver.domain.record.PartsError
 import com.spendobserver.domain.record.PartsEvaluation
 import com.spendobserver.domain.summary.formatCents
+import com.spendobserver.domain.text.sortedForLocale
 import com.spendobserver.ui.common.AddChip
 import com.spendobserver.ui.common.AlwaysLabeledTextField
 import com.spendobserver.ui.common.BackButton
@@ -85,6 +86,7 @@ import com.spendobserver.ui.common.TagNameDialog
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.dateText
 import com.spendobserver.ui.common.fadingBottomEdge
+import com.spendobserver.ui.common.rememberFormatLocale
 import com.spendobserver.ui.navigation.RecordChange
 import com.spendobserver.ui.common.tagNameText
 import com.spendobserver.ui.common.DeleteIconButton
@@ -137,8 +139,9 @@ fun RecordFormScreen(
     val globalTagIds by viewModel.globalTagIds.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
+    val locale = rememberFormatLocale()
     // Kept across recompositions (every keystroke here): fresh lists would redraw every tag row.
-    val (globalTags, localTags) = remember(tags) { tags.partition { it.isGlobal } }
+    val (globalTags, localTags) = remember(tags, locale) { tags.sortedForLocale(locale).partition { it.isGlobal } }
     val errors = if (showErrors) evaluation.errors else emptyList()
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }

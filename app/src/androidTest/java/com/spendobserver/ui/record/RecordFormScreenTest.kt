@@ -269,6 +269,26 @@ class RecordFormScreenTest {
     }
 
     @Test
+    fun tags_areShownAlphabetically_ignoringCase() {
+        // The database alone would give "Boucherie, Zara, aldi": SQLite compares bytes, capitals first.
+        runBlocking {
+            for (name in listOf("Zara", "aldi", "Boucherie")) tagRepository.insertTag(Tag(trackerId = trackerId, name = name))
+        }
+
+        setContent()
+        composeRule.waitForText("Zara")
+
+        // Chips wrap in rows: reading order is top to bottom, then left to right.
+        val shown = listOf("Zara", "aldi", "Boucherie").sortedWith(
+            compareBy(
+                { composeRule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot.top },
+                { composeRule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot.left },
+            ),
+        )
+        assertEquals(listOf("aldi", "Boucherie", "Zara"), shown)
+    }
+
+    @Test
     fun selectingAnotherGlobalTag_replacesTheSelectedOne() {
         runBlocking {
             tagRepository.insertTag(Tag(trackerId = trackerId, name = "aldi", isGlobal = true))
