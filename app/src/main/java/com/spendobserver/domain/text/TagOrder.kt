@@ -4,22 +4,25 @@ import com.spendobserver.domain.model.Tag
 import java.text.Collator
 import java.util.Locale
 
+/** Tags in the order a reader of [locale] expects — see [sortedByNameForLocale]. */
+fun List<Tag>.sortedForLocale(locale: Locale): List<Tag> = sortedByNameForLocale(locale) { it.name }
+
 /**
- * Tags in the order a reader of [locale] expects: names in that language's own
- * script first (Cyrillic for ru, Latin for en/fr/de), all the others after —
- * other scripts, and names with no letter at all. Each group is alphabetical by the
- * language's rules (é next to e in French), case ignored; equal names apart from
- * case keep one fixed order.
+ * Items in the order a reader of [locale] expects their [name]s: names in that
+ * language's own script first (Cyrillic for ru, Latin for en/fr/de), all the others
+ * after — other scripts, and names with no letter at all. Each group is alphabetical
+ * by the language's rules (é next to e in French), case ignored; equal names apart
+ * from case keep one fixed order.
  */
-fun List<Tag>.sortedForLocale(locale: Locale): List<Tag> {
+fun <T> List<T>.sortedByNameForLocale(locale: Locale, name: (T) -> String): List<T> {
     // The language's name in itself ("русский", "English") shows which script it is written in.
     val ownScript = scriptOf(locale.getDisplayLanguage(locale))
     // SECONDARY: letters and accents count, case does not.
     val collator = Collator.getInstance(locale).apply { strength = Collator.SECONDARY }
     return sortedWith(
-        compareBy<Tag> { scriptOf(it.name) != ownScript }
-            .thenComparator { a, b -> collator.compare(a.name, b.name) }
-            .thenBy { it.name },
+        compareBy<T> { scriptOf(name(it)) != ownScript }
+            .thenComparator { a, b -> collator.compare(name(a), name(b)) }
+            .thenBy { name(it) },
     )
 }
 

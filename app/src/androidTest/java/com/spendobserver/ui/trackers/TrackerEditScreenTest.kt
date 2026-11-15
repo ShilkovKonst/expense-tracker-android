@@ -170,6 +170,20 @@ class TrackerEditScreenTest {
     }
 
     @Test
+    fun tags_areListedAlphabetically_ignoringCase() {
+        // The database alone would give "Boucherie, Zara, aldi": SQLite compares bytes, capitals first.
+        runBlocking {
+            for (name in listOf("Zara", "aldi", "Boucherie")) tagRepository.insertTag(Tag(trackerId = trackerId, name = name))
+        }
+        setContent()
+        composeRule.waitForText("Zara")
+
+        val shown = listOf("Zara", "aldi", "Boucherie")
+            .sortedBy { composeRule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(listOf("aldi", "Boucherie", "Zara"), shown)
+    }
+
+    @Test
     fun creatingTag_appearsInList() {
         setContent()
         composeRule.waitForText("Family")

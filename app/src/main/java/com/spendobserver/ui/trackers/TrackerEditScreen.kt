@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.spendobserver.R
 import com.spendobserver.domain.model.Tag
+import com.spendobserver.domain.text.sortedForLocale
 import com.spendobserver.data.repository.TagRepository
 import com.spendobserver.data.repository.TrackerRepository
 import com.spendobserver.ui.common.DeleteIconButton
@@ -51,6 +52,7 @@ import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.LabeledOutlinedBox
 import com.spendobserver.ui.common.SplitByContentColumn
 import com.spendobserver.ui.common.TagNameDialog
+import com.spendobserver.ui.common.rememberFormatLocale
 import com.spendobserver.ui.common.tagNameText
 import com.spendobserver.ui.common.trackerNameText
 import com.spendobserver.ui.common.verticalScrollbar
@@ -75,8 +77,9 @@ fun TrackerEditScreen(
     )
     val title by viewModel.title.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val locale = rememberFormatLocale()
     // Kept across recompositions (every keystroke in the name field): fresh lists would redraw both sections.
-    val (globalTags, localTags) = remember(tags) { tags.partition { it.isGlobal } }
+    val (globalTags, localTags) = remember(tags, locale) { tags.sortedForLocale(locale).partition { it.isGlobal } }
     val tagUsage by viewModel.tagUsage.collectAsStateWithLifecycle()
     val tagNameError by viewModel.tagNameError.collectAsStateWithLifecycle()
     val saveError by viewModel.saveError.collectAsStateWithLifecycle()

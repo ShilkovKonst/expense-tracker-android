@@ -37,6 +37,7 @@ import com.spendobserver.testing.waitForText
 import com.spendobserver.testing.InMemoryDatabaseRule
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -172,6 +173,21 @@ class StatsScreenTest {
 
         composeRule.onNodeWithTag("subjectList").performScrollToNode(hasTestTag("tagRow-кино"))
         composeRule.onNodeWithTag("tagRow-кино").assert(hasText("0 · " + amount(0)))
+    }
+
+    @Test
+    fun picker_listsTagsAlphabetically_ignoringCase() {
+        // The database alone would give "Boucherie, Zara, aldi": SQLite compares bytes, capitals first.
+        runBlocking {
+            for (name in listOf("Zara", "aldi", "Boucherie")) tagRepository.insertTag(Tag(trackerId = trackerId, name = name))
+        }
+        setContent()
+
+        composeRule.onNodeWithTag("subjectField").performClick()
+
+        val shown = listOf("Zara", "aldi", "Boucherie")
+            .sortedBy { composeRule.onNodeWithTag("tagRow-$it").fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(listOf("aldi", "Boucherie", "Zara"), shown)
     }
 
     @Test

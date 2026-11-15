@@ -72,6 +72,7 @@ import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.domain.stats.StatsSubject
 import com.spendobserver.domain.stats.TagStats
 import com.spendobserver.domain.stats.TagTops
+import com.spendobserver.domain.text.sortedByNameForLocale
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.rememberFormatLocale
@@ -416,6 +417,8 @@ private fun SubjectPickerDialog(
     onDismiss: () -> Unit,
 ) {
     val selectedId = (subject as? StatsSubject.OfTag)?.tag?.id
+    val locale = rememberFormatLocale()
+    val sortedTags = remember(tags, locale) { tags.sortedByNameForLocale(locale) { it.tag.name } }
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
             Column(modifier = Modifier.padding(vertical = 16.dp)) {
@@ -441,7 +444,7 @@ private fun SubjectPickerDialog(
                         )
                     }
                     for ((title, level) in levels) {
-                        val levelTags = tags.filter { it.tag.isGlobal == level }
+                        val levelTags = sortedTags.filter { it.tag.isGlobal == level }
                         if (levelTags.isEmpty()) continue
                         item(key = "header-$level") { SectionHeader(title) }
                         items(levelTags, key = { "tag-${it.tag.id}" }) { stats ->
