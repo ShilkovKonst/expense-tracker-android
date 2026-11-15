@@ -197,11 +197,14 @@ fun TrackerDetailScreen(
                             ),
                             modifier = Modifier.testTag("trackerTitle"),
                         )
+                        // The count and total of what the title names: the month, the year, or the whole tracker.
+                        val stats = scrolledPast?.stats ?: summary
                         Text(
-                            text = pluralStringResource(R.plurals.records_count, summary.recordCount, summary.recordCount) +
-                                " · " + signedAmountText(summary.totals.netCents),
+                            text = pluralStringResource(R.plurals.records_count, stats.recordCount, stats.recordCount) +
+                                " · " + signedAmountText(stats.totals.netCents),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("trackerSubtitle"),
                         )
                     }
                 },

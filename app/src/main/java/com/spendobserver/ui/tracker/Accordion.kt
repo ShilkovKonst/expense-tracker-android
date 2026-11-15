@@ -2,9 +2,10 @@ package com.spendobserver.ui.tracker
 
 import com.spendobserver.domain.model.Record
 import com.spendobserver.domain.summary.MonthGroup
+import com.spendobserver.domain.summary.TrackerStats
 import com.spendobserver.domain.summary.YearGroup
+import com.spendobserver.domain.summary.stats
 import com.spendobserver.ui.navigation.RecordChange
-import kotlinx.datetime.number
 
 /** A month's identity within the accordion: (year, month 1..12). */
 typealias YearMonth = Pair<Int, Int>
@@ -91,8 +92,11 @@ sealed interface FocusTarget {
     data object None : FocusTarget
 }
 
-/** The year, and possibly the month, whose headers have scrolled off the top of the list. */
-data class ScrolledPastHeaders(val year: Int, val month: Int? = null)
+/**
+ * The year, and possibly the month, whose headers have scrolled off the top of the list,
+ * with [stats] of the innermost of them: the year's, or the month's once it is named too.
+ */
+data class ScrolledPastHeaders(val year: Int, val month: Int? = null, val stats: TrackerStats)
 
 /**
  * What the top bar should name for a list scrolled to [firstVisibleIndex]
@@ -103,8 +107,16 @@ data class ScrolledPastHeaders(val year: Int, val month: Int? = null)
  * above the first row is always an expanded one.
  */
 fun scrolledPastHeaders(items: List<AccordionItem>, firstVisibleIndex: Int): ScrolledPastHeaders? =
-    when (val first = items.getOrNull(firstVisibleIndex)) {
+    when (items.getOrNull(firstVisibleIndex)) {
         null, is AccordionItem.Year -> null
-        is AccordionItem.Month -> ScrolledPastHeaders(first.group.year)
-        is AccordionItem.RecordEntry -> ScrolledPastHeaders(first.record.date.year, first.record.date.month.number)
+        is AccordionItem.Month -> items.nearestAbove<AccordionItem.Year>(firstVisibleIndex)?.group?.let { year ->
+            ScrolledPastHeaders(year.year, stats = year.stats())
+        }
+        is AccordionItem.RecordEntry -> items.nearestAbove<AccordionItem.Month>(firstVisibleIndex)?.group?.let { month ->
+            ScrolledPastHeaders(month.year, month.month, month.stats())
+        }
     }
+
+/** The closest [T] above [index]: for a month or a record, the header it is listed under. */
+private inline fun <reified T : AccordionItem> List<AccordionItem>.nearestAbove(index: Int): T? =
+    subList(0, index).lastOrNull { it is T } as T?

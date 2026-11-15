@@ -324,6 +324,32 @@ class TrackerDetailScreenTest {
     }
 
     @Test
+    fun appBarCountAndTotal_followTheYearAndMonthWhoseHeadersScrolledAway() {
+        val recordId = runBlocking {
+            insertRecord(LocalDate(2025, 12, 1), RecordType.INCOME, 5000, "old income")
+            insertRecord(LocalDate(2026, 2, 1), RecordType.COST, 700, "february")
+            for (day in 2..28) insertRecord(LocalDate(2026, 3, day), RecordType.COST, 100, "filler $day")
+            insertRecord(LocalDate(2026, 3, 1), RecordType.COST, 100, "target")
+        }
+        // Opens 2026 and March: year-2026 (0), month-2026-2 (1), month-2026-3 (2), then March's records.
+        setContent(RecordChange(recordId = recordId, year = 2026, month = 3, deleted = false))
+        composeRule.waitForText(description("target"))
+        val subtitle = composeRule.onNodeWithTag("trackerSubtitle")
+        val list = composeRule.onNodeWithTag("recordList")
+
+        // 2026: February's 700 and March's 28 x 100.
+        list.performScrollToIndex(1)
+        subtitle.assertTextEquals(plural(R.plurals.records_count, 29) + " · " + signedAmount(-3500))
+
+        list.performScrollToIndex(3)
+        subtitle.assertTextEquals(plural(R.plurals.records_count, 28) + " · " + signedAmount(-2800))
+
+        // The whole tracker: 5000 - 3500.
+        list.performScrollToIndex(0)
+        subtitle.assertTextEquals(plural(R.plurals.records_count, 30) + " · " + signedAmount(1500))
+    }
+
+    @Test
     fun appBarTitle_followsARenameMadeElsewhere() {
         setContent()
         composeRule.waitForText("Family")

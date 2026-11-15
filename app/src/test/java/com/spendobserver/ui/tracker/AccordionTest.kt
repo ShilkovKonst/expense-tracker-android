@@ -1,6 +1,7 @@
 package com.spendobserver.ui.tracker
 
 import com.spendobserver.domain.summary.groupByYearMonth
+import com.spendobserver.domain.summary.stats
 import com.spendobserver.testing.recordWithParts
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.datetime.LocalDate
@@ -108,15 +109,19 @@ class AccordionTest {
     }
 
     @Test
-    fun scrolledPastHeaders_monthHeaderOnTop_namesItsYearOnly() {
-        assertEquals(ScrolledPastHeaders(2026), scrolledPastHeaders(openItems, firstVisibleIndex = 1))
-        assertEquals(ScrolledPastHeaders(2026), scrolledPastHeaders(openItems, firstVisibleIndex = 2))
+    fun scrolledPastHeaders_monthHeaderOnTop_namesItsYearOnly_withTheYearsStats() {
+        val year2026 = groups.first { it.year == 2026 }.stats()
+        assertEquals(3, year2026.recordCount)
+        assertEquals(ScrolledPastHeaders(2026, stats = year2026), scrolledPastHeaders(openItems, firstVisibleIndex = 1))
+        assertEquals(ScrolledPastHeaders(2026, stats = year2026), scrolledPastHeaders(openItems, firstVisibleIndex = 2))
     }
 
     @Test
-    fun scrolledPastHeaders_recordOnTop_namesItsYearAndMonth() {
-        assertEquals(ScrolledPastHeaders(2026, 9), scrolledPastHeaders(openItems, firstVisibleIndex = 3))
-        assertEquals(ScrolledPastHeaders(2026, 9), scrolledPastHeaders(openItems, firstVisibleIndex = 4))
+    fun scrolledPastHeaders_recordOnTop_namesItsYearAndMonth_withTheMonthsStats() {
+        val september = groups.first { it.year == 2026 }.months.first { it.month == 9 }.stats()
+        assertEquals(2, september.recordCount)
+        assertEquals(ScrolledPastHeaders(2026, 9, september), scrolledPastHeaders(openItems, firstVisibleIndex = 3))
+        assertEquals(ScrolledPastHeaders(2026, 9, september), scrolledPastHeaders(openItems, firstVisibleIndex = 4))
     }
 
     @Test
