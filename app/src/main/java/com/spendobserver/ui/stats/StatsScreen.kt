@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -58,9 +60,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.spendobserver.R
 import com.spendobserver.domain.model.RecordType
 import com.spendobserver.data.repository.RecordRepository
@@ -76,6 +77,7 @@ import com.spendobserver.domain.text.sortedByNameForLocale
 import com.spendobserver.ui.common.BackButton
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.rememberFormatLocale
+import com.spendobserver.ui.common.twoLineTopBarHeight
 import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,14 +91,15 @@ fun StatsScreen(
     modifier: Modifier = Modifier,
     /** Overridable so a test's "all time" axis doesn't grow with the real calendar. */
     today: () -> LocalDate = ::systemToday,
+    /**
+     * Whose store holds the ViewModel. The full-screen statistics pass the tracker
+     * screen's entry beneath them, so they and its stats column share one selection.
+     */
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current),
 ) {
-    val viewModel: StatsViewModel = viewModel(
-        factory = remember(trackerId, recordRepository, tagRepository) {
-            viewModelFactory {
-                initializer { StatsViewModel(trackerId, recordRepository, tagRepository, today) }
-            }
-        },
-    )
+    val viewModel = remember(viewModelStoreOwner, trackerId, recordRepository, tagRepository) {
+        statsViewModel(viewModelStoreOwner, trackerId, recordRepository, tagRepository, today)
+    }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val metric by viewModel.metric.collectAsStateWithLifecycle()
     var showSubjectPicker by remember { mutableStateOf(false) }
@@ -117,6 +120,7 @@ fun StatsScreen(
                 navigationIcon = {
                     if (onBackClick != null) BackButton(onClick = onBackClick)
                 },
+                height = twoLineTopBarHeight(),
                 actions = {
                     if (current != null) {
                         TypeToggle(
@@ -233,8 +237,8 @@ private val CrumbPadding = 4.dp
  * between the back arrow and the type toggle (a month in French or German), all
  * crumbs shrink by the same factor rather than wrap.
  *
- * The links are only a line of small text high, so the bar keeps its usual height;
- * Compose still takes a tap within 48dp of one as a tap on it.
+ * Each link's touch area is the full 48dp tall, but it counts in the layout only as one
+ * line of text high, so the bar keeps its usual height (see [touchTargetOverLine]).
  */
 @Composable
 private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
@@ -284,19 +288,46 @@ private fun Breadcrumbs(period: StatsPeriod, onSelect: (StatsPeriod) -> Unit, mo
                 } else {
                     // A bare clickable label, not a TextButton: its 58dp minimum width
                     // and wide padding would push the current crumb off the line.
-                    Text(
-                        label,
-                        style = scaled(linkStyle),
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        softWrap = false,
+                    val style = scaled(linkStyle)
+                    Box(
+                        contentAlignment = Alignment.Center,
                         modifier = Modifier
+                            .touchTargetOverLine(style)
                             .clip(MaterialTheme.shapes.small)
                             .clickable(role = Role.Button) { onSelect(target) }
-                            .padding(horizontal = CrumbPadding),
-                    )
+                            .heightIn(min = MinTouchTarget),
+                    ) {
+                        Text(
+                            label,
+                            style = style,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(horizontal = CrumbPadding),
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+private val MinTouchTarget = 48.dp
+
+/**
+ * Lays out a tall touch target as if it were one line of [style] text high, centred on
+ * that line: the rest of it overhangs above and below without pushing anything apart.
+ * Touches aren't clipped to the parent's bounds in Compose, so the overhang still
+ * takes taps, and accessibility tools see the full-size node.
+ */
+@Composable
+private fun Modifier.touchTargetOverLine(style: TextStyle): Modifier {
+    val lineHeight = with(LocalDensity.current) { style.lineHeight.roundToPx() }
+    return layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints.copy(minHeight = 0))
+        val height = minOf(placeable.height, lineHeight)
+        layout(placeable.width, height) {
+            placeable.place(0, (height - placeable.height) / 2)
         }
     }
 }

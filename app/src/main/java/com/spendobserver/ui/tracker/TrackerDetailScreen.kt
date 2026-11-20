@@ -88,6 +88,7 @@ import com.spendobserver.ui.common.nestedLevelColor
 import com.spendobserver.ui.common.amountText
 import com.spendobserver.ui.common.monthText
 import com.spendobserver.ui.common.signedAmountText
+import com.spendobserver.ui.common.twoLineTopBarHeight
 import com.spendobserver.ui.navigation.RecordChange
 import kotlinx.coroutines.launch
 
@@ -211,6 +212,7 @@ fun TrackerDetailScreen(
                 navigationIcon = {
                     BackButton(onClick = onBackClick)
                 },
+                height = twoLineTopBarHeight(),
                 // One overflow menu, like the tracker list's, instead of a row of icons
                 // squeezing the title.
                 actions = {

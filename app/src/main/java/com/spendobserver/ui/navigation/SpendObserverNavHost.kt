@@ -32,6 +32,7 @@ import com.spendobserver.ui.help.FaqScreen
 import com.spendobserver.ui.help.HelpScreen
 import com.spendobserver.ui.record.RecordFormScreen
 import com.spendobserver.ui.stats.StatsScreen
+import com.spendobserver.ui.stats.statsViewModel
 import com.spendobserver.ui.tracker.TrackerDetailScreen
 import com.spendobserver.ui.trackers.TrackerEditScreen
 import com.spendobserver.ui.trackers.TrackerListScreen
@@ -157,20 +158,32 @@ fun SpendObserverNavHost(
         composable<Route.TrackerStats> { backStackEntry ->
             val navigation = ScreenNavigation(navController, backStackEntry)
             val route: Route.TrackerStats = backStackEntry.toRoute()
+            // The same tracker's screen underneath (opened from it, not from the tracker list):
+            // its entry holds the ViewModel, shared with the stats column it shows in two
+            // columns, so a fold, unfold or rotation either way keeps period, type and tag.
+            val trackerEntry = remember(backStackEntry) {
+                navController.previousBackStackEntry?.takeIf { previous ->
+                    previous.destination.hasRoute<Route.TrackerDetail>() &&
+                        previous.toRoute<Route.TrackerDetail>().trackerId == route.trackerId
+                }
+            }
+            val viewModelOwner = trackerEntry ?: backStackEntry
             WithPaneLayout { twoPane ->
                 // Unfolded while the full-screen stats were open: the tracker screen shows them
                 // in its second column, so go there — back to it if it's underneath, else in place.
                 if (twoPane) {
                     LaunchedEffect(Unit) {
                         navigation.ifCurrent {
-                            val previous = navController.previousBackStackEntry
-                            val trackerUnderneath = previous?.destination?.hasRoute<Route.TrackerDetail>() == true &&
-                                previous.toRoute<Route.TrackerDetail>().trackerId == route.trackerId
-                            if (trackerUnderneath) {
+                            if (trackerEntry != null) {
                                 navController.popBackStack()
                             } else {
+                                // No shared ViewModel here: hand the selection over to the new entry's.
+                                val selection = statsViewModel(backStackEntry, route.trackerId, recordRepository, tagRepository).selection
                                 navController.navigate(Route.TrackerDetail(route.trackerId)) {
                                     popUpTo<Route.TrackerStats> { inclusive = true }
+                                }
+                                navController.currentBackStackEntry?.let { entry ->
+                                    statsViewModel(entry, route.trackerId, recordRepository, tagRepository).restore(selection)
                                 }
                             }
                         }
@@ -182,6 +195,7 @@ fun SpendObserverNavHost(
                     tagRepository = tagRepository,
                     onBackClick = { navigation.back() },
                     modifier = Modifier.fillMaxSize(),
+                    viewModelStoreOwner = viewModelOwner,
                 )
             }
         }
