@@ -59,18 +59,25 @@ fun SpendObserverTheme(
         content = content
     )
 }
+
 // How far every background and surface is moved off the scheme's own: the dark theme's
 // is close to black, the light theme's close to white. Neutral overlays, so the wallpaper's
 // hue in a dynamic scheme stays as it is.
 private val DarkSurfaceLift = Color.White.copy(alpha = 0.05f)
 private val LightSurfaceDim = Color.Black.copy(alpha = 0.035f)
 
-/** All background and surface roles moved by the same [overlay], so they keep their steps between each other. */
+/**
+ * All background and surface roles moved by the same [overlay], so they keep their steps
+ * between each other. Left as they are: `inverseSurface`, which is the opposite theme's
+ * surface (snackbars) and moves away from these on purpose, and `surfaceTint`, which is
+ * an accent color rather than a surface.
+ */
 private fun ColorScheme.withShiftedSurfaces(overlay: Color): ColorScheme {
     fun Color.shifted() = overlay.compositeOver(this)
     return copy(
         background = background.shifted(),
         surface = surface.shifted(),
+        surfaceVariant = surfaceVariant.shifted(),
         surfaceDim = surfaceDim.shifted(),
         surfaceBright = surfaceBright.shifted(),
         surfaceContainerLowest = surfaceContainerLowest.shifted(),
