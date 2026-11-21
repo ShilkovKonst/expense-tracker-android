@@ -49,6 +49,13 @@ android {
         debug {
             applicationIdSuffix = ".debug"
         }
+        // Release-optimised but signed with the debug key and installed beside the real app: for judging speed.
+        create("perf") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".perf"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
