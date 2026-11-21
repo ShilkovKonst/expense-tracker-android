@@ -1,5 +1,7 @@
 package com.spendobserver.ui.navigation
 
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.requiredWidth
@@ -13,6 +15,11 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,12 +38,12 @@ import com.spendobserver.data.settings.ThemeMode
 import com.spendobserver.testing.InMemoryDatabaseRule
 import com.spendobserver.testing.string
 import com.spendobserver.testing.waitFor
-import com.spendobserver.testing.waitForNoText
 import com.spendobserver.testing.waitForNode
 import com.spendobserver.testing.waitForTag
 import com.spendobserver.testing.waitForText
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -52,11 +59,23 @@ class SpendObserverNavHostTest {
     val composeRule = createComposeRule()
 
     private lateinit var navController: NavHostController
+    private lateinit var backDispatcher: OnBackPressedDispatcher
 
     /** The window's width; tests change it to fold or unfold the "device". */
     private var width by mutableStateOf(PhoneWidth)
 
     private val statsTitle get() = string(R.string.stats_title)
+
+    /**
+     * Whether the statistics are on screen. On a phone they're laid out beside the
+     * records even while off-screen, so being in the tree isn't enough.
+     */
+    private fun statsShown() =
+        runCatching { composeRule.onNodeWithText(statsTitle, useUnmergedTree = true).isDisplayed() }.getOrDefault(false)
+
+    private fun waitForStatsShown() = composeRule.waitFor { statsShown() }
+
+    private fun waitForStatsGone() = composeRule.waitFor { !statsShown() }
 
     /** A "Family" tracker and the whole app in a window [width] wide, on the start screen. */
     private fun setContent(width: Dp) {
@@ -66,6 +85,7 @@ class SpendObserverNavHostTest {
         val records = RecordRepository(db)
         composeRule.setContent {
             navController = rememberNavController()
+            backDispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             // requiredWidth, not width: a "window" wider than the emulator's screen is the point.
             Box(Modifier.requiredWidth(this.width).fillMaxHeight()) {
                 SpendObserverNavHost(
@@ -112,7 +132,7 @@ class SpendObserverNavHostTest {
         setContent(width = UnfoldedWidth)
         composeRule.onNodeWithText("Family").performClick()
 
-        composeRule.waitForText(statsTitle)
+        waitForStatsShown()
         composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
         // One way back, the record list's: the stats column has none of its own.
         assertEquals(1, composeRule.onAllNodesWithContentDescription(string(R.string.action_back)).fetchSemanticsNodes().size)
@@ -126,30 +146,43 @@ class SpendObserverNavHostTest {
     fun foldingAndUnfolding_dropsAndBringsBackTheStatsColumn() {
         setContent(width = UnfoldedWidth)
         composeRule.onNodeWithText("Family").performClick()
-        composeRule.waitForText(statsTitle)
+        waitForStatsShown()
 
         width = PhoneWidth
-        composeRule.waitForNoText(statsTitle)
+        waitForStatsGone()
         composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
 
         width = UnfoldedWidth
-        composeRule.waitForText(statsTitle)
+        waitForStatsShown()
     }
 
     @Test
-    fun unfoldingOnTheStatsScreen_returnsToTheTrackerUnderneath() {
+    fun phone_statsFromTheTrackerMenu_slideInAsItsSecondPane() {
         setContent(width = PhoneWidth)
-        composeRule.onNodeWithText("Family").performClick()
-        composeRule.waitForTag("trackerMenuButton")
+        openTracker()
         composeRule.onNodeWithTag("trackerMenuButton").performClick()
         composeRule.waitForTag("statsItem")
         composeRule.onNodeWithTag("statsItem").performClick()
-        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerStats>() } }
+
+        waitForStatsShown()
+        // The same screen, not a new one on top of it.
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    @Test
+    fun unfoldingOnTheStatsPane_showsBothColumns() {
+        setContent(width = PhoneWidth)
+        openTracker()
+        swipeLeftAcross()
+        waitForStatsShown()
 
         width = UnfoldedWidth
-        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerDetail>() } }
-        // Popped back to it, not a second tracker entry pushed on top.
-        composeRule.runOnIdle { assertTrue(previousRouteIsTrackerList()) }
+        composeRule.waitForText("Family")
+        waitForStatsShown()
+        composeRule.runOnIdle {
+            assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() })
+            assertTrue(previousRouteIsTrackerList())
+        }
     }
 
     @Test
@@ -172,7 +205,115 @@ class SpendObserverNavHostTest {
         composeRule.waitForTag("statsTrackerItem-Family")
         composeRule.onNodeWithTag("statsTrackerItem-Family").performClick()
 
-        composeRule.waitForText(statsTitle)
+        waitForStatsShown()
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    /** Opens "Family" from the start screen and waits for its records. */
+    private fun openTracker() {
+        composeRule.onNodeWithText("Family").performClick()
+        composeRule.waitForTag("trackerMenuButton")
+        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerDetail>() } }
+    }
+
+    // Away from the edges, where a phone's own back gesture would take the swipe.
+    private fun swipeLeftAcross() = composeRule.onRoot().performTouchInput {
+        swipeLeft(startX = width * 0.8f, endX = width * 0.2f)
+    }
+
+    private fun swipeRightAcross() = composeRule.onRoot().performTouchInput {
+        swipeRight(startX = width * 0.2f, endX = width * 0.8f)
+    }
+
+    @Test
+    fun phone_swipingLeftOnTheRecords_bringsInTheStatistics() {
+        setContent(width = PhoneWidth)
+        openTracker()
+
+        swipeLeftAcross()
+
+        waitForStatsShown()
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    @Test
+    fun phone_swipingRightOnTheStatistics_bringsBackTheRecords() {
+        setContent(width = PhoneWidth)
+        openTracker()
+        swipeLeftAcross()
+        waitForStatsShown()
+
+        swipeRightAcross()
+
+        waitForStatsGone()
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    @Test
+    fun phone_backOnTheStatistics_returnsToTheRecordsNotTheStartScreen() {
+        setContent(width = PhoneWidth)
+        openTracker()
+        swipeLeftAcross()
+        waitForStatsShown()
+
+        // The system back button, as the app receives it.
+        composeRule.runOnUiThread { backDispatcher.onBackPressed() }
+
+        waitForStatsGone()
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    @Test
+    fun phone_swipingRightOnTheRecords_returnsToTheStartScreen() {
+        setContent(width = PhoneWidth)
+        openTracker()
+
+        swipeRightAcross()
+
+        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerList>() } }
+    }
+
+    @Test
+    fun phone_swipingRightOnStatsFromTheStartScreen_returnsThere() {
+        setContent(width = PhoneWidth)
+        composeRule.onNodeWithTag("trackerRowMenu-Family").performClick()
+        composeRule.waitForTag("statsTrackerItem-Family")
+        composeRule.onNodeWithTag("statsTrackerItem-Family").performClick()
+        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerStats>() } }
+
+        swipeRightAcross()
+
+        composeRule.waitFor { currentRouteIs { it.hasRoute<Route.TrackerList>() } }
+    }
+
+    @Test
+    fun phone_aShortSlowSwipe_staysOnTheRecords() {
+        setContent(width = PhoneWidth)
+        openTracker()
+
+        composeRule.onRoot().performTouchInput {
+            swipeLeft(startX = width * 0.55f, endX = width * 0.45f, durationMillis = 1000)
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().performTouchInput {
+            swipeRight(startX = width * 0.45f, endX = width * 0.55f, durationMillis = 1000)
+        }
+        composeRule.waitForIdle()
+
+        assertFalse(statsShown())
+        composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
+    }
+
+    @Test
+    fun wideWindow_swipesDoNothingYet() {
+        setContent(width = UnfoldedWidth)
+        openTracker()
+
+        swipeLeftAcross()
+        composeRule.waitForIdle()
+        swipeRightAcross()
+        composeRule.waitForIdle()
+
         composeRule.runOnIdle { assertTrue(currentRouteIs { it.hasRoute<Route.TrackerDetail>() }) }
     }
 

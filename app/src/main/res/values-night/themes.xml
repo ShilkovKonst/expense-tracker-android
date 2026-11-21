@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Dark window behind the app in dark mode, so no white shows at start or mid-transition. -->
+    <style name="Theme.SpendObserver" parent="android:Theme.Material.NoActionBar" />
+</resources>
