@@ -15,6 +15,7 @@ import com.spendobserver.domain.stats.StatsPeriod
 import com.spendobserver.domain.stats.StatsSubject
 import com.spendobserver.domain.stats.chartBuckets
 import com.spendobserver.domain.stats.periodStats
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -72,6 +73,8 @@ class StatsViewModel(
     recordRepository: RecordRepository,
     tagRepository: TagRepository,
     private val today: () -> LocalDate = ::systemToday,
+    /** Computes [uiState]; a test passes its own, so the work runs under its virtual clock. */
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val period = MutableStateFlow<StatsPeriod>(StatsPeriod.AllTime)
@@ -99,7 +102,7 @@ class StatsViewModel(
         // Every step below walks all the tracker's records: off the main thread.
         // Not flowOn() before stateIn(): the two fuse, and the state would then be
         // set on a background thread instead of the main one the UI collects on.
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val availableTypes = records.mapTo(HashSet()) { it.type }
             // A type the tracker has no records of (its toggle button is disabled)
             // gives way to the one it has — e.g. after the last income is deleted.

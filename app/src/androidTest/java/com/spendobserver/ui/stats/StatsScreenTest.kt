@@ -2,6 +2,7 @@ package com.spendobserver.ui.stats
 
 import com.spendobserver.data.local.toDomain
 import com.spendobserver.data.local.entity.TrackerEntity
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -143,6 +144,22 @@ class StatsScreenTest {
         }
     }
 
+    /**
+     * Scrolls the open picker to [name]'s row. The list is lazy: in a short
+     * dialog — landscape, large fonts — rows below the fold aren't composed,
+     * so a row must be scrolled to before it can be found.
+     */
+    private fun scrollToTagRow(name: String) {
+        composeRule.onNodeWithTag("subjectList").performScrollToNode(hasTestTag("tagRow-$name"))
+    }
+
+    /** Opens the picker and picks [name]. */
+    private fun pickTag(name: String) {
+        composeRule.onNodeWithTag("subjectField").performClick()
+        scrollToTagRow(name)
+        composeRule.onNodeWithTag("tagRow-$name").performClick()
+    }
+
     private fun hasCrumb(crumb: String) =
         composeRule.onAllNodes(hasTestTag("breadcrumbs") and hasAnyDescendant(hasText(crumb)))
             .fetchSemanticsNodes().isNotEmpty()
@@ -171,7 +188,7 @@ class StatsScreenTest {
 
         composeRule.onNodeWithTag("subjectField").performClick()
 
-        composeRule.onNodeWithTag("subjectList").performScrollToNode(hasTestTag("tagRow-кино"))
+        scrollToTagRow("кино")
         composeRule.onNodeWithTag("tagRow-кино").assert(hasText("0 · " + amount(0)))
     }
 
@@ -185,8 +202,12 @@ class StatsScreenTest {
 
         composeRule.onNodeWithTag("subjectField").performClick()
 
-        val shown = listOf("Zara", "aldi", "Boucherie")
-            .sortedBy { composeRule.onNodeWithTag("tagRow-$it").fetchSemanticsNode().boundsInRoot.top }
+        // The order as the list holds it, not as rows sit on screen: a short dialog
+        // (landscape, large fonts) doesn't compose every row, and a prefetched row is
+        // composed but not placed, so its bounds mean nothing. Items are keyed "tag-<id>".
+        val indexForKey = composeRule.onNodeWithTag("subjectList").fetchSemanticsNode().config[SemanticsProperties.IndexForKey]
+        val ids = runBlocking { db.tagDao().getForTracker(trackerId) }.associate { it.name to it.id }
+        val shown = listOf("Zara", "aldi", "Boucherie").sortedBy { indexForKey("tag-${ids.getValue(it)}") }
         assertEquals(listOf("aldi", "Boucherie", "Zara"), shown)
     }
 
@@ -194,8 +215,7 @@ class StatsScreenTest {
     fun pickingTag_showsItsStats_andPickingOverviewReturns() {
         setContent()
 
-        composeRule.onNodeWithTag("subjectField").performClick()
-        composeRule.onNodeWithTag("tagRow-продукты").performClick()
+        pickTag("продукты")
         composeRule.onNodeWithTag("subjectList").assertDoesNotExist()
         composeRule.waitForText(costs(1200))
         composeRule.onNodeWithTag("subjectTitle").assertTextEquals(string(R.string.stats_subject_tag, "продукты", string(R.string.stats_costs_inline)))
@@ -264,8 +284,7 @@ class StatsScreenTest {
     @Test
     fun selectedTagDeletedElsewhere_fallsBackToOverview() {
         setContent()
-        composeRule.onNodeWithTag("subjectField").performClick()
-        composeRule.onNodeWithTag("tagRow-продукты").performClick()
+        pickTag("продукты")
         composeRule.waitForText(costs(1200))
 
         runBlocking {

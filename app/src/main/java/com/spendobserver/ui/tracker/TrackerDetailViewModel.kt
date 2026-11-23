@@ -10,6 +10,7 @@ import com.spendobserver.domain.summary.YearGroup
 import com.spendobserver.domain.summary.groupByYearMonth
 import com.spendobserver.domain.summary.trackerStats
 import com.spendobserver.ui.navigation.RecordChange
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,6 +34,8 @@ class TrackerDetailViewModel(
     private val trackerId: Long,
     private val trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
+    /** Groups the records; a test passes its own, so the grouping runs under its virtual clock. */
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     /** Observed rather than read once: this ViewModel outlives a rename on the tracker-edit screen. */
@@ -50,7 +53,7 @@ class TrackerDetailViewModel(
     val yearGroups: StateFlow<List<YearGroup>> = recordRepository.observeAll(trackerId)
         // Grouping and summing walk every record: off the main thread — inside map, not
         // flowOn() before stateIn(), which would fuse and set the state off the main thread.
-        .map { records -> withContext(Dispatchers.Default) { records.groupByYearMonth() }.also { recordsLoaded.value = true } }
+        .map { records -> withContext(defaultDispatcher) { records.groupByYearMonth() }.also { recordsLoaded.value = true } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

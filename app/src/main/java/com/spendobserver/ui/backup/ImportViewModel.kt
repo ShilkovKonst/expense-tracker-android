@@ -11,6 +11,7 @@ import com.spendobserver.domain.backup.ImportedTracker
 import com.spendobserver.domain.backup.copyTitle
 import com.spendobserver.domain.backup.parseBackup
 import com.spendobserver.domain.text.isSameNameAs
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,8 @@ sealed interface ImportState {
 class ImportViewModel(
     private val backupRepository: BackupRepository,
     private val trackerRepository: TrackerRepository,
+    /** Parses the file; a test passes its own, so the parsing runs under its virtual clock. */
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ImportState>(ImportState.Idle)
@@ -54,7 +57,7 @@ class ImportViewModel(
         }
         _state.value = ImportState.Working
         viewModelScope.launch {
-            _state.value = when (val result = withContext(Dispatchers.Default) { parseBackup(text) }) {
+            _state.value = when (val result = withContext(defaultDispatcher) { parseBackup(text) }) {
                 is BackupParseResult.Failure -> ImportState.Failed(ImportFailure.Invalid(result.error))
                 is BackupParseResult.Success -> ImportState.Preview(candidates(result.trackers))
             }
