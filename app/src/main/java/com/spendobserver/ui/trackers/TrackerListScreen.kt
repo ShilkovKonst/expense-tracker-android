@@ -1,6 +1,5 @@
 package com.spendobserver.ui.trackers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
 import com.spendobserver.ui.common.AppTopBar
 import androidx.compose.material3.DropdownMenu
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
@@ -43,8 +45,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -84,8 +89,15 @@ fun TrackerListScreen(
     onTrackerCreated: (trackerId: Long) -> Unit = {},
     onHelpClick: () -> Unit = {},
     onFaqClick: () -> Unit = {},
+    /** The tracker open beside the list, shown picked out; null when none is. */
+    selectedTrackerId: Long? = null,
+    /** Where the list's ViewModels live: the start screen's, wherever the list is shown, so it's one list. */
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current),
+    /** Beside a tracker, its bar's height, so the two bars stay one band at large font sizes too. */
+    topBarHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight,
 ) {
     val viewModel: TrackerListViewModel = viewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
         factory = remember(trackerRepository, recordRepository) {
             viewModelFactory {
                 initializer { TrackerListViewModel(trackerRepository, recordRepository.observeStatsByTracker()) }
@@ -102,7 +114,15 @@ fun TrackerListScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
 
+    // Picks up where the list was left, here or in its other place, and keeps that up to date.
+    val listState = rememberLazyListState(viewModel.scrollIndex, viewModel.scrollOffset)
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) -> viewModel.saveScroll(index, offset) }
+    }
+
     val importViewModel: ImportViewModel = viewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
         factory = remember(backupRepository, trackerRepository) {
             viewModelFactory { initializer { ImportViewModel(backupRepository, trackerRepository) } }
         },
@@ -188,6 +208,7 @@ fun TrackerListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(),
+                height = topBarHeight,
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -209,6 +230,7 @@ fun TrackerListScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 // Room below the last row for the FAB (56dp + 16dp margins).
                 contentPadding = PaddingValues(bottom = 88.dp),
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -218,6 +240,7 @@ fun TrackerListScreen(
                         tracker = tracker,
                         position = index,
                         stats = statsByTracker[tracker.id] ?: TrackerStats.EMPTY,
+                        selected = tracker.id == selectedTrackerId,
                         onClick = { onTrackerClick(tracker) },
                         onStatsClick = { onStatsClick(tracker) },
                         onEditClick = { onEditTrackerClick(tracker) },
@@ -287,6 +310,7 @@ private fun TrackerRow(
     tracker: Tracker,
     position: Int,
     stats: TrackerStats,
+    selected: Boolean,
     onClick: () -> Unit,
     onStatsClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -295,8 +319,16 @@ private fun TrackerRow(
     // Each row keeps its own open/closed flag; LazyColumn keys rows by tracker id, so it stays with its tracker.
     var showMenu by remember { mutableStateOf(false) }
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        colors = ListItemDefaults.colors(containerColor = alternatingRowColor(position)),
+        // selectable, not clickable: screen readers also hear which tracker is open beside the list.
+        modifier = Modifier.selectable(selected = selected, onClick = onClick).testTag("trackerRow-${tracker.title}"),
+        colors = if (selected) {
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        } else {
+            ListItemDefaults.colors(containerColor = alternatingRowColor(position))
+        },
         headlineContent = { Text(tracker.title) },
         supportingContent = {
             Text(

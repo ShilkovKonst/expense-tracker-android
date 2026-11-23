@@ -109,16 +109,18 @@ fun TrackerDetailScreen(
     trackerRepository: TrackerRepository,
     recordRepository: RecordRepository,
     backupRepository: BackupRepository,
-    onBackClick: () -> Unit,
+    /** Null hides the back arrow: in two columns the tracker list is on screen beside the records. */
+    onBackClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     onAddRecordClick: () -> Unit = {},
     onRecordClick: (Record) -> Unit = {},
     onEditTrackerClick: () -> Unit = {},
-    /** Null hides the menu's «Статистика»: in two columns the statistics are already on screen. */
-    onStatsClick: (() -> Unit)? = {},
+    onStatsClick: () -> Unit = {},
     onTrackerDeleted: () -> Unit = {},
     recordChange: RecordChange? = null,
     onRecordChangeConsumed: () -> Unit = {},
+    /** Called once the tracker's title and records have come in, so there's something real to show. */
+    onLoaded: () -> Unit = {},
 ) {
     val viewModel: TrackerDetailViewModel = viewModel(
         factory = remember(trackerId, trackerRepository, recordRepository) {
@@ -135,6 +137,8 @@ fun TrackerDetailScreen(
     val items = viewModel.items.collectAsStateWithLifecycle().value
     val focusTarget by viewModel.focusTarget.collectAsStateWithLifecycle()
     val writeFailed by viewModel.writeFailed.collectAsStateWithLifecycle()
+    val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
+    LaunchedEffect(isLoaded) { if (isLoaded) onLoaded() }
     val listState = rememberLazyListState()
     // derivedStateOf: the scroll position changes every frame, but the title only when a header crosses the top edge.
     val scrolledPast by remember(items) {
@@ -210,7 +214,7 @@ fun TrackerDetailScreen(
                     }
                 },
                 navigationIcon = {
-                    BackButton(onClick = onBackClick)
+                    if (onBackClick != null) BackButton(onClick = onBackClick)
                 },
                 height = twoLineTopBarHeight(),
                 // One overflow menu, like the tracker list's, instead of a row of icons
@@ -232,7 +236,7 @@ fun TrackerDetailScreen(
                                 colors = if (destructive) MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error) else MenuDefaults.itemColors(),
                                 modifier = Modifier.testTag(tag),
                             )
-                            if (onStatsClick != null) item(stringResource(R.string.menu_stats), "statsItem", action = onStatsClick)
+                            item(stringResource(R.string.menu_stats), "statsItem", action = onStatsClick)
                             item(stringResource(R.string.menu_settings), "editTrackerItem", action = onEditTrackerClick)
                             HorizontalDivider()
                             item(stringResource(R.string.menu_save_to_file), "exportSaveItem") { exportActions.save(exportScope) }

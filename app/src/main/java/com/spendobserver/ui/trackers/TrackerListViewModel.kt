@@ -42,6 +42,21 @@ class TrackerListViewModel(
             initialValue = emptyMap(),
         )
 
+    /**
+     * How far the list is scrolled: its first visible row and that row's hidden part.
+     * Plain values, not the list's own state: on a wide screen the list shows both on
+     * the start screen and beside a tracker, two places that each pick up from here.
+     */
+    var scrollIndex = 0
+        private set
+    var scrollOffset = 0
+        private set
+
+    fun saveScroll(index: Int, offset: Int) {
+        scrollIndex = index
+        scrollOffset = offset
+    }
+
     /** The database refused a write (a full disk, say). */
     private val _writeFailed = MutableStateFlow(false)
     val writeFailed: StateFlow<Boolean> = _writeFailed.asStateFlow()

@@ -14,8 +14,9 @@ sealed interface Route {
     @Serializable
     data object TrackerList : Route
 
+    /** [showStats] opens it on its statistics rather than its records. */
     @Serializable
-    data class TrackerDetail(val trackerId: Long) : Route
+    data class TrackerDetail(val trackerId: Long, val showStats: Boolean = false) : Route
 
     /** [recordId] is null when creating a new record, set when editing an existing one. */
     @Serializable

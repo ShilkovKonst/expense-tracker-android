@@ -44,10 +44,13 @@ class TrackerDetailViewModel(
             initialValue = null,
         )
 
+    /** Set once the records have first come in: an empty list before that says nothing yet. */
+    private val recordsLoaded = MutableStateFlow(false)
+
     val yearGroups: StateFlow<List<YearGroup>> = recordRepository.observeAll(trackerId)
         // Grouping and summing walk every record: off the main thread — inside map, not
         // flowOn() before stateIn(), which would fuse and set the state off the main thread.
-        .map { withContext(Dispatchers.Default) { it.groupByYearMonth() } }
+        .map { records -> withContext(Dispatchers.Default) { records.groupByYearMonth() }.also { recordsLoaded.value = true } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -61,6 +64,17 @@ class TrackerDetailViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = TrackerStats.EMPTY,
+        )
+
+    /**
+     * Whether the title and the records have come in from the database: until then the
+     * screen would show an untitled tracker with "no records yet", which it may well have.
+     */
+    val isLoaded: StateFlow<Boolean> = combine(trackerTitle, recordsLoaded) { title, loaded -> title != null && loaded }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = false,
         )
 
     private val expandedYears = MutableStateFlow(emptySet<Int>())

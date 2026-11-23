@@ -10,6 +10,7 @@
 
     <!-- Tracker list -->
     <string name="tracker_list_empty">Noch keine Tracker</string>
+    <string name="tracker_pick_hint">Wählen Sie einen Tracker, um seine Einträge zu sehen</string>
     <string name="tracker_list_add">Tracker hinzufügen</string>
     <string name="menu_import">Aus Datei importieren</string>
     <string name="menu_save_all">Alles in Datei speichern</string>
